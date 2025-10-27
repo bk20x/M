@@ -44,4 +44,4 @@ proc doFile(file: string) =
     env.eval sexp
 
 
-doFile "test.m"
+doFile "test.as"
