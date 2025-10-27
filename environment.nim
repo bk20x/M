@@ -172,7 +172,7 @@ doList =
      
       let evaluatedList = env.eval: listForm
       if evaluatedList.kind != Cons and not evaluatedList.isNil:
-        raise newException(ValueError, fmt"doList: expected list for iteration but got {$evaluatedList.kind}")
+        raise newException(ValueError, fmt"expected list for `doList` but got {$evaluatedList.kind}")
         
 
       var listToIter = evaluatedList
