@@ -52,7 +52,7 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
         return name
       of "return":
          let valForm = form.cdr.car
-         let val = eval(env, valForm)
+         let val = env.eval(valForm)
          raise ReturnException(retVal: val)
       of "if":
         # (if (cond) (expr) (elt))
