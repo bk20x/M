@@ -3,6 +3,12 @@ import lispobject
 
 import Strings
 
+
+
+type
+  ReturnException* = ref object of CatchableError
+    retVal*: LispObject
+    
 proc newScope*(parent: ref Env): owned ref Env =
   new result
   result.interned = parent.interned
@@ -18,6 +24,7 @@ var
   ifImpl:  proc(env: var ref Env, form: LispObject): LispObject
   doTimes: proc(env: var ref Env, form: LispObject): LispObject
   doList:  proc(env: var ref Env, form: LispObject): LispObject
+  evalLambda: proc(env: var ref Env, form: LispObject, evaluated: seq[LispObject]): LispObject {.inline.}
   
 proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
   if form.isNil or form.kind in {Number, String}:
@@ -31,9 +38,9 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
     if form.isNil:
       return NIL()
 
-
+      
     if form.car.kind == Symbol:
-      case form.car.sym.name:
+      case form.car.sym.name: # special forms
       of "fn":
         # (fn name (params) (body))
         let
@@ -43,6 +50,10 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
           lambda = env.newLambda(params, body)
         env.intern(name.sym.name, lambda)
         return name
+      of "return":
+         let valForm = form.cdr.car
+         let val = eval(env, valForm)
+         raise ReturnException(retVal: val)
       of "if":
         # (if (cond) (expr) (elt))
         return env.ifImpl(form.cdr)
@@ -79,8 +90,7 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
       evaluated.add: env.eval: args.car
       args = args.cdr # goto next Cons cell
 
-      
-      
+            
     # eval the operator (functions might return another function)
     let op = env.eval: form.car
     # Built-in functions
@@ -93,15 +103,22 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
       for arg in reversedArgs:
         consArgs = cons(arg, consArgs)
       
-      return op.fun(consArgs)
-      
+      return op.fun(consArgs)      
     # User defined funs
     elif op.kind == Lambda:
-      var lambda = op
-      lambda.closure = env.newScope()
+      return env.evalLambda(op, evaluated)
+    else:
+      raise newException(ValueError, "Can't apply non-function object: " & $op.kind)
+  else:
+    raise newException(ValueError, "Can't eval object of kind: " & $form.kind)
 
-      var params = lambda.params
-      var argIndex = 0
+evalLambda =
+    proc(env: var ref Env, form: LispObject, evaluated: seq[LispObject]): LispObject {.inline.} =
+      var
+        lambda = form
+        params = lambda.params
+        argIndex = 0
+      lambda.closure = env.newScope()
       while not params.isNil:
         if argIndex >= evaluated.len:
           raise newException(ValueError, "Wrong number of arguments for lambda")
@@ -109,28 +126,26 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
         params = params.cdr
         inc argIndex
       if argIndex != evaluated.len:
-        raise newException(ValueError, "Wrong number of arguments for lambda")      
-      return eval(lambda.closure, lambda.body)
-      
-    else:
-      raise newException(ValueError, "Can't apply non-function object: " & $op.kind)
-  else:
-    raise newException(ValueError, "Can't eval object of kind: " & $form.kind)
-
+        raise newException(ValueError, "Wrong number of arguments for lambda")
+      try:
+        return lambda.closure.eval: lambda.body
+      except ReturnException as ret:
+        return ret.retVal
+    
 ifImpl =
     proc(env: var ref Env, form: LispObject): LispObject =
       let
         cond   = env.eval(form.first)
         ifCond = form.second
       var elt: LispObject
-      if form.len == 3:
-         new elt
-         elt = form.third
       if not cond.isNil:
          return env.eval(ifCond)
       else:
-         if not elt.isNil:
-          return env.eval(elt)
+         if form.len == 3:
+           new elt
+           elt = form.third
+           if not elt.isNil:
+             return env.eval(elt)
          else:
            return NIL()
 
@@ -243,7 +258,27 @@ proc newEnv*(): owned ref Env =
     typeOf: Fun =
       proc(args: LispObject): LispObject =
         return LispObject(kind: String, str: $args.first.kind)
-        
+
+    eq: Fun =
+      proc(args: LispObject): LispObject =
+        let
+          x = args.first
+          y = args.second
+        assert x.kind == y.kind
+        case x.kind:
+        of Number:
+          if x.num == y.num:
+            return newSym "t"
+          else:
+            return NIL()
+        of Symbol:
+          if x.sym.name == y.sym.name:
+            return newSym "t"
+          else:
+            return NIL()
+        else:
+          discard
+          
 
 
    # setf: Fun =
@@ -259,6 +294,7 @@ proc newEnv*(): owned ref Env =
     "+"            : newFun(lispadd,       "+"),
     "*"            : newFun(lispmul,       "*"),
     ">"            : newFun(lispgthan,     ">"),
+    "eq"           : newFun(eq,            "eq"),
     "list"         : newFun(list,          "list"),
     "car"          : newFun(car,           "car"),
     "cdr"          : newFun(cdr,           "cdr"),
