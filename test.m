@@ -8,15 +8,15 @@
 
 
 
-(putLn (typeOf "Yo"))
+(putLn (typeOf 5))
 
-
-(doTimes 100000 (putLn "yo"))
 
 (fn sayHi (name)
   (putLn (strConcat "Hello!, " name)))
 
-(defvar name "Boben")
+(defvar name "Dad!!")
 
 (sayHi name)
 
+(doList (x (list 2 4 6 8))
+ (putLn x))

@@ -14,9 +14,11 @@ proc intern*(env: var ref Env, sym: string, val: LispObject) =
     echo fmt"WARNING: Redefining {sym} in the current scope"
   env.interned[sym] = val
 
-var ifImpl:  proc(env: var ref Env, form: LispObject): LispObject
-var doTimes: proc(env: var ref Env, form: LispObject): LispObject
-    
+var
+  ifImpl:  proc(env: var ref Env, form: LispObject): LispObject
+  doTimes: proc(env: var ref Env, form: LispObject): LispObject
+  doList:  proc(env: var ref Env, form: LispObject): LispObject
+  
 proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
   if form.isNil or form.kind in {Number, String}:
     return form
@@ -48,19 +50,22 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
         # (defvar name val)
         let
           name = form.cdr.car
-          val  = eval(env, form.cdr.cdr.car)
+          val  = env.eval: form.cdr.cdr.car
         env.intern(name.sym.name, val)
         return name
       of "setf":
         # (setf name val)
         let
           name = form.cdr.car
-          val = eval(env, form.cdr.cdr.car)
+          val = env.eval: form.cdr.cdr.car
         env.interned[name.sym.name] = val
         return val
       of "doTimes":
         # (doTimes times (body))
         return env.doTimes(form.cdr)
+      of "doList":
+        # (doList (var list) (body))
+        return env.doList(form.cdr)
       else:
         discard
         
@@ -71,7 +76,7 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
       evaluated: seq[LispObject] = @[]
       args = form.cdr
     while not args.isNil:
-      evaluated.add: eval(env, args.car)
+      evaluated.add: env.eval: args.car
       args = args.cdr # goto next Cons cell
 
       
@@ -82,7 +87,7 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
     if op.kind == Function:
       var reversedArgs: seq[LispObject] = @[]
       for i in countdown(evaluated.len - 1, 0):
-        reversedArgs.add(evaluated[i])
+        reversedArgs.add: evaluated[i]
 
       var consArgs = NIL()
       for arg in reversedArgs:
@@ -109,8 +114,6 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
       
     else:
       raise newException(ValueError, "Can't apply non-function object: " & $op.kind)
-  
-  # Handle unexpected LispObject kinds
   else:
     raise newException(ValueError, "Can't eval object of kind: " & $form.kind)
 
@@ -142,6 +145,33 @@ doTimes =
         i += 1
       return env.eval: body 
         
+
+doList =
+    proc(env: var ref Env, form: LispObject): LispObject =
+      let
+        varAndList = form.first # (var list)
+        body = form.second # (body)
+        varSym = varAndList.car # 
+        listForm = varAndList.cdr.car 
+      
+     
+      let evaluatedList = env.eval: listForm
+      if evaluatedList.kind != Cons and not evaluatedList.isNil:
+        raise newException(ValueError, fmt"doList: expected list for iteration but got {$evaluatedList.kind}")
+        
+
+      var listToIter = evaluatedList
+      
+
+      while not listToIter.isNil:
+        var newEnv = env.newScope()
+        
+        newEnv.interned[varSym.sym.name] = listToIter.car
+        
+        result = newEnv.eval: body
+        listToIter = listToIter.cdr
+      return result
+
         
 proc newEnv*(): owned ref Env =
   new result
