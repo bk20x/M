@@ -5,9 +5,21 @@
 
 (fn printNames (names)
  (doList (name names)
-  (putLn name)))
+  (putLn (strUpcase name))))
+
+(putLn printNames)
 
 
-(printNames (list "Bober" "Cerny" "Yoben"))
+(defvar myList (list "Bober" "Cerny" "Yoben"))
+
+(printNames myList)
+
+
+(fn nil? (obj)
+ (if obj nil t))
+
+
+(putLn (nil? 5))
+
 
 ```
