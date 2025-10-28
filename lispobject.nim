@@ -32,8 +32,9 @@ type
         discard
 
 
-func NIL*(): LispObject =
-  return LispObject(kind: Nil)
+
+func T*(): LispObject   {.inline.} = LispObject(kind: Symbol, sym: SymbolRef(name: "t"))
+func NIL*(): LispObject {.inline.} = LispObject(kind: Nil)
   
 func newLambda*(env: ref Env, params, body: LispObject): LispObject =
   return LispObject(kind: Lambda, params: params, body: body)
@@ -105,7 +106,7 @@ func `$`*(s: LispObject): string =
       result &= ".0"
     return result
   of String:
-    return "\"" & s.str & "\""
+    return s.str
   of Cons:
     result = "("
     var current = s.cdr
@@ -131,9 +132,8 @@ func toSeq*(list: LispObject): seq[LispObject] =
         result.add: obj.car
     else:
       result.add: obj
-      
     collect(obj.cdr, result) 
-    
+
   result  = @[]
   collect(list, result)
   return result

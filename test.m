@@ -7,10 +7,14 @@
 
 (fn printNames (names)
  (doList (name names)
-  (putLn name)))
+  (putLn (strUpcase name))))
 
 
-(printNames (list "Bober" "Cerny" "Yoben"))
+(putLn printNames)
 
+(defvar myList (list "Bober" "Cerny" "Yoben"))
+
+
+(printNames myList)
 
 
