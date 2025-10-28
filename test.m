@@ -9,12 +9,16 @@
  (doList (name names)
   (putLn (strUpcase name))))
 
-
 (putLn printNames)
 
-(defvar myList (list "Bober" "Cerny" "Yoben"))
 
+(defvar myList (list "Bober" "Cerny" "Yoben"))
 
 (printNames myList)
 
 
+(fn nil? (obj)
+ (if obj nil t))
+
+
+(putLn (nil? 5))
