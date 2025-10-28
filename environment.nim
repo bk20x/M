@@ -1,5 +1,5 @@
-import std/[strformat, tables]
-import lispobject
+import std/[strformat, tables, streams, strutils]
+import lispobject, reader
 
 import Strings
 
@@ -33,9 +33,41 @@ var
   doTimes:    proc(env: var ref Env, form: LispObject): LispObject
   doList:     proc(env: var ref Env, form: LispObject): LispObject
   evalLambda: proc(env: var ref Env, form: LispObject, evaluated: seq[LispObject]): LispObject {.inline.}
-  
+  load:       proc(env: var ref Env, form: LispObject): LispObject
+
+
+proc readAllSexprs(filename: string): seq[LispObject] =
+  result = @[]
+  var s = newFileStream(filename, fmRead)
+  if s == nil:
+    quit("Could not open file: " & filename)
+
+  var
+    buffer = ""
+    parenCount = 0
+
+  while not s.atEnd:
+    let c = s.readChar()
+    case c:
+    of '(':
+      parenCount += 1
+      buffer.add(c)
+    of ')':
+      parenCount -= 1
+      buffer.add(c)
+      if parenCount == 0:
+        result.add: parse buffer.strip()
+        buffer = ""
+    of ' ', '\n', '\t':
+      if parenCount > 0:
+        buffer.add(c)
+    else:
+      buffer.add(c)
+
+  s.close()
+
 proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
-  if form.isNil or form.kind in {Number, String}:
+  if form.isNil or form.kind in {Int, Float, String}:
     return form
   elif form.kind == Symbol:
     if env.interned.hasKey(form.sym.name):
@@ -58,6 +90,10 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
           lambda = env.newLambda(params, body)
         env.intern(name.sym.name, lambda)
         return name
+      of "load":
+        let
+          file = form.second
+        return env.load file
       of "return":
          let
            valForm = form.cdr.car
@@ -74,21 +110,25 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
         env.intern(name.sym.name, val)
         return name
       of "setf":
-        echo form.cdr.cdr.car
         let
           placeForm = form.cdr.car
-          valForm = form.cdr.cdr.car
-        
+          valForm   = form.cdr.cdr.car
         let
           val = env.eval: valForm
           placeRef = env.lookupPlace(placeForm)
-        
         if placeRef.isNil:
           raise newException(ValueError, "setf: place does not exist")
-
-
         placeRef[] = val
         return val
+      of "setq":
+        let
+          placeForm = form.cdr.car
+          valForm   = form.cdr.cdr.car
+          placeRef  = env.lookupPlace(placeForm)
+        if placeRef.isNil:
+          raise newException(ValueError, "setq: place does not exist")
+        placeRef[] = valForm
+        return valForm
       of "doTimes":
         # (doTimes times (body))
         return env.doTimes(form.cdr)
@@ -111,8 +151,11 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
             
     # eval the operator (functions might return another function)
     let op = env.eval: form.car
+    ##if op.kind == Symbol and env.interned.hasKey(op.sym.name):
+      ##return env.evalLambda(env.interned[op.sym.name], evaluated)
+      
     # Built-in functions
-    if op.kind == Function:
+    if op.kind == Builtin:
       var
         reversedArgs: seq[LispObject] = @[]
         consArgs = NIL()
@@ -191,10 +234,10 @@ ifImpl =
 doTimes =
     proc(env: var ref Env, form: LispObject): LispObject =
       let
-        times = form.first.num
+        times = form.first.intVal
         body  = form.second
-      var i = 0.0
-      while not (i == times - 1): # bc we return the last eval
+      var i = 0
+      while (i == times - 1): # bc we return the last eval
         env.eval: body
         i += 1
       return env.eval: body 
@@ -226,74 +269,142 @@ doList =
         listToIter = listToIter.cdr
       return result
 
-        
+  
+load =
+  proc(env: var ref Env, form: LispObject): LispObject =
+    let sexprs = readAllSexprs form.str
+    for sexp in sexprs:
+      env.eval sexp
+    return T()
+
+
 proc newEnv*(): owned ref Env =
   new result
   var env = result
   let
-    car: Fun =
+    car: BuiltinFn =
       proc(args: LispObject): LispObject =
         return args.car.car
         
-    cdr: Fun =
+    cdr: BuiltinFn =
       proc(args: LispObject): LispObject =
         return args.car.cdr
         
-    list: Fun =
+    list: BuiltinFn =
       proc(args: LispObject): LispObject =
         return args
         
-    lispgthan: Fun =
+    lispgthan: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        if args.cdr.isNil:
+          raise newException(ValueError, "> requires two arguments")
+    
+        let
+          x = args.car
+          y = args.cdr.car
+
+
+        if not (x.kind in {Int, Float}) or not (y.kind in {Int, Float}):
+          raise newException(ValueError, "Attempt to call > on non-numeric types")
+
+        var isGreater: bool
+        if x.kind == Float or y.kind == Float:
+          var
+            xVal = if x.kind == Float: x.floatVal else: x.intVal.float
+            yVal = if y.kind == Float: y.floatVal else: y.intVal.float
+          isGreater = xVal > yVal
+        else:
+          isGreater = x.intVal > y.intVal
+          if isGreater:
+            return T()
+          else:
+            return NIL()
+
+    lispadd: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        let nums = args.toSeq
+        var
+          isFloat = false
+          intSum: int = 0
+          floatSum: float = 0.0
+
+    # Check if any argument is a float. If so, cast all to float.
+        for num in nums:
+          if num.kind == Float:
+            isFloat = true
+            break
+    
+        for num in nums:
+          if isFloat:
+            case num.kind:
+            of Int:
+              floatSum += num.intVal.float
+            of Float:
+              floatSum += num.floatVal
+            else:
+              raise newException(ValueError, "Type mismatch in +")
+          else:
+            case num.kind:
+              of Int:
+                intSum += num.intVal
+              else:
+                raise newException(ValueError, "Type mismatch in +")
+            
+        if isFloat:
+          return LispObject(kind: Float, floatVal: floatSum)
+        else:
+          return LispObject(kind: Int, intVal: intSum)
+
+
+    lispmul: BuiltinFn =
       proc(args: LispObject): LispObject =
         let
           x = args.first
           y = args.second
-        if not (x.kind == Number) and (y.kind == Number):
-          raise newException(ValueError, fmt"Attempt to call > on {x.kind} and {y.kind}")
-        elif x.num > y.num:
-           return newSym "t"
+        if x.kind == Float or y.kind == Float:
+          let
+            xVal = if x.kind == Float: x.floatVal else: x.intVal.float
+            yVal = if y.kind == Float: y.floatVal else: y.intVal.float
+            res  = xVal * yVal
+          if res is float:  
+            return LispObject(kind: Float, floatVal: res)
         else:
-           return NIL()
-               
-    lispadd: Fun =
-      proc(args: LispObject): LispObject =
-        let nums = args.toSeq
-        var n = 0.0
-        for num in nums:
-          n += num.num
-        return LispObject(kind: Number, num: n)
+          return LispObject(kind: Int,   intVal:  x.intVal * y.intVal)
         
-    lispmul: Fun =
-      proc(args: LispObject): LispObject =
-        let
-          x = args.first.num
-          y = args.second.num
-        return LispObject(kind: Number, num: x * y)
-        
-    function: Fun =
+    function: BuiltinFn =
       proc(args: LispObject): LispObject =
         let fn = args.car.name
-        if fn in env.interned and env.interned[fn].kind == Function:
+        if fn in env.interned and env.interned[fn].kind == Builtin:
           return env.interned[fn]
 
-    putLn: Fun =
+    putLn: BuiltinFn =
       proc(args: LispObject): LispObject =
-        echo args.car
+        case args.car.kind:
+        of String:
+          echo args.car.str # because the printer prints string quoted
+        else:
+          echo args.car
         return NIL()
+          
         
-    typeOf: Fun =
+    typeOf: BuiltinFn =
       proc(args: LispObject): LispObject =
-        return LispObject(kind: String, str: $args.first.kind)
+        return newSym($args.first.kind)
 
-    eq: Fun =
+    eq: BuiltinFn =
       proc(args: LispObject): LispObject =
         let
           x = args.first
           y = args.second
         assert x.kind == y.kind
         case x.kind:
-        of Number:
-          if x.num == y.num:
+        of Int:
+          if x.intVal == y.intVal:
+            return T()
+          else:
+            return NIL()
+        of Float:
+          if x.floatVal == y.floatVal:
             return T()
           else:
             return NIL()
@@ -310,9 +421,14 @@ proc newEnv*(): owned ref Env =
         else:
           discard
           
+    body: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        let
+          lambda = args.first
+          body   = lambda.body
+        return body
 
-
-   # setf: Fun =
+   # setf: Builtin =
    #   proc(args: LispObject): LispObject =
    #     echo args
    #     let
@@ -322,20 +438,22 @@ proc newEnv*(): owned ref Env =
    #     return val
   result.interned = toTable {
     "t"            : T(),
-    "+"            : newFun(lispadd,       "+"),
-    "*"            : newFun(lispmul,       "*"),
-    ">"            : newFun(lispgthan,     ">"),
-    "eq"           : newFun(eq,            "eq"),
-    "list"         : newFun(list,          "list"),
-    "car"          : newFun(car,           "car"),
-    "cdr"          : newFun(cdr,           "cdr"),
-    "putLn"        : newFun(putLn,         "putLn"),
-    "function"     : newFun(function,      "function"),
-    "typeOf"       : newFun(typeOf,        "typeOf"),
-    "strConcat"    : newFun(strConcat,     "strConcat"),
-    "strLen"       : newFun(strLen,        "strLen"),
-    "strDowncase"  : newFun(strDowncase,   "strDowncase"),
-    "strUpcase"    : newFun(strUpcase,     "strUpcase")
+    "+"            : newBuiltin(lispadd,       "+"),
+    "*"            : newBuiltin(lispmul,       "*"),
+    ">"            : newBuiltin(lispgthan,     ">"),
+    "eq"           : newBuiltin(eq,            "eq"),
+    "list"         : newBuiltin(list,          "list"),
+    "car"          : newBuiltin(car,           "car"),
+    "cdr"          : newBuiltin(cdr,           "cdr"),
+    "putLn"        : newBuiltin(putLn,         "putLn"),
+    "function"     : newBuiltin(function,      "function"),
+    "body"         : newBuiltin(body,          "body"),
+    "typeOf"       : newBuiltin(typeOf,        "typeOf"),
+    "strConcat"    : newBuiltin(strConcat,     "strConcat"),
+    "strLen"       : newBuiltin(strLen,        "strLen"),
+    "strDowncase"  : newBuiltin(strDowncase,   "strDowncase"),
+    "strUpcase"    : newBuiltin(strUpcase,     "strUpcase"),
+    "strReplace"   : newBuiltin(strReplace,    "strReplace")
    }
    
   return result

@@ -41,7 +41,7 @@ proc parseSym*(lx: var AshLexer, start: int) =
 proc parseNumber*(lx: var AshLexer, start: int) =
   var pos = lx.bufpos
   var isFloat = false
-  
+  # parse the int part
   while pos < lx.buf.len and (lx.buf[pos].isDigit or lx.buf[pos] == '.'):
     if lx.buf[pos] == '.':
       isFloat = true

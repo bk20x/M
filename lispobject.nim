@@ -2,12 +2,12 @@ import std/[tables, strutils]
 
 type
   LispObjectKind* = enum
-    Nil, Number, Symbol, String, Cons, Function, Lambda
+    Nil, Int, Float, Symbol, String, Cons, Builtin, Lambda
     
   SymbolRef* = ref object
     name*: string
   
-  Fun* = proc(args: LispObject): LispObject
+  BuiltinFn* = proc(args: LispObject): LispObject
                
   Env* = object
     interned*: Table[string, LispObject]
@@ -16,14 +16,16 @@ type
     case kind*: LispObjectKind:
       of Symbol:
         sym*: SymbolRef
-      of Number:
-        num*: float
+      of Int:
+        intVal*: int
+      of Float:
+        floatVal*: float
       of String:
         str*: string
       of Cons:
         car*, cdr*: LispObject
-      of Function:
-        fun*: Fun
+      of Builtin:
+        fun*: BuiltinFn
         name*: string
       of Lambda:
         params*, body*: LispObject
@@ -39,15 +41,17 @@ func NIL*(): LispObject {.inline.} = LispObject(kind: Nil)
 func newLambda*(env: ref Env, params, body: LispObject): LispObject =
   return LispObject(kind: Lambda, params: params, body: body)
 
-func newFun*(fun: Fun, name: string): owned LispObject {.inline.} =
-  return LispObject(kind: Function, fun: fun, name: name)
+func newBuiltin*(fun: BuiltinFn, name: string): owned LispObject {.inline.} =
+  return LispObject(kind: Builtin, fun: fun, name: name)
                     
 func newSym*(sym: sink string): owned LispObject =
   return LispObject(kind: Symbol, sym: SymbolRef(name: sym))
 
-func newNum*(val: sink float): owned LispObject =
-  return LispObject(kind: Number, num: val)
+func newInt*(val: sink int): owned LispObject =
+  return LispObject(kind: Int , intVal: val)
 
+func newFloat*(val: sink float): owned LispObject =
+  return LispObject(kind: Float, floatVal: val)
 func newStr*(s: sink string): owned LispObject =
   return LispObject(kind: String, str: s)
 
@@ -90,23 +94,26 @@ func len*(list: LispObject): int =
     
   
 import std/strformat
-func `$`*(s: LispObject): string =
+func `$`*(s: LispObject): string = 
   case s.kind:
   of Nil:
     return "NIL"
   of Symbol:
+    if s.sym.name == "t": return s.sym.name.toUpper
     return s.sym.name
-  of Function:
+  of Builtin:
     return fmt"<#BUILTIN {s.name}>"
   of Lambda:
     return fmt"<#LAMBDA {s.params} {s.body}>"
-  of Number:
-    result = $s.num
+  of Float:
+    result = $s.floatVal
     if result.find('.') == -1:
       result &= ".0"
     return result
+  of Int:
+    return $s.intVal
   of String:
-    return s.str
+    return s.str.escape
   of Cons:
     result = "("
     var current = s.cdr
@@ -123,7 +130,7 @@ func `$`*(s: LispObject): string =
   
 
     
-func toSeq*(list: LispObject): seq[LispObject] =
+proc toSeq*(list: LispObject): seq[LispObject] =
   proc collect(obj: LispObject, result: var seq[LispObject]) =
     if obj.isNil:
       return 

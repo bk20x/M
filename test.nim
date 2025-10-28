@@ -1,21 +1,6 @@
-import reader, lispobject, environment, tables
+import compilefile
 
 
 
 
-
-
-var env = newEnv()
-
-
-
-
-
-
-env.eval (parse """
-     (if t (putLn "yo") (putLn "in elt"))
-""")
-
-
-
-
+let load* = compilefile.doFile

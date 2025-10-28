@@ -7,7 +7,7 @@
  (doList (name names)
   (putLn (strUpcase name))))
 
-(putLn printNames)
+(putLn printNames) ;; functions are regular values, like in scheme they are just named lambdas
 
 
 (defvar myList (list "Bober" "Cerny" "Yoben"))
@@ -15,11 +15,10 @@
 (printNames myList)
 
 
-(fn nil? (obj)
+(fn isNil? (obj)
  (if obj nil t))
 
 
-(putLn (nil? 5))
-
+(putLn (isNil? 5))
 
 ```
