@@ -1,6 +1,7 @@
 import std/[strformat, tables, streams, strutils]
 import lispobject, reader
 
+import builtins
 import Strings
 
 
@@ -25,15 +26,16 @@ proc intern*(env: var ref Env, sym: string, val: LispObject) =
     echo fmt"WARNING: Redefining {sym} in the current scope"
   env.interned[sym] = val
 
-var
-  lookupPlace:proc(env: var ref Env, form: LispObject): ptr LispObject
+
+  
   
 var
-  ifImpl:     proc(env: var ref Env, form: LispObject): LispObject
-  doTimes:    proc(env: var ref Env, form: LispObject): LispObject
-  doList:     proc(env: var ref Env, form: LispObject): LispObject
-  evalLambda: proc(env: var ref Env, form: LispObject, evaluated: seq[LispObject]): LispObject {.inline.}
-  load:       proc(env: var ref Env, form: LispObject): LispObject
+  lookupPlace: proc(env: var ref Env, form: LispObject): ptr LispObject
+  ifImpl:      proc(env: var ref Env, form: LispObject): LispObject
+  doTimes:     proc(env: var ref Env, form: LispObject): LispObject
+  doList:      proc(env: var ref Env, form: LispObject): LispObject
+  evalLambda:  proc(env: var ref Env, form: LispObject, evaluated: seq[LispObject]): LispObject {.inline.}
+  load:        proc(env: var ref Env, form: LispObject): LispObject
 
 
 proc readAllSexprs(filename: string): seq[LispObject] =
@@ -123,11 +125,22 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
       of "setq":
         let
           placeForm = form.cdr.car
-          valForm   = form.cdr.cdr.car
-          placeRef  = env.lookupPlace(placeForm)
-        if placeRef.isNil:
-          raise newException(ValueError, "setq: place does not exist")
-        placeRef[] = valForm
+          valForm   = form.cdr.cdr.car        
+        if placeForm.kind == Symbol:
+          if not env.interned.hasKey(placeForm.sym.name):
+            raise newException(ValueError, fmt"setq: unbound symbol {placeForm.sym.name}")
+          env.interned[placeForm.sym.name] = valForm
+        elif placeForm.kind == Cons:
+          let
+            formToAssign = placeForm.cdr.car
+            place        = env.eval(formToAssign)
+          if place.kind == Lambda:
+            place.body   = valForm   
+          else:
+            var place    = env.lookupPlace(placeForm)
+            place[]      = valForm
+        else:
+          raise newException(ValueError, fmt"setq: invalid place form {placeForm}")
         return valForm
       of "doTimes":
         # (doTimes times (body))
@@ -180,7 +193,7 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
 lookupPlace = proc(env: var ref Env, form: LispObject): ptr LispObject =
   if form.kind == Symbol:
     if not env.interned.hasKey(form.sym.name):
-      raise newException(ValueError, "Unbound symbol {form.sym.name}")
+      raise newException(ValueError, fmt"Unbound symbol {form.sym.name}")
     return addr env.interned[form.sym.name]
   elif form.kind == Cons:
     let op = form.car
@@ -237,7 +250,7 @@ doTimes =
         times = form.first.intVal
         body  = form.second
       var i = 0
-      while (i == times - 1): # bc we return the last eval
+      while not (i == times - 1): # bc we return the last eval
         env.eval: body
         i += 1
       return env.eval: body 
@@ -284,93 +297,16 @@ proc newEnv*(): owned ref Env =
   let
     car: BuiltinFn =
       proc(args: LispObject): LispObject =
-        return args.car.car
+        return if args.kind == Cons: args.car else: NIL()
         
     cdr: BuiltinFn =
       proc(args: LispObject): LispObject =
-        return args.car.cdr
+        return if args.kind == Cons: args.cdr else: NIL()
         
     list: BuiltinFn =
       proc(args: LispObject): LispObject =
         return args
-        
-    lispgthan: BuiltinFn =
-      proc(args: LispObject): LispObject =
-        if args.cdr.isNil:
-          raise newException(ValueError, "> requires two arguments")
-    
-        let
-          x = args.car
-          y = args.cdr.car
 
-
-        if not (x.kind in {Int, Float}) or not (y.kind in {Int, Float}):
-          raise newException(ValueError, "Attempt to call > on non-numeric types")
-
-        var isGreater: bool
-        if x.kind == Float or y.kind == Float:
-          var
-            xVal = if x.kind == Float: x.floatVal else: x.intVal.float
-            yVal = if y.kind == Float: y.floatVal else: y.intVal.float
-          isGreater = xVal > yVal
-        else:
-          isGreater = x.intVal > y.intVal
-          if isGreater:
-            return T()
-          else:
-            return NIL()
-
-    lispadd: BuiltinFn =
-      proc(args: LispObject): LispObject =
-        let nums = args.toSeq
-        var
-          isFloat = false
-          intSum: int = 0
-          floatSum: float = 0.0
-
-    # Check if any argument is a float. If so, cast all to float.
-        for num in nums:
-          if num.kind == Float:
-            isFloat = true
-            break
-    
-        for num in nums:
-          if isFloat:
-            case num.kind:
-            of Int:
-              floatSum += num.intVal.float
-            of Float:
-              floatSum += num.floatVal
-            else:
-              raise newException(ValueError, "Type mismatch in +")
-          else:
-            case num.kind:
-              of Int:
-                intSum += num.intVal
-              else:
-                raise newException(ValueError, "Type mismatch in +")
-            
-        if isFloat:
-          return LispObject(kind: Float, floatVal: floatSum)
-        else:
-          return LispObject(kind: Int, intVal: intSum)
-
-
-    lispmul: BuiltinFn =
-      proc(args: LispObject): LispObject =
-        let
-          x = args.first
-          y = args.second
-        if x.kind == Float or y.kind == Float:
-          let
-            xVal = if x.kind == Float: x.floatVal else: x.intVal.float
-            yVal = if y.kind == Float: y.floatVal else: y.intVal.float
-            res  = xVal * yVal
-          if res is float:  
-            return LispObject(kind: Float, floatVal: res)
-        else:
-          return LispObject(kind: Int,   intVal:  x.intVal * y.intVal)
-        
     function: BuiltinFn =
       proc(args: LispObject): LispObject =
         let fn = args.car.name
@@ -438,22 +374,22 @@ proc newEnv*(): owned ref Env =
    #     return val
   result.interned = toTable {
     "t"            : T(),
-    "+"            : newBuiltin(lispadd,       "+"),
-    "*"            : newBuiltin(lispmul,       "*"),
-    ">"            : newBuiltin(lispgthan,     ">"),
-    "eq"           : newBuiltin(eq,            "eq"),
-    "list"         : newBuiltin(list,          "list"),
-    "car"          : newBuiltin(car,           "car"),
-    "cdr"          : newBuiltin(cdr,           "cdr"),
-    "putLn"        : newBuiltin(putLn,         "putLn"),
-    "function"     : newBuiltin(function,      "function"),
-    "body"         : newBuiltin(body,          "body"),
-    "typeOf"       : newBuiltin(typeOf,        "typeOf"),
-    "strConcat"    : newBuiltin(strConcat,     "strConcat"),
-    "strLen"       : newBuiltin(strLen,        "strLen"),
-    "strDowncase"  : newBuiltin(strDowncase,   "strDowncase"),
-    "strUpcase"    : newBuiltin(strUpcase,     "strUpcase"),
-    "strReplace"   : newBuiltin(strReplace,    "strReplace")
+    "+"            : newBuiltin(lispadd,             "+"),
+    "*"            : newBuiltin(lispMultiply,        "*"),
+    ">"            : newBuiltin(lispGreaterThan,     ">"),
+    "eq"           : newBuiltin(eq,                  "eq"),
+    "list"         : newBuiltin(list,                "list"),
+    "car"          : newBuiltin(car,                 "car"),
+    "cdr"          : newBuiltin(cdr,                 "cdr"),
+    "putLn"        : newBuiltin(putLn,               "putLn"),
+    "function"     : newBuiltin(function,            "function"),
+    "body"         : newBuiltin(body,                "body"),
+    "typeOf"       : newBuiltin(typeOf,              "typeOf"),
+    "strConcat"    : newBuiltin(strConcat,           "strConcat"),
+    "strLen"       : newBuiltin(strLen,              "strLen"),
+    "strDowncase"  : newBuiltin(strDowncase,         "strDowncase"),
+    "strUpcase"    : newBuiltin(strUpcase,           "strUpcase"),
+    "strReplace"   : newBuiltin(strReplace,          "strReplace")
    }
    
   return result

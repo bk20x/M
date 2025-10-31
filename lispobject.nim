@@ -52,6 +52,7 @@ func newInt*(val: sink int): owned LispObject =
 
 func newFloat*(val: sink float): owned LispObject =
   return LispObject(kind: Float, floatVal: val)
+  
 func newStr*(s: sink string): owned LispObject =
   return LispObject(kind: String, str: s)
 

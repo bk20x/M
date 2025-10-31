@@ -1,4 +1,4 @@
 
 
-(fn doTheGoodThing (words)
- (strReplace words "oben" "opple"))
+(fn hello (name)
+ (putLn (strConcat "Hello! " name)))
