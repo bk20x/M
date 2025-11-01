@@ -29,7 +29,7 @@ proc intern*(env: var ref Env, sym: string, val: LispObject) =
 
   
   
-var
+var ## All used in `eval`
   lookupPlace: proc(env: var ref Env, form: LispObject): ptr LispObject
   ifImpl:      proc(env: var ref Env, form: LispObject): LispObject
   doTimes:     proc(env: var ref Env, form: LispObject): LispObject
@@ -92,6 +92,12 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
           lambda = env.newLambda(params, body)
         env.intern(name.sym.name, lambda)
         return name
+      of "->":
+        let
+          params = form.second
+          body   = form.third
+          lambda = env.newLambda(params, body)
+        return lambda
       of "load":
         let
           file = form.second
@@ -104,7 +110,7 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
       of "if":
         # (if (cond) (expr) (elt))
         return env.ifImpl(form.cdr)
-      of "defvar":
+      of "define":
         # (defvar name val)
         let
           name = form.cdr.car
@@ -164,8 +170,6 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
             
     # eval the operator (functions might return another function)
     let op = env.eval: form.car
-    ##if op.kind == Symbol and env.interned.hasKey(op.sym.name):
-      ##return env.evalLambda(env.interned[op.sym.name], evaluated)
       
     # Built-in functions
     if op.kind == Builtin:
@@ -293,8 +297,13 @@ load =
 
 proc newEnv*(): owned ref Env =
   new result
-  var env = result
+  var
+    env = result
   let
+    cons: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        return cons(args.first, args.second)
+        
     car: BuiltinFn =
       proc(args: LispObject): LispObject =
         let cell = args.first
@@ -309,11 +318,6 @@ proc newEnv*(): owned ref Env =
       proc(args: LispObject): LispObject =
         return args
 
-    function: BuiltinFn =
-      proc(args: LispObject): LispObject =
-        let fn = args.car.name
-        if fn in env.interned and env.interned[fn].kind == Builtin:
-          return env.interned[fn]
 
     putLn: BuiltinFn =
       proc(args: LispObject): LispObject =
@@ -381,10 +385,10 @@ proc newEnv*(): owned ref Env =
     ">"            : newBuiltin(lispGreaterThan,     ">"),
     "eq"           : newBuiltin(eq,                  "eq"),
     "list"         : newBuiltin(list,                "list"),
+    "cons"         : newBuiltin(cons,                "cons"),
     "car"          : newBuiltin(car,                 "car"),
     "cdr"          : newBuiltin(cdr,                 "cdr"),
     "putLn"        : newBuiltin(putLn,               "putLn"),
-    "function"     : newBuiltin(function,            "function"),
     "body"         : newBuiltin(body,                "body"),
     "typeOf"       : newBuiltin(typeOf,              "typeOf"),
     "strConcat"    : newBuiltin(strConcat,           "strConcat"),
