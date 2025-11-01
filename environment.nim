@@ -297,11 +297,13 @@ proc newEnv*(): owned ref Env =
   let
     car: BuiltinFn =
       proc(args: LispObject): LispObject =
-        return if args.kind == Cons: args.car else: NIL()
+        let cell = args.first
+        return if cell.kind == Cons: cell.car else: NIL()
         
     cdr: BuiltinFn =
       proc(args: LispObject): LispObject =
-        return if args.kind == Cons: args.cdr else: NIL()
+        let cell = args.first
+        return if cell.kind == Cons: cell.cdr else: NIL()
         
     list: BuiltinFn =
       proc(args: LispObject): LispObject =
