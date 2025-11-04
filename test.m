@@ -1,6 +1,6 @@
 
 
-(define xs (map '(2 4 6 8) (-> (x) (* x x))))
+
 
 
 (define length
@@ -11,10 +11,13 @@
     acc)))
 
 
-(define fun (-> () (putLn "Hello World!")))
+(define sum
+ (-> (xs)
+  (let ((sum 0))
+   (doList (x xs)
+    (setf sum (+ sum x)))
+   sum)))
 
-(fun)
 
-(setq (body fun) (putLn "Goodbye!"))
 
-(fun)
+(define xs (map '(2 4 6 8) (-> (x) (* x x))))
