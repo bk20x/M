@@ -128,9 +128,9 @@ proc eval*(env: var Env, form: LispObject): LispObject {.discardable.} =
       of "open":
         for m in form.cdr.toSeq:
           let module = m.sym.name
-          if Stdlib.hasKey module:
+          if env.loadedModules.hasKey module:
             let
-              opened = wrapModule(Stdlib[module])
+              opened = wrapModule(env.loadedModules[module])
             for name, val in opened:
               env.intern(name, val)
         return T()
@@ -331,6 +331,11 @@ load =
     for sexp in sexprs:
       env.eval sexp
     return T()
+
+proc registerModule*(env: var Env, name: string, module: Table[string, BuiltinFn]) =
+  for k, v in module:
+    env.loadedModules[name] = module
+  
     
 proc newEnv*(): owned Env =
   new result
@@ -448,6 +453,7 @@ proc newEnv*(): owned Env =
    #       val = args.second
    #     env.interned[sym.sym.name] = val
    #     return val
+  result.loadedModules = Stdlib
   result.interned = toTable {
     "t"            : T(),
     "+"            : newBuiltin(lispadd,             "+"),

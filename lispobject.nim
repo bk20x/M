@@ -10,8 +10,9 @@ type
   BuiltinFn* = proc(args: LispObject): LispObject
                
   Env* = ref object
-    interned*: Table[string, LispObject]
-    parent*  : Env
+    interned*     : Table[string, LispObject]
+    loadedModules*: Table[string, Table[string, BuiltinFn]]
+    parent*       : Env
  
   LispObject* = ref object
     case kind*: LispObjectKind:
@@ -36,7 +37,7 @@ type
 
 
 proc newScope*(parent: Env): owned Env =
-  return Env(interned: initTable[string, LispObject](), parent: parent)
+  return Env(interned: initTable[string, LispObject](), loadedModules: initTable[string, Table[string, BuiltinFn]](), parent: parent)
 
 func T*(): LispObject   {.inline.} = LispObject(kind: Symbol, sym: SymbolRef(name: "t"))
 func NIL*(): LispObject {.inline.} = LispObject(kind: Nil)
