@@ -1,6 +1,6 @@
 import std/[strformat]
 import lispobject
-import environment
+
 
 
 
@@ -25,13 +25,13 @@ let lispAdd*: BuiltinFn =
         of Float:
           floatSum += num.floatVal
         else:
-          raise newException(ValueError, fmt"got {num.kind} but expected Int or Float")
+          raise newException(ValueError, fmt"`+` got {num.kind} but expected Int or Float")
       else:
         case num.kind:
         of Int:
           intSum += num.intVal
         else:
-          raise newException(ValueError, fmt"got {num.kind} but expected Int or Float")
+          raise newException(ValueError, fmt"`+` got {num.kind} but expected Int or Float")
     if isFloat:
       return newFloat(floatSum)
     else:
@@ -54,7 +54,7 @@ let lispMultiply*: BuiltinFn =
 
 let lispGreaterThan*: BuiltinFn =
   proc(args: LispObject): LispObject =
-    if args.cdr.isNil:
+    if not args.len == 2:
       raise newException(ValueError, "`>` expects 2 arguments")
     let
       x = args.first
@@ -64,7 +64,7 @@ let lispGreaterThan*: BuiltinFn =
       
     var isGreater: bool
     if x.kind == Float or y.kind == Float:
-      var
+      let
         xVal = if x.kind == Float: x.floatVal else: x.intVal.float
         yVal = if y.kind == Float: y.floatVal else: y.intVal.float
       isGreater = xVal > yVal
@@ -74,3 +74,12 @@ let lispGreaterThan*: BuiltinFn =
         return T()
       else:
         return NIL()
+
+let lispMod*: BuiltinFn =
+  proc(args: LispObject): LispObject =
+    if not args.len == 2:
+      raise newException(ValueError, "`mod` expects 2 arguments")
+    let
+      x = if args.first.kind == Float: args.first.floatVal.int else: args.first.intVal
+      y = if args.first.kind == Float: args.first.floatVal.int else: args.first.intVal
+    return newInt(x mod y)

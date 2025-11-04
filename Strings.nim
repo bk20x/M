@@ -1,9 +1,9 @@
-import std/[strformat, strutils, sequtils, sugar]
+import std/[strformat, strutils, tables, sugar, sequtils]
 import lispobject
 
 
 
-let strReplace*: BuiltinFn = proc(args: LispObject): LispObject =
+proc strReplace(args: LispObject): LispObject =
   let
     first  = args.first
     second = args.second
@@ -13,7 +13,7 @@ let strReplace*: BuiltinFn = proc(args: LispObject): LispObject =
   else:
     return newStr(first.str.replace(second.str, third.str))
 
-let strConcat*: BuiltinFn = proc(args: LispObject): LispObject =
+proc strConcat(args: LispObject): LispObject =
   let
     first  = args.first
     second = args.second
@@ -21,23 +21,58 @@ let strConcat*: BuiltinFn = proc(args: LispObject): LispObject =
     raise newException(ValueError, fmt"`strConcat` is of type String -> String -> String but got {first} as {first.kind} and {second} as {second.kind}")
   else:
     return newStr(first.str & second.str)
+    
+proc strContains(args: LispObject): LispObject =
+  let
+    first  = args.first
+    second = args.second
+  if not((first.kind == String) or not (second.kind == String)):
+    raise newException(ValueError, fmt"`strConcat` is of type String -> String -> Bool but got {first} as {first.kind} and {second} as {second.kind}")
+  if first.str.contains(second.str):
+    return T()
+  return NIL()
 
-let strLen*: BuiltinFn = proc(args: LispObject): LispObject =
+proc strLen(args: LispObject): LispObject =
   if not (args.first.kind == String):
     raise newException(ValueError, fmt"`strLen` is of type String -> String but got {$args.first.kind}")
   else:
     return newInt(args.first.str.len)
 
-let strDowncase*: BuiltinFn = proc(args: LispObject): LispObject =
+proc strDowncase(args: LispObject): LispObject =
   if not (args.first.kind == String):
     raise newException(ValueError, fmt"`toLower` is of type String -> String but got {$args.first.kind}")
   else:
     return newStr(args.first.str.toLower)
 
 
-let strUpcase*: BuiltinFn = proc(args: LispObject): LispObject =
+proc strUpcase(args: LispObject): LispObject =
   if not (args.first.kind == String):
     raise newException(ValueError, fmt"`toUpper` is of type String -> String but got {$args.first.kind}")
   else:
     return newStr(args.first.str.toUpper)
 
+proc splitLines(args: LispObject): LispObject =
+  return args.first.str.splitLines.map(ln => newStr ln).list
+
+proc strip(args: LispObject): LispObject =
+  if args.len > 1:
+    let
+      str      = args.first.str
+      leading  = if args.second.isT(): true else: false   
+      trailing = if args.third.isT() : true else: false
+    return newStr(str.strip(leading, trailing))
+  else:
+    let str = args.first.str
+    return newStr(str.strip)
+    
+const
+  Module* = toTable {
+    "strReplace" : BuiltinFn strReplace,
+    "strConcat"  : BuiltinFn strConcat,
+    "strLen"     : BuiltinFn strLen,
+    "strDowncase": BuiltinFn strDowncase,
+    "strUpcase"  : BuiltinFn strUpcase,
+    "strContains": BuiltinFn strContains,
+    "splitLines" : BuiltinFn splitLines,
+    "strip"      : BuiltinFn strip
+  }

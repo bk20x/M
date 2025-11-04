@@ -9,8 +9,9 @@ type
   
   BuiltinFn* = proc(args: LispObject): LispObject
                
-  Env* = object
+  Env* = ref object
     interned*: Table[string, LispObject]
+    parent*  : Env
  
   LispObject* = ref object
     case kind*: LispObjectKind:
@@ -29,17 +30,19 @@ type
         name*: string
       of Lambda:
         params*, body*: LispObject
-        closure*: ref Env
+        closure*: Env
       of Nil:
         discard
 
 
+proc newScope*(parent: Env): owned Env =
+  return Env(interned: initTable[string, LispObject](), parent: parent)
 
 func T*(): LispObject   {.inline.} = LispObject(kind: Symbol, sym: SymbolRef(name: "t"))
 func NIL*(): LispObject {.inline.} = LispObject(kind: Nil)
   
-func newLambda*(env: ref Env, params, body: LispObject): LispObject =
-  return LispObject(kind: Lambda, params: params, body: body)
+func newLambda*(env: Env, params, body: LispObject): LispObject =
+  return LispObject(kind: Lambda, params: params, body: body, closure: env.newScope())
 
 func newBuiltin*(fun: BuiltinFn, name: string): owned LispObject {.inline.} =
   return LispObject(kind: Builtin, fun: fun, name: name)
@@ -76,7 +79,11 @@ func fifth*(list: LispObject): LispObject =
 
 
 
-  
+func list*(objs: seq[LispObject]): LispObject =
+  result = NIL()
+  for i in countdown(objs.high, 0):
+    result = cons(objs[i], result)
+    
 func `==`*(a, b: SymbolRef)    : bool   = a.name == b.name
 func isNil*(obj: LispObject)   : bool   =
   if obj.kind == Symbol:  obj.sym.name == "nil" else: obj.kind == Nil
@@ -130,18 +137,15 @@ func `$`*(s: LispObject): string =
     return result 
   
 
-    
-proc toSeq*(list: LispObject): seq[LispObject] =
-  proc collect(obj: LispObject, result: var seq[LispObject]) =
-    if obj.isNil:
-      return 
-    if obj.kind == Cons:
-      if not obj.car.isNil:
-        result.add: obj.car
+func toSeq*(list: LispObject): seq[LispObject] =
+  var current: LispObject = list
+  while not current.isNil:
+    if current.kind == Cons:
+      if not current.car.isNil:
+        result.add(current.car)
+      current = current.cdr
     else:
-      result.add: obj
-    collect(obj.cdr, result) 
-
-  result  = @[]
-  collect(list, result)
+      result.add(current)
+      break 
+      
   return result

@@ -1,24 +1,22 @@
 ```
-(putLn (strLen "My18CharLongString"))
+(define xs (map '(2 4 6 8) (-> (x) (* x x))))
 
 
-
-(fn printNames (names)
- (doList (name names)
-  (putLn (strUpcase name))))
-
-(putLn printNames) ;; functions are regular values, like in scheme they are just named lambdas
-
-
-(defvar myList (list "Bober" "Cerny" "Yoben"))
-
-(printNames myList)
+(define length
+ (-> (xs)
+  (let ((acc 0))
+   (doList (x xs)
+    (setf acc (+ acc 1)))
+    acc)))
 
 
-(fn isNil? (obj)
- (if obj nil t))
+(define fun (-> () (putLn "Hello World!")))
 
+(fun)
 
-(putLn (isNil? 5))
+(setq (body fun) (putLn "Goodbye!"))
+
+(fun)
+
 
 ```

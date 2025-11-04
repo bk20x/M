@@ -40,7 +40,6 @@ proc parseAtom*(p: var Reader): LispObject =
   of tkQuote:
     p.advance
     let quoted = parseSexp(p)
-    echo quoted
     return cons(newSym "quote", quoted)
   of tkEof:
     raise newException(IndexDefect, "Unexpected end of token stream")

@@ -2,7 +2,7 @@ import std/[strformat, tables, streams, strutils]
 import lispobject, reader
 
 import builtins
-import Strings
+import Std
 
 
 
@@ -10,10 +10,6 @@ type
   ReturnException* = ref object of CatchableError
     retVal*: LispObject
     
-proc newScope*(parent: ref Env): owned ref Env =
-  new result
-  result.interned = parent.interned
-  return result
 
 proc lookupRef*(env: Env, symName: string): ptr LispObject =
   if env.interned.hasKey(symName):
@@ -21,21 +17,36 @@ proc lookupRef*(env: Env, symName: string): ptr LispObject =
   else:
     raise newException(ValueError, fmt"Unbound reference {symName}")
     
-proc intern*(env: var ref Env, sym: string, val: LispObject) =
+proc intern*(env: var Env, sym: string, val: LispObject) =
   if sym in env.interned:
     echo fmt"WARNING: Redefining {sym} in the current scope"
   env.interned[sym] = val
 
 
+func wrapModule*(module: Table[string, BuiltinFn]): Table[string, LispObject] =
+  result = initTable[string, LispObject]()
+  for k, v in module:
+    result[k] = newBuiltin(v, k)
+
   
-  
+
+proc lookupValue(env: var Env, symbolName: string): LispObject =
+  var currentEnv = env
+  while currentEnv != nil:
+    if currentEnv.interned.hasKey(symbolName):
+      return currentEnv.interned[symbolName]
+    currentEnv = currentEnv.parent
+  raise newException(ValueError, fmt"Unbound symbol: {symbolName}")
+
+
 var ## All used in `eval`
-  lookupPlace: proc(env: var ref Env, form: LispObject): ptr LispObject
-  ifImpl:      proc(env: var ref Env, form: LispObject): LispObject
-  doTimes:     proc(env: var ref Env, form: LispObject): LispObject
-  doList:      proc(env: var ref Env, form: LispObject): LispObject
-  evalLambda:  proc(env: var ref Env, form: LispObject, evaluated: seq[LispObject]): LispObject {.inline.}
-  load:        proc(env: var ref Env, form: LispObject): LispObject
+  lookupPlace: proc(env: var Env, form: LispObject): ptr LispObject
+  ifImpl:      proc(env: var Env, form: LispObject): LispObject
+  letImpl:     proc(env: var Env, form: LispObject): LispObject
+  doTimes:     proc(env: var Env, form: LispObject): LispObject
+  doList:      proc(env: var Env, form: LispObject): LispObject
+  evalLambda:  proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): LispObject {.inline.}
+  load:        proc(env: var Env, form: LispObject): LispObject
 
 
 proc readAllSexprs(filename: string): seq[LispObject] =
@@ -68,14 +79,11 @@ proc readAllSexprs(filename: string): seq[LispObject] =
 
   s.close()
 
-proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
+proc eval*(env: var Env, form: LispObject): LispObject {.discardable.} =
   if form.isNil or form.kind in {Int, Float, String}:
     return form
   elif form.kind == Symbol:
-    if env.interned.hasKey(form.sym.name):
-      return env.interned[form.sym.name]
-    else:
-      raise newException(ValueError, "Unbound symbol: " & form.sym.name)
+    return env.lookupValue(form.sym.name)
   elif form.kind == Cons:
     if form.isNil:
       return NIL()
@@ -83,29 +91,53 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
       
     if form.car.kind == Symbol:
       case form.car.sym.name: # special forms
-      of "fn":
-        # (fn name (params) (body))
-        let
-          name   = form.cdr.car
-          params = form.cdr.cdr.car
-          body   = form.cdr.cdr.cdr.car
-          lambda = env.newLambda(params, body)
-        env.intern(name.sym.name, lambda)
-        return name
       of "->":
         let
           params = form.second
           body   = form.third
           lambda = env.newLambda(params, body)
         return lambda
+      of "quote":
+        let quoted = form.cdr
+        return quoted
+      of "eval":
+        let
+          form   = form.second
+        if form.kind == Symbol:
+          let
+            form = env.eval(form)
+          return env.eval(form)
+        return env.eval(form)
+      of "let":
+        let
+          bindings    = form.second
+          body        = form.cdr.cdr
+        var scope     = env.newLambda(NIL(),body)
+        scope.closure = env.newScope()
+        
+        for binding in bindings.toSeq:
+          let name    = binding.car.sym.name
+          scope.closure.interned[name] = env.eval binding.second
+        for progn in body.toSeq:
+          result      = scope.closure.eval progn
+        return result
       of "load":
         let
           file = form.second
         return env.load file
+      of "open":
+        for m in form.cdr.toSeq:
+          let module = m.sym.name
+          if Stdlib.hasKey module:
+            let
+              opened = wrapModule(Stdlib[module])
+            for name, val in opened:
+              env.intern(name, val)
+        return T()
       of "return":
          let
            valForm = form.cdr.car
-           val = env.eval: valForm
+           val     = env.eval: valForm
          raise ReturnException(retVal: val)
       of "if":
         # (if (cond) (expr) (elt))
@@ -113,8 +145,8 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
       of "define":
         # (defvar name val)
         let
-          name = form.cdr.car
-          val  = env.eval: form.cdr.cdr.car
+          name = form.second
+          val  = env.eval: form.third
         env.intern(name.sym.name, val)
         return name
       of "setf":
@@ -172,16 +204,9 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
     let op = env.eval: form.car
       
     # Built-in functions
-    if op.kind == Builtin:
-      var
-        reversedArgs: seq[LispObject] = @[]
-        consArgs = NIL()
-        
-      for i in countdown(evaluated.len - 1, 0):
-        reversedArgs.add: evaluated[i]
+    if op.kind == Builtin:  
 
-      for arg in reversedArgs:
-        consArgs = cons(arg, consArgs)
+      let consArgs = evaluated.list
       
       return op.fun(consArgs)      
     # User defined funs
@@ -194,25 +219,41 @@ proc eval*(env: var ref Env, form: LispObject): LispObject {.discardable.} =
 
 
 
-lookupPlace = proc(env: var ref Env, form: LispObject): ptr LispObject =
+lookupPlace = proc(env: var Env, form: LispObject): ptr LispObject =
   if form.kind == Symbol:
-    if not env.interned.hasKey(form.sym.name):
-      raise newException(ValueError, fmt"Unbound symbol {form.sym.name}")
-    return addr env.interned[form.sym.name]
+    let symbolName = form.sym.name
+    var currentEnv = env
+    
+   
+    while currentEnv != nil:
+      if currentEnv.interned.hasKey(symbolName):
+        return addr currentEnv.interned[symbolName]
+      
+
+      currentEnv = currentEnv.parent
+      
+  
+    raise newException(ValueError, fmt"Unbound symbol {symbolName} in lookupPlace")
+    
   elif form.kind == Cons:
     let op = form.car
     if op.kind == Symbol:
+
       let
         listForm = form.cdr.car
         listVal = env.eval: listForm
       if listVal.kind == Cons:
         return addr listVal.car
-    raise newException(ValueError, "Invalid setf place: " & $form.kind)
+    
+    
+    raise newException(ValueError, "Invalid  place: " & $form.kind)
+
   else:
-    raise newException(ValueError, "Invalid setf place: " & $form.kind)
+    raise newException(ValueError, "Invalid place: " & $form.kind)
+
 
 evalLambda =
-    proc(env: var ref Env, form: LispObject, evaluated: seq[LispObject]): LispObject {.inline.} =
+    proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): LispObject {.inline.} =
       var
         lambda = form
         params = lambda.params
@@ -232,7 +273,7 @@ evalLambda =
         return ret.retVal
     
 ifImpl =
-    proc(env: var ref Env, form: LispObject): LispObject =
+    proc(env: var Env, form: LispObject): LispObject =
       let
         cond   = env.eval(form.first)
         ifCond = form.second
@@ -249,7 +290,7 @@ ifImpl =
            return NIL()
 
 doTimes =
-    proc(env: var ref Env, form: LispObject): LispObject =
+    proc(env: var Env, form: LispObject): LispObject =
       let
         times = form.first.intVal
         body  = form.second
@@ -258,48 +299,67 @@ doTimes =
         env.eval: body
         i += 1
       return env.eval: body 
-        
 
-doList =
-    proc(env: var ref Env, form: LispObject): LispObject =
-      let
-        varAndList = form.first # (var list)
-        body = form.second # (body)
-        varSym = varAndList.car # 
-        listForm = varAndList.cdr.car 
+
+doList = proc(env: var Env, form: LispObject): LispObject =
+    let
+      varAndList = form.first # (var list)
+      body       = form.second # (body)
+      varSym     = varAndList.car
+      listForm   = varAndList.cdr.car
+
+    let evaluatedList = env.eval(listForm)
+    if evaluatedList.kind != Cons and not evaluatedList.isNil:
+      raise newException(ValueError, fmt"expected list for `doList` but got {$evaluatedList.kind}")
+
+    var listToIter = evaluatedList
+
+    while not listToIter.isNil:
+      var newEnv = env.newScope()
+      newEnv.interned[varSym.sym.name] = listToIter.car
       
-     
-      let evaluatedList = env.eval: listForm
-      if evaluatedList.kind != Cons and not evaluatedList.isNil:
-        raise newException(ValueError, fmt"expected list for `doList` but got {$evaluatedList.kind}")
-        
+      discard newEnv.eval(body)
 
-      var listToIter = evaluatedList
-      
+      listToIter = listToIter.cdr
 
-      while not listToIter.isNil:
-        var newEnv = env.newScope()
-        
-        newEnv.interned[varSym.sym.name] = listToIter.car
-        
-        result = newEnv.eval: body
-        listToIter = listToIter.cdr
-      return result
+    return NIL()
 
-  
+
 load =
-  proc(env: var ref Env, form: LispObject): LispObject =
+  proc(env: var Env, form: LispObject): LispObject =
     let sexprs = readAllSexprs form.str
     for sexp in sexprs:
       env.eval sexp
     return T()
-
-
-proc newEnv*(): owned ref Env =
+    
+proc newEnv*(): owned Env =
   new result
   var
     env = result
   let
+    map: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        let
+          list = args.first.toSeq
+          fun  = args.second
+        result = NIL()
+        for i in countdown(list.high, 0):
+          let
+            new = env.evalLambda(fun, @[list[i]])
+          result = cons(new, result)
+          
+    filter: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        let
+          list = args.first.toSeq
+          fun  = args.second
+        result = NIL()
+        for i in countdown(list.high, 0):
+          let
+            new = env.evalLambda(fun, @[list[i]])
+          if new.isT:
+            result = cons(list[i], result)
+            
     cons: BuiltinFn =
       proc(args: LispObject): LispObject =
         return cons(args.first, args.second)
@@ -338,25 +398,24 @@ proc newEnv*(): owned ref Env =
         let
           x = args.first
           y = args.second
-        assert x.kind == y.kind
         case x.kind:
         of Int:
-          if x.intVal == y.intVal:
+          if y.kind == Int    and x.intVal == y.intVal:
             return T()
           else:
             return NIL()
         of Float:
-          if x.floatVal == y.floatVal:
+          if y.kind == Float  and x.floatVal == y.floatVal:
             return T()
           else:
             return NIL()
         of String:
-          if x.str == y.str:
+          if y.kind == String and x.str == y.str:
             return T()
           else:
             return NIL()
         of Symbol:
-          if x.sym.name == y.sym.name:
+          if y.kind == Symbol and x.sym.name == y.sym.name:
             return T()
           else:
             return NIL()
@@ -369,7 +428,18 @@ proc newEnv*(): owned ref Env =
           lambda = args.first
           body   = lambda.body
         return body
-
+    append: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        var
+          list = args.first.toSeq
+          elem = args.second
+        if elem.kind == Cons:
+          for e in elem.toSeq:
+            list.add e
+          return list.list
+        list.add elem
+        return list.list
+      
    # setf: Builtin =
    #   proc(args: LispObject): LispObject =
    #     echo args
@@ -382,20 +452,19 @@ proc newEnv*(): owned ref Env =
     "t"            : T(),
     "+"            : newBuiltin(lispadd,             "+"),
     "*"            : newBuiltin(lispMultiply,        "*"),
+    "mod"          : newBuiltin(lispMod,             "mod"),
     ">"            : newBuiltin(lispGreaterThan,     ">"),
-    "eq"           : newBuiltin(eq,                  "eq"),
+    "="            : newBuiltin(eq,                  "="),
+    "append"       : newBuiltin(append,              "append"),
+    "map"          : newBuiltin(map,                 "map"),
+    "filter"       : newBuiltin(filter,              "filter"),
     "list"         : newBuiltin(list,                "list"),
     "cons"         : newBuiltin(cons,                "cons"),
     "car"          : newBuiltin(car,                 "car"),
     "cdr"          : newBuiltin(cdr,                 "cdr"),
     "putLn"        : newBuiltin(putLn,               "putLn"),
     "body"         : newBuiltin(body,                "body"),
-    "typeOf"       : newBuiltin(typeOf,              "typeOf"),
-    "strConcat"    : newBuiltin(strConcat,           "strConcat"),
-    "strLen"       : newBuiltin(strLen,              "strLen"),
-    "strDowncase"  : newBuiltin(strDowncase,         "strDowncase"),
-    "strUpcase"    : newBuiltin(strUpcase,           "strUpcase"),
-    "strReplace"   : newBuiltin(strReplace,          "strReplace")
+    "typeOf"       : newBuiltin(typeOf,              "typeOf")
    }
    
   return result

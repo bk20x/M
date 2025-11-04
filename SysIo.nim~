@@ -1,0 +1,31 @@
+import std/[tables, sequtils, sugar]
+import lispobject
+
+
+
+
+proc readFile(args: LispObject): LispObject =
+  if not args.len == 1:
+    raise newException(IndexDefect, "`readFile` expects 1 argument")
+  return newStr(readFile args.first.str)
+
+proc readLines(args: LispObject): LispObject =
+  if not args.len == 2:
+    raise newException(IndexDefect, "`readLines` expects 2 arguments")
+  return readLines(args.first.str, args.second.intVal).map(ln => newStr ln).list
+
+proc writeFile(args: LispObject): LispObject =
+  if not args.len == 2:
+    raise newException(IndexDefect, "`writeFile` expects 2 arguments")
+  let
+    filename = args.first.str
+    content  = args.second.str
+  writeFile(filename, content)
+  return NIL()
+  
+const
+  Module* = toTable {
+    "readFile"  : BuiltinFn SysIo.readFile,
+    "readLines" : BuiltinFn SysIo.readLines,
+    "writeFile" : BuiltinFn SysIo.writeFile
+  }
