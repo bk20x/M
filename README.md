@@ -10,7 +10,7 @@
     acc)))
 
 
-(define fun (-> () (putLn "Hello World!")))
+(define fun (-> () (putLn "Hey everybody!")))
 
 (fun)
 
