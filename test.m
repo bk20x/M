@@ -3,7 +3,7 @@
 
 
 
-(define length (-> (xs) (let ((acc 0)) (doList (x xs) (setf acc (+ acc 1))) acc)))
+
 
 (open Strings)
 
@@ -15,7 +15,7 @@
 
 
 
-
+(define length (-> (xs) (let ((acc 0)) (doList (x xs) (setf acc (+ acc 1))) acc)))
 
 
 (define range (-> (lo hi)
@@ -24,9 +24,9 @@
 
 
 
-(define fact (-> (n acc)
+(define factorial (-> (n acc)
   (if (= n 0)
-      acc
-      (fact (- n 1) (* acc n)))))
+       acc
+      (factorial (- n 1) (* acc n)))))
 
 

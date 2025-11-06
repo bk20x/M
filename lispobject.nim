@@ -40,15 +40,17 @@ type
 
 
 
-proc newScope*(parent: Env): owned Env =
-  return Env(interned: initTable[string, LispObject](), loadedModules: initTable[string, Table[string, BuiltinFn]](), parent: parent)
+
 
 func T*(): LispObject   {.inline.} = LispObject(kind: Symbol, sym: SymbolRef(name: "t"))
 func NIL*(): LispObject {.inline.} = LispObject(kind: Nil)
+
+func newScope*(parent: Env): owned Env =
+  return Env(interned: initTable[string, LispObject](), loadedModules: initTable[string, Table[string, BuiltinFn]](), parent: parent)
   
 func newLambda*(env: Env, params, body: LispObject): LispObject =
   return LispObject(kind: Lambda, params: params, body: body, closure: env.newScope())
-
+    
 func newBuiltin*(fun: BuiltinFn, name: string): owned LispObject {.inline.} =
   return LispObject(kind: Builtin, fun: fun, name: name)
                     
@@ -60,6 +62,9 @@ func newInt*(val: sink int): owned LispObject =
 
 func newFloat*(val: sink float): owned LispObject =
   return LispObject(kind: Float, floatVal: val)
+
+func newBigInt*(val: sink int): owned LispObject =
+  return LispObject(kind: BigInt, bigNum: initBigInt(val))
   
 func newStr*(s: sink string): owned LispObject =
   return LispObject(kind: String, str: s)

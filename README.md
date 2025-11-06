@@ -1,7 +1,7 @@
 # λx.(M)
 
 ```
-(define xs (map '(2 4 6 8) (-> (x) (* x x))))
+
 
 (open Strings)
 
@@ -22,6 +22,10 @@
   (if (= n 0)
       acc
       (fact (- n 1) (* acc n)))))
+
+
+(define xs (map (filter (range 1 5000) (-> (x) (= (mod x 2) 0))) (-> (x) (* x x))))
+
 
 
 (define fun (-> () (putLn "Hey everybody!")))
