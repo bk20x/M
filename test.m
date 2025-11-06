@@ -1,26 +1,21 @@
-
-
-
-
-
 (open Strings)
 
 (define joinStr (-> (lines)
  (let ((result ""))
-  (doList (ln lines)
+  (each (ln lines)
    (setf result (strConcat result ln)))
     result)))
 
 
 
-(define length (-> (xs) (let ((acc 0)) (doList (x xs) (setf acc (+ acc 1))) acc)))
+(define length (-> (xs) (let ((acc 0)) (each (x xs) (setf acc (+ acc 1))) acc)))
+
+
 
 
 (define range (-> (lo hi)
  (if (> lo hi) ()
   (cons lo (range (+ lo 1) hi)))))
-
-
 
 
 (define factorial (-> (n acc)
@@ -30,5 +25,6 @@
 
 
 
-(putLn (factorial 500 1))
+
+
 

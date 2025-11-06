@@ -46,7 +46,7 @@ var ## All used in `eval`
   lookupPlace: proc(env: var Env, form: LispObject): ptr LispObject
   ifImpl:      proc(env: var Env, form: LispObject): LispObject
   doTimes:     proc(env: var Env, form: LispObject): LispObject
-  doList:      proc(env: var Env, form: LispObject): LispObject
+  eachImpl:    proc(env: var Env, form: LispObject): LispObject
   evalLambda:  proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): Tailcall {.inline.}
   load:        proc(env: var Env, form: LispObject): LispObject
 
@@ -209,8 +209,8 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           return valForm
         of "doTimes":
           return currentEnv.doTimes(currentForm.cdr)
-        of "doList":
-          return currentEnv.doList(currentForm.cdr)
+        of "each":
+          return currentEnv.eachImpl(currentForm.cdr)
         else:
           discard
           
@@ -353,7 +353,7 @@ doTimes =
       return env.eval: body 
 
 
-doList = proc(env: var Env, form: LispObject): LispObject =
+eachImpl = proc(env: var Env, form: LispObject): LispObject =
     let
       varAndList = form.first # (var list)
       body       = form.second # (body)

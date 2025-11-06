@@ -8,7 +8,7 @@
 (define joinStr
  (-> (lines)
   (let ((result ""))
-   (doList (ln lines)
+   (each (ln lines)
     (setf result (strConcat result ln)))
     result)))
 
