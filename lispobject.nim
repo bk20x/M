@@ -175,9 +175,6 @@ func toSeq*(list: LispObject): seq[LispObject] =
 
 
 
-# In lispobject.nim (or shared utilities file)
-# Make sure you have the hash(LispObject) proc defined here as well
-
 proc `==`*(x, y: LispObject): bool =
   if x.kind != y.kind:
     return false
@@ -237,5 +234,4 @@ func hash*(obj: LispObject): Hash =
       curr = curr.cdr
     return h
   of Builtin, Lambda, HashTable:
-    # These remain identity-based
     return hash(cast[pointer](addr obj)) 

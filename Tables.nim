@@ -14,9 +14,6 @@ proc getHash(args: LispObject): LispObject =
     table   = args.second
   if table.kind != HashTable:
       raise newException(ValueError, "Second argument to getHash must be a table")
-  if hashKey.kind == HashTable: # Add this check
-      raise newException(ValueError, "Cannot use a table as a hash key.")
-
   return table.table.getOrDefault(hashKey, NIL())
 
 proc putHash(args: LispObject): LispObject =
