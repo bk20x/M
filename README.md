@@ -24,7 +24,7 @@
       (fact (- n 1) (* acc n)))))
 
 
-(define xs (map (filter (range 1 5000) (-> (x) (= (mod x 2) 0))) (-> (x) (* x x))))
+(define xs (map (filter (range 1 1000) (-> (x) (= (mod x 2) 0))) (-> (x) (fact x 1))))
 
 
 (define fun (-> () (putLn "Hey everybody!")))
