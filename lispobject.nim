@@ -1,8 +1,9 @@
 import std/[tables, strutils]
+import bigints
 
 type
   LispObjectKind* = enum
-    Nil, Int, Float, Symbol, String, Cons, Builtin, Lambda
+    Nil, Int, Float, BigInt, Symbol, String, Cons, Builtin, Lambda
     
   SymbolRef* = ref object
     name*: string
@@ -22,6 +23,8 @@ type
         intVal*: int
       of Float:
         floatVal*: float
+      of BigInt:
+        bigNum*: BigInt
       of String:
         str*: string
       of Cons:
@@ -122,6 +125,8 @@ proc `$`*(s: LispObject): string =
     return result
   of Int:
     return $s.intVal
+  of BigInt:
+    return $s.bigNum
   of String:
     return s.str.escape
   of Cons:

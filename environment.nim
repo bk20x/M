@@ -45,7 +45,6 @@ proc lookupValue(env: var Env, symbolName: string): LispObject =
 var ## All used in `eval`
   lookupPlace: proc(env: var Env, form: LispObject): ptr LispObject
   ifImpl:      proc(env: var Env, form: LispObject): LispObject
-  letImpl:     proc(env: var Env, form: LispObject): LispObject
   doTimes:     proc(env: var Env, form: LispObject): LispObject
   doList:      proc(env: var Env, form: LispObject): LispObject
   evalLambda:  proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): Tailcall {.inline.}
@@ -91,7 +90,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
     tailcall: Tailcall 
 
   while true: 
-    if currentForm.kind in {Int, Float, String}:
+    if currentForm.kind in {Int, Float, String, BigInt}:
       return currentForm
     elif currentForm.isNil:
       return LispObject(kind: Nil)
@@ -260,7 +259,7 @@ proc apply*(env: var Env, fun: LispObject, args: seq[LispObject]): LispObject =
 
 
   while true:
-    if currentForm.kind in {Int, Float, String}:
+    if currentForm.kind in {Int, Float, String, BigInt}:
       return currentForm
     elif currentForm.isNil:
       return LispObject(kind: Nil)
