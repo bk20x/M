@@ -4,7 +4,7 @@ import lispobject, lexer
 
 type
   Reader* = object
-    lexer: AshLexer
+    lexer: MLexr
 
 
 proc advance*(p: var Reader) =
@@ -79,7 +79,7 @@ proc parse*(input: string): LispObject =
   var
     parser: Reader
     inputstrm = newStringStream(input)
-    lexer: AshLexer
+    lexer: MLexr
   initLexer(lexer, inputstrm)
   parser.lexer = lexer
   parser.advance

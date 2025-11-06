@@ -101,7 +101,6 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
         return LispObject(kind: Nil)
         
       if currentForm.car.kind == Symbol:
-        
         case currentForm.car.sym.name:
         of "->":
           let
@@ -119,9 +118,9 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             let
               form = currentEnv.eval(form)
             currentForm = form
-            continue # Restart to eval result
+            continue # eval result
           currentForm = form
-          continue # Restart to eval form
+          continue # eval form
         of "let":
           result = NIL()
           let
@@ -129,12 +128,11 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             body        = currentForm.cdr.cdr
           var scope     = currentEnv.newLambda(NIL(),body)
           scope.closure = currentEnv.newScope()
-          
           for binding in bindings.toSeq:
             let name    = binding.car.sym.name
-            scope.closure.interned[name] = currentEnv.eval binding.second
+            scope.closure.interned[name] = currentEnv.eval(binding.second)
           for progn in body.toSeq:
-            result      = scope.closure.eval progn
+            result      = scope.closure.eval(progn)
           return result
         of "load":
           let
@@ -149,11 +147,10 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
               for name, val in opened:
                 currentEnv.intern(name, val)
           return T()
-          
         of "return":
            let
              valForm = currentForm.cdr.car
-             val     = currentEnv.eval: valForm
+             val     = currentEnv.eval(valForm)
            raise ReturnException(retVal: val)
         of "if":
           # (if (cond) (then) (else))
@@ -173,7 +170,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           # (define name val)
           let
             name = currentForm.second
-            val  = currentEnv.eval: currentForm.third 
+            val  = currentEnv.eval(currentForm.third)
           currentEnv.intern(name.sym.name, val)
           return name
         of "setf":
@@ -181,7 +178,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             placeForm = currentForm.cdr.car
             valForm   = currentForm.cdr.cdr.car
           let
-            val = currentEnv.eval: valForm
+            val = currentEnv.eval(valForm)
             placeRef = currentEnv.lookupPlace(placeForm)
           if placeRef.isNil:
             raise newException(ValueError, "setf: place does not exist")
@@ -284,24 +281,17 @@ lookupPlace = proc(env: var Env, form: LispObject): ptr LispObject =
     while currentEnv != nil:
       if currentEnv.interned.hasKey(symbolName):
         return addr currentEnv.interned[symbolName]
-      
-
       currentEnv = currentEnv.parent
-      
-  
     raise newException(ValueError, fmt"Unbound symbol {symbolName} in lookupPlace")
     
   elif form.kind == Cons:
     let op = form.car
     if op.kind == Symbol:
-
       let
         listForm = form.cdr.car
         listVal = env.eval: listForm
       if listVal.kind == Cons:
         return addr listVal.car
-    
-    
     raise newException(ValueError, "Invalid  place: " & $form.kind)
 
   else:
@@ -369,9 +359,7 @@ eachImpl = proc(env: var Env, form: LispObject): LispObject =
     while not listToIter.isNil:
       var newEnv = env.newScope()
       newEnv.interned[varSym.sym.name] = listToIter.car
-      
       discard newEnv.eval(body)
-
       listToIter = listToIter.cdr
 
     return NIL()

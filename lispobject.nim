@@ -1,9 +1,9 @@
-import std/[tables, strutils]
+import std/[tables, strutils, hashes]
 import bigints
 
 type
   LispObjectKind* = enum
-    Nil, Int, Float, BigInt, Symbol, String, Cons, Builtin, Lambda
+    Nil, Int, Float, BigInt, Symbol, String, Cons, Builtin, Lambda, HashTable
     
   SymbolRef* = ref object
     name*: string
@@ -35,6 +35,8 @@ type
       of Lambda:
         params*, body*: LispObject
         closure*: Env
+      of HashTable:
+        table*: Table[LispObject, LispObject]
       of Nil:
        discard
 
@@ -45,10 +47,13 @@ type
 func T*(): LispObject   {.inline.} = LispObject(kind: Symbol, sym: SymbolRef(name: "t"))
 func NIL*(): LispObject {.inline.} = LispObject(kind: Nil)
 
+func newTable*(): owned LispObject =
+  return LispObject(kind: HashTable, table: initTable[LispObject, LispObject]())
+
 func newScope*(parent: Env): owned Env =
   return Env(interned: initTable[string, LispObject](), loadedModules: initTable[string, Table[string, BuiltinFn]](), parent: parent)
   
-func newLambda*(env: Env, params, body: LispObject): LispObject =
+func newLambda*(env: Env, params, body: LispObject): owned LispObject =
   return LispObject(kind: Lambda, params: params, body: body, closure: env.newScope())
     
 func newBuiltin*(fun: BuiltinFn, name: string): owned LispObject {.inline.} =
@@ -123,6 +128,8 @@ proc `$`*(s: LispObject): string =
     return fmt"<#BUILTIN {s.name}>"
   of Lambda:
     return fmt"<#LAMBDA {s.params} {s.body}>"
+  of HashTable:
+    return $s.table
   of Float:
     result = $s.floatVal
     if result.find('.') == -1:
@@ -153,7 +160,6 @@ proc `$`*(s: LispObject): string =
     
     return result
 
-
 func toSeq*(list: LispObject): seq[LispObject] =
   var current: LispObject = list
   while not current.isNil:
@@ -166,3 +172,70 @@ func toSeq*(list: LispObject): seq[LispObject] =
       break 
       
   return result
+
+
+
+# In lispobject.nim (or shared utilities file)
+# Make sure you have the hash(LispObject) proc defined here as well
+
+proc `==`*(x, y: LispObject): bool =
+  if x.kind != y.kind:
+    return false
+  
+  case x.kind
+  of Int:
+    return x.intVal == y.intVal
+  of Float:
+    return x.floatVal == y.floatVal
+  of String:
+    return x.str == y.str
+  of Symbol:
+    return x.sym.name == y.sym.name
+  of BigInt:
+    return x.bigNum == y.bigNum
+  of Nil: 
+    return true
+  of Cons:
+    var
+      currX = x
+      currY = y
+    while not currX.isNil and not currY.isNil:
+      if not (currX.car == currY.car): 
+        return false
+      currX = currX.cdr
+      currY = currY.cdr
+
+    return currX.isNil and currY.isNil
+    
+  of Builtin, Lambda, HashTable:
+    return (cast[pointer](addr x) == cast[pointer](addr y))
+
+
+func hash*(obj: LispObject): Hash =
+  case obj.kind
+  of Int:
+    result = hash(obj.intVal)
+  of Float:
+    result = hash(obj.floatVal)
+  of String:
+    result = hash(obj.str)
+  of Symbol:
+    if obj.sym.name == "t":
+      result = hash(true)
+    else:
+      result = hash(obj.sym.name)
+  of BigInt:
+    result = hash(obj.bigNum) 
+  of Nil:
+    result = hash(false) 
+  of Cons:
+    var
+      h: Hash = 0
+      curr = obj
+    while not curr.isNil:
+      h = h !& hash(curr.car) 
+      curr = curr.cdr
+    return h
+  of Builtin, Lambda, HashTable:
+    # These remain identity-based
+    return hash(cast[pointer](addr obj)) 

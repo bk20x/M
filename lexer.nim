@@ -14,7 +14,7 @@ type
       
       else: discard
 
-  AshLexer* = object of BaseLexer
+  MLexr* = object of BaseLexer
     filename*: string
     curLine*: string
     curTok*: Token
@@ -23,22 +23,22 @@ type
 const
   SymbolChars = {'a'..'z', 'A'..'Z', '0'..'9', '*', '+', '-', '!', '?', '_', '>', '<', '$', '|', '='}
 
-proc initLexer*(lx: var AshLexer, input: Stream, filename: string = "") =
+proc initLexer*(lx: var MLexr, input: Stream, filename: string = "") =
   lexbase.open(lx, input)
   lx.filename = filename
 
-proc skip*(lx: var AshLexer) =
+proc skip*(lx: var MLexr) =
   while lx.bufpos < lx.buf.len and lx.buf[lx.bufpos] in {' ', '\t', '\n', '\r'}:
     inc lx.bufpos
 
 
-proc parseSym*(lx: var AshLexer, start: int) =
+proc parseSym*(lx: var MLexr, start: int) =
   while lx.buf[lx.bufpos] in SymbolChars:
     inc lx.bufpos
   let symStr = lx.buf.substr(start, lx.bufpos - 1)
   lx.curTok = Token(kind: tkSym, sym: newSym(symStr).sym)
 
-proc parseNumber*(lx: var AshLexer, start: int) =
+proc parseNumber*(lx: var MLexr, start: int) =
   var pos = lx.bufpos
   var isFloat = false
   
@@ -66,7 +66,7 @@ proc parseNumber*(lx: var AshLexer, start: int) =
     raise newException(ValueError, fmt"Invalid number: {numStr} at {lx.bufpos}")
 
 
-proc parseStr*(lx: var AshLexer) =
+proc parseStr*(lx: var MLexr) =
   var str = ""
   inc lx.bufpos
   while true:
@@ -79,7 +79,7 @@ proc parseStr*(lx: var AshLexer) =
     inc lx.bufpos
   lx.curTok = Token(kind: tkStr, str: str)
 
-proc getTok*(lx: var AshLexer) =
+proc getTok*(lx: var MLexr) =
   lx.skip()
 
   let start = lx.bufpos

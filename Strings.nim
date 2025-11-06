@@ -3,6 +3,15 @@ import lispobject
 
 
 
+proc toString(obj: LispObject): string =
+  case obj.kind:
+  of String:
+    return obj.str
+  else:
+    return $obj
+      
+
+
 proc strReplace(args: LispObject): LispObject =
   let
     first  = args.first
@@ -64,7 +73,37 @@ proc strip(args: LispObject): LispObject =
   else:
     let str = args.first.str
     return newStr(str.strip)
-    
+
+
+
+proc stringFormat(args: LispObject): LispObject =
+  if args.len < 1 or args.first.kind != String:
+    raise newException(ValueError, "`strFormat` expects a format string as its first argument.")
+  var
+    str       = ""
+    formatStr = args.first.str
+    vars      = args.cdr.toSeq 
+    cursor    = 0
+    i         = 0
+
+  while i < formatStr.len:
+    if formatStr[i] == '$':
+      if i + 1 < formatStr.len and formatStr[i+1] == '$':
+        str.add '$'
+        i += 2
+      else:
+        if cursor >= vars.len:
+          raise newException(ValueError, "Too few arguments provided for string format placeholders.")
+        str.add vars[cursor].toString
+        inc cursor
+        inc i
+    else:
+      str.add formatStr[i]
+      inc i
+  if cursor < vars.len:
+    discard
+  return newStr(str)
+
 const
   Module* = toTable {
     "strReplace" : BuiltinFn strReplace,
@@ -74,5 +113,6 @@ const
     "strUpcase"  : BuiltinFn strUpcase,
     "strContains": BuiltinFn strContains,
     "splitLines" : BuiltinFn splitLines,
+    "fmt"        : BuiltinFn stringFormat,
     "strip"      : BuiltinFn strip
   }
