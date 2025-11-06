@@ -513,6 +513,7 @@ proc newEnv*(): owned Env =
   result.interned = toTable {
     "t"            : T(),
     "+"            : newBuiltin(lispadd,             "+"),
+    "-"            : newBuiltin(lispSub,             "-"),
     "*"            : newBuiltin(lispMultiply,        "*"),
     "mod"          : newBuiltin(lispMod,             "mod"),
     ">"            : newBuiltin(lispGreaterThan,     ">"),

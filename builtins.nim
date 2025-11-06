@@ -37,6 +37,21 @@ let lispAdd*: BuiltinFn =
     else:
       return newInt(intSum)
 
+proc lispSub*(args: LispObject): LispObject =
+  if not args.len == 2 and not (args.first.kind in {Int, Float} and args.second.kind in {Int, Float}):
+    raise newException(ValueError, fmt"`-` got {args.first.kind} and {args.second.kind} but expected Int or Float")
+  let
+    x = args.first
+    y = args.second
+  if x.kind == Float or y.kind == Float:
+    let
+      xVal = if x.kind == Float: x.floatVal else: x.intVal.float
+      yVal = if y.kind == Float: y.floatVal else: y.intVal.float
+      res = xVal - yVal
+    return newFloat(res)
+  else:
+    return newInt(x.intVal - y.intVal)
+      
 let lispMultiply*: BuiltinFn =
   proc(args: LispObject): LispObject =
     let
@@ -47,10 +62,10 @@ let lispMultiply*: BuiltinFn =
         xVal = if x.kind == Float: x.floatVal else: x.intVal.float
         yVal = if y.kind == Float: y.floatVal else: y.intVal.float
         res  = xVal * yVal
-      if res is float:
-        return newFloat(res)
+      return newFloat(res)
     else:
       return newInt(x.intVal * y.intVal)
+    
 
 let lispGreaterThan*: BuiltinFn =
   proc(args: LispObject): LispObject =

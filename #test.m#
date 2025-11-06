@@ -1,7 +1,9 @@
-# λx.(M)
 
-```
-(define xs (map '(2 4 6 8) (-> (x) (* x x))))
+
+
+
+
+(define length (-> (xs) (let ((acc 0)) (doList (x xs) (setf acc (+ acc 1))) acc)))
 
 (open Strings)
 
@@ -11,6 +13,8 @@
    (doList (ln lines)
     (setf result (strConcat result ln)))
     result)))
+
+(define xs (map '(2 4 6 8) (-> (x) (* x x))))
 
 
 (define range (-> (lo hi)
@@ -22,15 +26,3 @@
   (if (= n 0)
       acc
       (factorial (- n 1) (* acc n)))))
-
-
-(define fun (-> () (putLn "Hey everybody!")))
-
-(fun)
-
-(setq (body fun) (putLn "Goodbye!"))
-
-(fun)
-
-
-```
