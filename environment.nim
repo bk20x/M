@@ -9,7 +9,10 @@ import Std
 type
   ReturnException* = ref object of CatchableError
     retVal*: LispObject
-    
+
+  Tailcall* = object
+    form: LispObject
+    closure: Env
 
 proc lookupRef*(env: Env, symName: string): ptr LispObject =
   if env.interned.hasKey(symName):
@@ -45,7 +48,7 @@ var ## All used in `eval`
   letImpl:     proc(env: var Env, form: LispObject): LispObject
   doTimes:     proc(env: var Env, form: LispObject): LispObject
   doList:      proc(env: var Env, form: LispObject): LispObject
-  evalLambda:  proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): LispObject {.inline.}
+  evalLambda:  proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): Tailcall {.inline.}
   load:        proc(env: var Env, form: LispObject): LispObject
 
 
@@ -79,143 +82,197 @@ proc readAllSexprs(filename: string): seq[LispObject] =
 
   s.close()
 
-proc eval*(env: var Env, form: LispObject): LispObject {.discardable.} =
-  if form.isNil or form.kind in {Int, Float, String}:
-    return form
-  elif form.kind == Symbol:
-    return env.lookupValue(form.sym.name)
-  elif form.kind == Cons:
-    if form.isNil:
-      return NIL()
 
-      
-    if form.car.kind == Symbol:
-      case form.car.sym.name: # special forms
-      of "->":
-        let
-          params = form.second
-          body   = form.third
-          lambda = env.newLambda(params, body)
-        return lambda
-      of "quote":
-        let quoted = form.cdr
-        return quoted
-      of "eval":
-        let
-          form   = form.second
-        if form.kind == Symbol:
-          let
-            form = env.eval(form)
-          return env.eval(form)
-        return env.eval(form)
-      of "let":
-        let
-          bindings    = form.second
-          body        = form.cdr.cdr
-        var scope     = env.newLambda(NIL(),body)
-        scope.closure = env.newScope()
+
+proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
+  var
+    currentForm = initialForm
+    currentEnv  = env
+    tailcall: Tailcall 
+
+  while true: 
+    if currentForm.kind in {Int, Float, String}:
+      return currentForm
+    elif currentForm.isNil:
+      return LispObject(kind: Nil)
+    elif currentForm.kind == Symbol:
+      return currentEnv.lookupValue(currentForm.sym.name)
+    elif currentForm.kind == Cons:
+      if currentForm.isNil:
+        return LispObject(kind: Nil)
         
-        for binding in bindings.toSeq:
-          let name    = binding.car.sym.name
-          scope.closure.interned[name] = env.eval binding.second
-        for progn in body.toSeq:
-          result      = scope.closure.eval progn
-        return result
-      of "load":
-        let
-          file = form.second
-        return env.load file
-      of "open":
-        for m in form.cdr.toSeq:
-          let module = m.sym.name
-          if env.loadedModules.hasKey module:
+      if currentForm.car.kind == Symbol:
+        
+        case currentForm.car.sym.name:
+        of "->":
+          let
+            params = currentForm.second
+            body   = currentForm.third
+            lambda = currentEnv.newLambda(params, body)
+          return lambda
+        of "quote":
+          let quoted = currentForm.cdr
+          return quoted
+        of "eval":
+          let
+            form   = currentForm.second
+          if form.kind == Symbol:
             let
-              opened = wrapModule(env.loadedModules[module])
-            for name, val in opened:
-              env.intern(name, val)
-        return T()
-      of "return":
-         let
-           valForm = form.cdr.car
-           val     = env.eval: valForm
-         raise ReturnException(retVal: val)
-      of "if":
-        # (if (cond) (expr) (elt))
-        return env.ifImpl(form.cdr)
-      of "define":
-        # (defvar name val)
-        let
-          name = form.second
-          val  = env.eval: form.third
-        env.intern(name.sym.name, val)
-        return name
-      of "setf":
-        let
-          placeForm = form.cdr.car
-          valForm   = form.cdr.cdr.car
-        let
-          val = env.eval: valForm
-          placeRef = env.lookupPlace(placeForm)
-        if placeRef.isNil:
-          raise newException(ValueError, "setf: place does not exist")
-        placeRef[] = val
-        return val
-      of "setq":
-        let
-          placeForm = form.cdr.car
-          valForm   = form.cdr.cdr.car        
-        if placeForm.kind == Symbol:
-          if not env.interned.hasKey(placeForm.sym.name):
-            raise newException(ValueError, fmt"setq: unbound symbol {placeForm.sym.name}")
-          env.interned[placeForm.sym.name] = valForm
-        elif placeForm.kind == Cons:
+              form = currentEnv.eval(form)
+            currentForm = form
+            continue # Restart to eval result
+          currentForm = form
+          continue # Restart to eval form
+        of "let":
+          result = NIL()
           let
-            formToAssign = placeForm.cdr.car
-            place        = env.eval(formToAssign)
-          if place.kind == Lambda:
-            place.body   = valForm   
+            bindings    = currentForm.second
+            body        = currentForm.cdr.cdr
+          var scope     = currentEnv.newLambda(NIL(),body)
+          scope.closure = currentEnv.newScope()
+          
+          for binding in bindings.toSeq:
+            let name    = binding.car.sym.name
+            scope.closure.interned[name] = currentEnv.eval binding.second
+          for progn in body.toSeq:
+            result      = scope.closure.eval progn
+          return result
+        of "load":
+          let
+            file = currentForm.second
+          return currentEnv.load file
+        of "open":
+          for m in currentForm.cdr.toSeq:
+            let module = m.sym.name
+            if currentEnv.loadedModules.hasKey module:
+              let
+                opened = wrapModule(currentEnv.loadedModules[module])
+              for name, val in opened:
+                currentEnv.intern(name, val)
+          return T()
+          
+        of "return":
+           let
+             valForm = currentForm.cdr.car
+             val     = currentEnv.eval: valForm
+           raise ReturnException(retVal: val)
+        of "if":
+          # (if (cond) (then) (else))
+          let cond = currentEnv.eval(currentForm.second)
+          if not cond.isNil:
+            currentForm = currentForm.third 
           else:
-            var place    = env.lookupPlace(placeForm)
-            place[]      = valForm
+            let elseBranch = currentForm.cdr.cdr.cdr
+            if not elseBranch.isNil:
+              currentForm = elseBranch.car 
+            else:
+              return NIL() 
+          
+          continue 
+          
+        of "define":
+          # (define name val)
+          let
+            name = currentForm.second
+            val  = currentEnv.eval: currentForm.third 
+          currentEnv.intern(name.sym.name, val)
+          return name
+        of "setf":
+          let
+            placeForm = currentForm.cdr.car
+            valForm   = currentForm.cdr.cdr.car
+          let
+            val = currentEnv.eval: valForm
+            placeRef = currentEnv.lookupPlace(placeForm)
+          if placeRef.isNil:
+            raise newException(ValueError, "setf: place does not exist")
+          placeRef[] = val
+          return val
+        of "setq":
+          let
+            placeForm = currentForm.cdr.car
+            valForm   = currentForm.cdr.cdr.car        
+          if placeForm.kind == Symbol:
+            if not currentEnv.interned.hasKey(placeForm.sym.name):
+              raise newException(ValueError, fmt"setq: unbound symbol {placeForm.sym.name}")
+            currentEnv.interned[placeForm.sym.name] = valForm
+          elif placeForm.kind == Cons:
+            let
+              formToAssign = placeForm.cdr.car
+              place        = currentEnv.eval(formToAssign)
+            if place.kind == Lambda:
+              place.body   = valForm   
+            else:
+              var place    = currentEnv.lookupPlace(placeForm)
+              place[]      = valForm
+          else:
+            raise newException(ValueError, fmt"setq: invalid place form {placeForm}")
+          return valForm
+        of "doTimes":
+          return currentEnv.doTimes(currentForm.cdr)
+        of "doList":
+          return currentEnv.doList(currentForm.cdr)
         else:
-          raise newException(ValueError, fmt"setq: invalid place form {placeForm}")
-        return valForm
-      of "doTimes":
-        # (doTimes times (body))
-        return env.doTimes(form.cdr)
-      of "doList":
-        # (doList (var list) (body))
-        return env.doList(form.cdr)
-      else:
-        discard
+          discard
+          
+      
+      var
+        evaluated: seq[LispObject] = @[]
+        args = currentForm.cdr
+      while not args.isNil:
+        evaluated.add: currentEnv.eval: args.car
+        args = args.cdr # goto next Cons cell
+
+              
+      # eval the operator
+      let op = currentEnv.eval: currentForm.car
         
-    
-    
-    # eval all args first
-    var
-      evaluated: seq[LispObject] = @[]
-      args = form.cdr
-    while not args.isNil:
-      evaluated.add: env.eval: args.car
-      args = args.cdr # goto next Cons cell
 
-            
-    # eval the operator (functions might return another function)
-    let op = env.eval: form.car
-      
-    # Built-in functions
-    if op.kind == Builtin:  
+      if op.kind == Builtin:  
+        let consArgs = evaluated.list
+        return op.fun(consArgs)
+        
 
-      let consArgs = evaluated.list
-      
-      return op.fun(consArgs)      
-    # User defined funs
-    elif op.kind == Lambda:
-      return env.evalLambda(op, evaluated)
+      elif op.kind == Lambda:
+        tailcall = currentEnv.evalLambda(op, evaluated)
+        currentForm = tailcall.form
+        currentEnv  = tailcall.closure
+        continue 
+        
+      else:
+        raise newException(ValueError, fmt"Can't apply non-function object: {op} OF {$op.kind}")
     else:
-      raise newException(ValueError, fmt"Can't apply non-function object: {op} OF {$op.kind}")
-  else:
-    raise newException(ValueError,   fmt"Can't eval object: {form} OF {$form.kind}")
+      raise newException(ValueError,   fmt"Can't eval object: {currentForm} OF {$currentForm.kind}")
+
+
+
+proc apply*(env: var Env, fun: LispObject, args: seq[LispObject]): LispObject =
+  ## Eagerly evaluate a lambda object and get the return value instead of a Tc
+  var 
+    currentForm: LispObject
+    currentEnv: Env
+    tailcall: Tailcall
+
+  
+  tailcall = env.evalLambda(fun, args)
+  currentForm = tailcall.form
+  currentEnv = tailcall.closure
+
+
+  while true:
+    if currentForm.kind in {Int, Float, String}:
+      return currentForm
+    elif currentForm.isNil:
+      return LispObject(kind: Nil)
+    elif currentForm.kind == Symbol:
+      return currentEnv.lookupValue(currentForm.sym.name)
+    elif currentForm.kind == Cons:
+      try:
+        return currentEnv.eval(currentForm) 
+      except ReturnException as ret:
+        return ret.retVal
+    else:
+      raise newException(ValueError, fmt"Can't eval object in `apply`;; scrutinee: {currentForm}")
 
 
 
@@ -253,7 +310,7 @@ lookupPlace = proc(env: var Env, form: LispObject): ptr LispObject =
 
 
 evalLambda =
-    proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): LispObject {.inline.} =
+    proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): Tailcall {.inline.} =
       var
         lambda = form
         params = lambda.params
@@ -267,11 +324,7 @@ evalLambda =
         inc argIndex
       if argIndex != evaluated.len:
         raise newException(ValueError, "Wrong number of arguments for lambda")
-      try:
-        return lambda.closure.eval: lambda.body
-      except ReturnException as ret:
-        return ret.retVal
-    
+      result = Tailcall(form: lambda.body, closure: lambda.closure)
 ifImpl =
     proc(env: var Env, form: LispObject): LispObject =
       let
@@ -292,10 +345,10 @@ ifImpl =
 doTimes =
     proc(env: var Env, form: LispObject): LispObject =
       let
-        times = form.first.intVal
+        times = env.eval form.first
         body  = form.second
       var i = 0
-      while not (i == times - 1): # bc we return the last eval
+      while not (i == times.intVal - 1): # bc we return the last eval
         env.eval: body
         i += 1
       return env.eval: body 
@@ -350,7 +403,7 @@ proc newEnv*(): owned Env =
         result = NIL()
         for i in countdown(list.high, 0):
           let
-            new = env.evalLambda(fun, @[list[i]])
+            new = env.apply(fun, @[list[i]])
           result = cons(new, result)
           
     filter: BuiltinFn =
@@ -361,7 +414,7 @@ proc newEnv*(): owned Env =
         result = NIL()
         for i in countdown(list.high, 0):
           let
-            new = env.evalLambda(fun, @[list[i]])
+            new = env.apply(fun, @[list[i]])
           if new.isT:
             result = cons(list[i], result)
             
@@ -425,7 +478,9 @@ proc newEnv*(): owned Env =
           else:
             return NIL()
         else:
-          discard
+          if x.kind == Nil and y.kind == Nil:
+            return T()
+        return NIL()
           
     body: BuiltinFn =
       proc(args: LispObject): LispObject =
@@ -433,6 +488,7 @@ proc newEnv*(): owned Env =
           lambda = args.first
           body   = lambda.body
         return body
+        
     append: BuiltinFn =
       proc(args: LispObject): LispObject =
         var
@@ -468,6 +524,8 @@ proc newEnv*(): owned Env =
     "cons"         : newBuiltin(cons,                "cons"),
     "car"          : newBuiltin(car,                 "car"),
     "cdr"          : newBuiltin(cdr,                 "cdr"),
+    "first"        : newBuiltin(first,               "first"),
+    "second"       : newBuiltin(second,              "second"),
     "putLn"        : newBuiltin(putLn,               "putLn"),
     "body"         : newBuiltin(body,                "body"),
     "typeOf"       : newBuiltin(typeOf,              "typeOf")

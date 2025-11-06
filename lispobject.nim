@@ -33,7 +33,8 @@ type
         params*, body*: LispObject
         closure*: Env
       of Nil:
-        discard
+       discard
+
 
 
 proc newScope*(parent: Env): owned Env =
@@ -103,7 +104,7 @@ func len*(list: LispObject): int =
     
   
 import std/strformat
-func `$`*(s: LispObject): string = 
+proc `$`*(s: LispObject): string =
   case s.kind:
   of Nil:
     return "NIL"
@@ -125,18 +126,23 @@ func `$`*(s: LispObject): string =
     return s.str.escape
   of Cons:
     result = "("
-    var current = s.cdr
-    result &= $s.car
+    var
+      current = s
+      first = true
+
     while not current.isNil and current.kind == Cons:
-      result &= " " & $current.car
-      current = current.cdr
+      if not first:
+        result &= " "
+      result &= $(current.car) 
+      current = current.cdr 
+      first = false
 
     if not current.isNil:
       result &= " . " & $current
     result &= ")"
     
-    return result 
-  
+    return result
+
 
 func toSeq*(list: LispObject): seq[LispObject] =
   var current: LispObject = list

@@ -80,6 +80,22 @@ let lispMod*: BuiltinFn =
     if not args.len == 2:
       raise newException(ValueError, "`mod` expects 2 arguments")
     let
-      x = if args.first.kind == Float: args.first.floatVal.int else: args.first.intVal
-      y = if args.first.kind == Float: args.first.floatVal.int else: args.first.intVal
+      x = if args.first.kind  == Float: args.first.floatVal.int  else: args.first.intVal
+      y = if args.second.kind == Float: args.second.floatVal.int else: args.second.intVal
     return newInt(x mod y)
+
+let first*: BuiltinFn =
+  proc(args: LispObject): LispObject =
+    if not args.len == 1 and not (args.first.kind == Cons):
+      raise newException(ValueError, "`second` is of type Cons -> T but got {args}")
+    return args.car.first
+
+let second*: BuiltinFn =
+  proc(args: LispObject): LispObject =
+    if not args.len == 1 and not (args.first.kind == Cons):
+      raise newException(ValueError, "`second` is of type Cons -> T but got {args}")
+    let
+      form = args.car
+    if form.cdr.kind != Cons:
+      return form.cdr    
+    return form.second

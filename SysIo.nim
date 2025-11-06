@@ -1,4 +1,4 @@
-import std/[tables, sequtils, sugar]
+import std/[tables, sequtils, sugar, os, osproc]
 import lispobject
 
 
@@ -22,10 +22,20 @@ proc writeFile(args: LispObject): LispObject =
     content  = args.second.str
   writeFile(filename, content)
   return NIL()
-  
+
+proc runCmdCode(args: LispObject): LispObject =
+  if not args.len == 1 and not (args.first.kind  == String):
+    raise newException(ValueError, "`cmd!` is of type String -> Int but gut {args}")
+  let
+    command = args.first.str
+    res     = execCmdEx(command)
+  return cons(newInt(res.exitCode), newStr(res.output))
+
+
 const
   Module* = toTable {
     "readFile"  : BuiltinFn SysIo.readFile,
     "readLines" : BuiltinFn SysIo.readLines,
-    "writeFile" : BuiltinFn SysIo.writeFile
+    "writeFile" : BuiltinFn SysIo.writeFile,
+    "cmd!"      : BuiltinFn SysIo.runCmdCode
   }

@@ -48,7 +48,8 @@ proc parseAtom*(p: var Reader): LispObject =
 
 proc parseList*(p: var Reader): LispObject =
   p.expect tkLpar 
-  
+  result = NIL() 
+
   var l: seq[LispObject]
   while p.lexer.curTok.kind != tkRpar:
     if p.lexer.curTok.kind == tkEof:
@@ -56,8 +57,6 @@ proc parseList*(p: var Reader): LispObject =
     l.add: parseSexp(p)
     
   p.expect tkRpar
-  
-  result = NIL()
   for i in countdown(l.len - 1, 0):
     result = cons(l[i], result)
     
