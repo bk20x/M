@@ -450,36 +450,6 @@ proc newEnv*(): owned Env =
       proc(args: LispObject): LispObject =
         return newSym($args.first.kind)
 
-    eq: BuiltinFn =
-      proc(args: LispObject): LispObject =
-        let
-          x = args.first
-          y = args.second
-        case x.kind:
-        of Int:
-          if y.kind == Int    and x.intVal == y.intVal:
-            return T()
-          else:
-            return NIL()
-        of Float:
-          if y.kind == Float  and x.floatVal == y.floatVal:
-            return T()
-          else:
-            return NIL()
-        of String:
-          if y.kind == String and x.str == y.str:
-            return T()
-          else:
-            return NIL()
-        of Symbol:
-          if y.kind == Symbol and x.sym.name == y.sym.name:
-            return T()
-          else:
-            return NIL()
-        else:
-          if x.kind == Nil and y.kind == Nil:
-            return T()
-        return NIL()
           
     body: BuiltinFn =
       proc(args: LispObject): LispObject =
@@ -516,7 +486,7 @@ proc newEnv*(): owned Env =
     "*"            : newBuiltin(lispMultiply,        "*"),
     "mod"          : newBuiltin(lispMod,             "mod"),
     ">"            : newBuiltin(lispGreaterThan,     ">"),
-    "="            : newBuiltin(eq,                  "="),
+    "="            : newBuiltin(lispEquals,          "="),
     "append"       : newBuiltin(append,              "append"),
     "map"          : newBuiltin(map,                 "map"),
     "filter"       : newBuiltin(filter,              "filter"),

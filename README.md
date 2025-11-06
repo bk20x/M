@@ -27,7 +27,6 @@
 (define xs (map (filter (range 1 5000) (-> (x) (= (mod x 2) 0))) (-> (x) (* x x))))
 
 
-
 (define fun (-> () (putLn "Hey everybody!")))
 
 (fun)

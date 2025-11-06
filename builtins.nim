@@ -1,104 +1,211 @@
-import std/[strformat]
+import std/[strformat, strutils]
 import lispobject
+import bigints
 
 
 
 
 
+proc toBigInt(obj: LispObject): BigInt =
+  case obj.kind
+  of Int:    return initBigInt(obj.intVal)
+  of BigInt: return obj.bigNum
+  else: raise newException(ValueError, fmt"Expected Int or BigInt, got {obj.kind}")
+
+proc toFloat(bi: BigInt): float =
+  return parseFloat($bi)
   
 let lispAdd*: BuiltinFn =
   proc(args: LispObject): LispObject =
     let nums = args.toSeq
     var
       isFloat   = false
-      intSum    = 0
-      floatSum  = 0.0
+      isBigInt  = false
+
     for num in nums:
-      if num.kind == Float:
-        isFloat = true
-        break
-    for num in nums:
-      if isFloat:
-        case num.kind:
-        of Int:
-          floatSum += num.intVal.float
-        of Float:
-          floatSum += num.floatVal
-        else:
-          raise newException(ValueError, fmt"`+` got {num.kind} but expected Int or Float")
-      else:
-        case num.kind:
-        of Int:
-          intSum += num.intVal
-        else:
-          raise newException(ValueError, fmt"`+` got {num.kind} but expected Int or Float")
+      if num.kind == Float: isFloat = true; break
+      elif num.kind == BigInt: isBigInt = true
+
     if isFloat:
+      var floatSum  = 0.0
+      for num in nums:
+        if   num.kind == Int:    floatSum += num.intVal.float
+        elif num.kind == Float:  floatSum += num.floatVal
+        elif num.kind == BigInt: floatSum += num.bigNum.toFloat
+        else: raise newException(ValueError, fmt"`+` got {num.kind} but expected numeric types")
       return newFloat(floatSum)
+
+    elif isBigInt:
+      var bigIntSum = nums[0].toBigInt() 
+      for i in 1..<nums.len:
+        bigIntSum += nums[i].toBigInt()
+      return LispObject(kind: BigInt, bigNum: bigIntSum)
+
     else:
-      return newInt(intSum)
+      var intSum = 0
+      try:
+        for num in nums:
+          if num.kind == Int:
+            intSum += num.intVal # This might overflow
+          else:
+            raise newException(ValueError, fmt"`+` got {num.kind} but expected Int")
+        
+        return newInt(intSum)
+
+      except OverflowDefect:
+        var bigIntSum = initBigInt(0)
+        for num in nums:
+           bigIntSum += initBigInt(num.intVal)
+        return LispObject(kind: BigInt, bigNum: bigIntSum)
 
 proc lispSub*(args: LispObject): LispObject =
-  if not args.len == 2 and not (args.first.kind in {Int, Float} and args.second.kind in {Int, Float}):
-    raise newException(ValueError, fmt"`-` got {args.first.kind} and {args.second.kind} but expected Int or Float")
+  if args.len != 2:
+    raise newException(ValueError, "`-` expects exactly 2 arguments")
   let
     x = args.first
     y = args.second
   if x.kind == Float or y.kind == Float:
     let
-      xVal = if x.kind == Float: x.floatVal else: x.intVal.float
-      yVal = if y.kind == Float: y.floatVal else: y.intVal.float
-      res = xVal - yVal
+      xVal = if x.kind == Float: x.floatVal elif x.kind == Int: x.intVal.float else: x.bigNum.toFloat
+      yVal = if y.kind == Float: y.floatVal elif y.kind == Int: y.intVal.float else: y.bigNum.toFloat
+      res  = xVal - yVal
     return newFloat(res)
+    
+  elif x.kind == BigInt or y.kind == BigInt:
+    let
+      xVal = x.toBigInt()
+      yVal = y.toBigInt()
+      res  = xVal - yVal
+    return LispObject(kind: BigInt, bigNum: res)
   else:
-    return newInt(x.intVal - y.intVal)
+    try:
+      let res = x.intVal - y.intVal
+      return newInt(res)
+    except OverflowDefect:
+      let res = initBigInt(x.intVal) - initBigInt(y.intVal)
+      return LispObject(kind: BigInt, bigNum: res)
       
 let lispMultiply*: BuiltinFn =
   proc(args: LispObject): LispObject =
+    if args.len != 2:
+      raise newException(ValueError, "`*` expects exactly 2 arguments")
     let
       x = args.first
       y = args.second
     if x.kind == Float or y.kind == Float:
       let
-        xVal = if x.kind == Float: x.floatVal else: x.intVal.float
-        yVal = if y.kind == Float: y.floatVal else: y.intVal.float
+        xVal = if x.kind == Float: x.floatVal elif x.kind == Int: x.intVal.float else: x.bigNum.toFloat
+        yVal = if y.kind == Float: y.floatVal elif y.kind == Int: y.intVal.float else: y.bigNum.toFloat
         res  = xVal * yVal
       return newFloat(res)
+    elif x.kind == BigInt or y.kind == BigInt:
+      let
+        xVal = x.toBigInt()
+        yVal = y.toBigInt()
+        res  = xVal * yVal
+      return LispObject(kind: BigInt, bigNum: res)
+
     else:
-      return newInt(x.intVal * y.intVal)
+      try:
+        let res = x.intVal * y.intVal
+        return newInt(res)
+      except OverflowDefect:
+        let res = initBigInt(x.intVal) * initBigInt(y.intVal)
+        return LispObject(kind: BigInt, bigNum: res)
     
 
 let lispGreaterThan*: BuiltinFn =
   proc(args: LispObject): LispObject =
-    if not args.len == 2:
+    if args.len != 2:
       raise newException(ValueError, "`>` expects 2 arguments")
     let
       x = args.first
       y = args.second
-    if not (x.kind in {Int, Float}) or not (y.kind in {Int, Float}):
-      raise newException(ValueError, fmt"`>` expects Int or Float but got {x.kind} and {y.kind}")
       
     var isGreater: bool
+
     if x.kind == Float or y.kind == Float:
       let
-        xVal = if x.kind == Float: x.floatVal else: x.intVal.float
-        yVal = if y.kind == Float: y.floatVal else: y.intVal.float
+        xVal    = if x.kind == Float: x.floatVal elif x.kind == Int: x.intVal.float else: x.bigNum.toFloat
+        yVal    = if y.kind == Float: y.floatVal elif y.kind == Int: y.intVal.float else: y.bigNum.toFloat
       isGreater = xVal > yVal
+
+    elif x.kind == BigInt or y.kind == BigInt:
+      let
+        xVal    = x.toBigInt()
+        yVal    = y.toBigInt()
+      isGreater = xVal > yVal
+
     else:
       isGreater = x.intVal > y.intVal
-      if isGreater:
-        return T()
-      else:
-        return NIL()
+      
+    if isGreater:
+      return T()
+    else:
+      return NIL()
 
 let lispMod*: BuiltinFn =
   proc(args: LispObject): LispObject =
-    if not args.len == 2:
+    if args.len != 2:
       raise newException(ValueError, "`mod` expects 2 arguments")
     let
-      x = if args.first.kind  == Float: args.first.floatVal.int  else: args.first.intVal
-      y = if args.second.kind == Float: args.second.floatVal.int else: args.second.intVal
-    return newInt(x mod y)
+      x = args.first
+      y = args.second
 
+    if not (x.kind in {Int, BigInt}) or not (y.kind in {Int, BigInt}):
+       raise newException(ValueError, fmt"`mod` expects Int or BigInt but got {x.kind} and {y.kind}")
+       
+    let
+      xVal = x.toBigInt()
+      yVal = y.toBigInt()
+      res  = xVal mod yVal
+
+    return LispObject(kind: BigInt, bigNum: res)
+
+let lispEquals*: BuiltinFn =
+  proc(args: LispObject): LispObject =
+    let
+      x = args.first 
+      y = args.second
+    
+    var areEqual: bool = false
+
+    if x.kind == Nil and y.kind == Nil:
+      areEqual = true
+
+    elif x.kind in {Int, Float, BigInt} and y.kind in {Int, Float, BigInt}:
+      
+      if x.kind == Float or y.kind == Float:
+        let
+          xVal = if x.kind == Float: x.floatVal elif x.kind == Int: x.intVal.float else: x.bigNum.toFloat
+          yVal = if y.kind == Float: y.floatVal elif y.kind == Int: y.intVal.float else: y.bigNum.toFloat
+        areEqual = (xVal == yVal)
+
+      elif x.kind == BigInt or y.kind == BigInt:
+        let
+          xVal = x.toBigInt()
+          yVal = y.toBigInt()
+        areEqual = (xVal == yVal)
+
+      else:
+        areEqual = (x.intVal == y.intVal)
+
+
+    elif x.kind == String and y.kind == String:
+        areEqual = (x.str == y.str)
+  
+    elif x.kind == Symbol and y.kind == Symbol:
+        areEqual = (x.sym.name == y.sym.name)
+    
+    elif x == y: 
+        areEqual = true
+  
+    if areEqual:
+      return T()
+    else:
+      return NIL()
+
+      
 let first*: BuiltinFn =
   proc(args: LispObject): LispObject =
     if not args.len == 1 and not (args.first.kind == Cons):
@@ -111,6 +218,7 @@ let second*: BuiltinFn =
       raise newException(ValueError, "`second` is of type Cons -> T but got {args}")
     let
       form = args.car
-    if form.cdr.kind != Cons:
+    if form.cdr.isAtom:
       return form.cdr    
     return form.second
+

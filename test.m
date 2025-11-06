@@ -3,8 +3,6 @@
 
 
 
-
-
 (open Strings)
 
 (define joinStr (-> (lines)
@@ -24,9 +22,13 @@
 
 
 
+
 (define factorial (-> (n acc)
   (if (= n 0)
        acc
       (factorial (- n 1) (* acc n)))))
 
+
+
+(putLn (factorial 500 1))
 
