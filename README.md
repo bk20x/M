@@ -21,7 +21,7 @@
 (define fact (-> (n acc)
   (if (= n 0)
       acc
-      (factorial (- n 1) (* acc n)))))
+      (fact (- n 1) (* acc n)))))
 
 
 (define fun (-> () (putLn "Hey everybody!")))
