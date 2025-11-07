@@ -1,13 +1,3 @@
-(open Strings Tables)
-
-(define joinStr (-> (lines)
- (let ((result ""))
-  (each (ln lines)
-   (setf result (strConcat result ln)))
-    result)))
-
-
-
 (define length (-> (xs) (let ((acc 0)) (each (x xs) (setf acc (+ acc 1))) acc)))
 
 
@@ -22,8 +12,11 @@
       (factorial (- n 1) (* acc n)))))
 
 
+(load "record.m")
 
-(defmacro make-record (pairs)
-  (let ((insertions (map pairs (-> (pair) `(putHash ',(car pair) ,(car (cdr pair)) result)))))
-    `(let ((result (makeTable)))
-      ,@(append insertions 'result)))))
+(define rec (
+  makeRecord (
+   (Name "Boben")
+   (Bober "Cerny")
+   (speak (-> () (putLn ($ rec Name))))
+)))

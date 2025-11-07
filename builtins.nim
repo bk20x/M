@@ -15,8 +15,8 @@ proc toBigInt(obj: LispObject): BigInt =
 proc toFloat(bi: BigInt): float =
   return parseFloat($bi)
   
-let lispAdd*: BuiltinFn =
-  proc(args: LispObject): LispObject =
+
+proc lispAdd*(args: LispObject): LispObject =
     let nums = args.toSeq
     var
       isFloat   = false
@@ -40,7 +40,6 @@ let lispAdd*: BuiltinFn =
       for i in 1..<nums.len:
         bigIntSum += nums[i].toBigInt()
       return LispObject(kind: BigInt, bigNum: bigIntSum)
-
     else:
       var intSum = 0
       try:
@@ -85,8 +84,8 @@ proc lispSub*(args: LispObject): LispObject =
       let res = initBigInt(x.intVal) - initBigInt(y.intVal)
       return LispObject(kind: BigInt, bigNum: res)
       
-let lispMultiply*: BuiltinFn =
-  proc(args: LispObject): LispObject =
+
+proc lispMultiply*(args: LispObject): LispObject =
     if args.len != 2:
       raise newException(ValueError, "`*` expects exactly 2 arguments")
     let
@@ -114,8 +113,8 @@ let lispMultiply*: BuiltinFn =
         return LispObject(kind: BigInt, bigNum: res)
     
 
-let lispGreaterThan*: BuiltinFn =
-  proc(args: LispObject): LispObject =
+
+proc lispGreaterThan*(args: LispObject): LispObject =
     if args.len != 2:
       raise newException(ValueError, "`>` expects 2 arguments")
     let
@@ -144,8 +143,8 @@ let lispGreaterThan*: BuiltinFn =
     else:
       return NIL()
 
-let lispMod*: BuiltinFn =
-  proc(args: LispObject): LispObject =
+
+proc lispMod*(args: LispObject): LispObject =
     if args.len != 2:
       raise newException(ValueError, "`mod` expects 2 arguments")
     let
@@ -162,25 +161,22 @@ let lispMod*: BuiltinFn =
 
     return LispObject(kind: BigInt, bigNum: res)
 
-let lispEquals*: BuiltinFn =
-  proc(args: LispObject): LispObject =
+
+proc lispEquals*(args: LispObject): LispObject =
     let
       x = args.first 
       y = args.second
-    
     var areEqual: bool = false
 
     if x.kind == Nil and y.kind == Nil:
       areEqual = true
 
     elif x.kind in {Int, Float, BigInt} and y.kind in {Int, Float, BigInt}:
-      
       if x.kind == Float or y.kind == Float:
         let
           xVal = if x.kind == Float: x.floatVal elif x.kind == Int: x.intVal.float else: x.bigNum.toFloat
           yVal = if y.kind == Float: y.floatVal elif y.kind == Int: y.intVal.float else: y.bigNum.toFloat
         areEqual = (xVal == yVal)
-
       elif x.kind == BigInt or y.kind == BigInt:
         let
           xVal = x.toBigInt()
@@ -189,22 +185,28 @@ let lispEquals*: BuiltinFn =
 
       else:
         areEqual = (x.intVal == y.intVal)
-
-
     elif x.kind == String and y.kind == String:
         areEqual = (x.str == y.str)
-  
     elif x.kind == Symbol and y.kind == Symbol:
         areEqual = (x.sym.name == y.sym.name)
-    
     elif x == y: 
         areEqual = true
-  
     if areEqual:
       return T()
     else:
       return NIL()
 
+proc append*(args: LispObject): LispObject =
+  result = NIL()
+  var
+    list = args.first.toSeq
+    elem = args.second
+  if elem.kind == Cons:
+    for e in elem.toSeq:
+      list.add e
+    return list.list
+  list.add elem
+  return list.list
       
 let first*: BuiltinFn =
   proc(args: LispObject): LispObject =

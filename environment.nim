@@ -56,6 +56,7 @@ var ## All used in `eval`
   load:        proc(env: var Env, form: LispObject): LispObject
   qqExpand:    proc(env: var Env, form: LispObject): LispObject
   macroExpand: proc(env: var Env, form: LispObject, rawArgsList: LispObject): LispObject
+  
 proc readAllSexprs(filename: string): seq[LispObject] =
   result = @[]
   var s = newFileStream(filename, fmRead)
@@ -85,6 +86,7 @@ proc readAllSexprs(filename: string): seq[LispObject] =
       buffer.add(c)
 
   s.close()
+
 
 
 
@@ -140,6 +142,21 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             scope.closure.interned[name] = currentEnv.eval(binding.second)
           for progn in body.toSeq:
             result      = scope.closure.eval(progn)
+          return result
+        of "let*": 
+          result = NIL()
+          let
+            bindings    = currentForm.second
+            body        = currentForm.cdr.cdr          
+          var scope = currentEnv.newScope()
+          for binding in bindings.toSeq:
+            let
+              name  = binding.car.sym.name
+              value = scope.eval(binding.second) 
+            scope.interned[name] = value
+            
+          for progn in body.toSeq:
+            result = scope.eval(progn)
           return result
         of "load":
           let
@@ -224,9 +241,8 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           return currentEnv.eachImpl(currentForm.cdr)
         else:
           discard
-          
-      let op = currentEnv.eval(currentForm.car)
-      
+      # Non Special forms :: Lambdas | Builtins | Macros
+      let op = currentEnv.eval(currentForm.car)      
       if op.kind == Builtin:  
         var
           evaluatedArgs: seq[LispObject]
@@ -263,16 +279,12 @@ macroExpand = proc(env: var Env, macroObj: LispObject, rawArgsAst: LispObject): 
   var
     scope  = macroObj.closure.newScope() 
     params = macroObj.params
-    args   = rawArgsAst
-    
+    args   = rawArgsAst    
   while not params.isNil and not args.isNil:
     let name = params.first.sym.name
     scope.intern(name, args.first) 
     params = params.safeCdr
     args   = args.safeCdr
-
- 
-
   result = scope.eval(macroObj.body)
   
 
@@ -283,13 +295,10 @@ proc apply*(env: var Env, fun: LispObject, args: seq[LispObject]): LispObject =
     currentForm: LispObject
     currentEnv: Env
     tailcall: Tailcall
-
-  
-  tailcall = env.evalLambda(fun, args)
+  tailcall    = env.evalLambda(fun, args)
   currentForm = tailcall.form
-  currentEnv = tailcall.closure
-
-
+  currentEnv  = tailcall.closure
+  
   while true:
     if currentForm.kind in {Int, Float, String, BigInt}:
       return currentForm
@@ -314,7 +323,6 @@ qqExpand = proc(env: var Env, form: LispObject): LispObject =
       resultHead = NIL()
       resultTail = NIL()
       current    = currentForm
-
     let head = currentForm.first
     if head.isSymbol and head.sym.name == "unquote":
       return env.eval(current.second) 
@@ -322,10 +330,8 @@ qqExpand = proc(env: var Env, form: LispObject): LispObject =
     while not current.isNil:
       let item = current.first
       
-     
       if not item.isAtom and item.first.isSymbol and item.first.sym.name == "unquote-splicing":
-        let splicedList = env.eval(item.second)
-        
+        let splicedList = env.eval(item.second)  
         if splicedList.isAtom and not splicedList.isNil:
            raise newException(ValueError, "Unquote-splicing result must be a list.")
         if resultHead.isNil:
@@ -333,18 +339,14 @@ qqExpand = proc(env: var Env, form: LispObject): LispObject =
           resultTail = splicedList
         else:
           resultTail.cdr = splicedList
-
-
+          
         while not resultTail.isNil and resultTail.kind == Cons and not resultTail.safeCdr.isNil:
           resultTail = resultTail.safeCdr
-
-
         current = current.safeCdr.safeCdr
-
       else:
         let
           expanded = env.expandRec(item)
-          newForm = cons(expanded, NIL()) 
+          newForm  = cons(expanded, NIL()) 
 
         if resultHead.isNil:
           resultHead = newForm
@@ -352,8 +354,6 @@ qqExpand = proc(env: var Env, form: LispObject): LispObject =
         else:
           resultTail.cdr = newForm
           resultTail     = newForm
-        
-
         current = current.safeCdr
         
     return resultHead
@@ -367,13 +367,11 @@ lookupPlace = proc(env: var Env, form: LispObject): ptr LispObject =
     let symbolName = form.sym.name
     var currentEnv = env
     
-   
     while currentEnv != nil:
       if currentEnv.interned.hasKey(symbolName):
         return addr currentEnv.interned[symbolName]
       currentEnv = currentEnv.parent
     raise newException(ValueError, fmt"Unbound symbol {symbolName} in lookupPlace")
-    
   elif form.kind == Cons:
     let op = form.car
     if op.kind == Symbol:
@@ -404,6 +402,7 @@ evalLambda =
       if argIndex != evaluated.len:
         raise newException(ValueError, "Wrong number of arguments for lambda")
       result = Tailcall(form: lambda.body, closure: lambda.closure)
+      
 ifImpl =
     proc(env: var Env, form: LispObject): LispObject =
       let
@@ -469,8 +468,7 @@ proc registerModule*(env: var Env, name: string, module: Table[string, BuiltinFn
     
 proc newEnv*(): owned Env =
   new result
-  var
-    env = result
+  var env = result
   let
     map: BuiltinFn =
       proc(args: LispObject): LispObject =
@@ -531,25 +529,26 @@ proc newEnv*(): owned Env =
           
     body: BuiltinFn =
       proc(args: LispObject): LispObject =
+        result = NIL()
         let
           lambda = args.first
           body   = lambda.body
         return body
         
-    append: BuiltinFn =
+
+
+    gensym: BuiltinFn =
       proc(args: LispObject): LispObject =
-        var
-          list = args.first.toSeq
-          elem = args.second
-        if elem.kind == Cons:
-          for e in elem.toSeq:
-            list.add e
-          return list.list
-        list.add elem
-        return list.list
+        result = NIL()
+        var prefix = "G"
+        if not args.isNil:
+          if args.kind == Cons and args.car.kind == String:
+            prefix = args.car.str    
+            let symbolName = prefix & $env.ctr
+            env.ctr.inc()
+            result = newSym(symbolName)
+        
 
-
-    
           
    # setf: Builtin =
    #   proc(args: LispObject): LispObject =
@@ -579,7 +578,8 @@ proc newEnv*(): owned Env =
     "second"       : newBuiltin(second,              "second"),
     "putLn"        : newBuiltin(putLn,               "putLn"),
     "body"         : newBuiltin(body,                "body"),
-    "typeOf"       : newBuiltin(typeOf,              "typeOf")
+    "typeOf"       : newBuiltin(typeOf,              "typeOf"),
+    "gensym"       : newBuiltin(gensym,              "gensym")
    }
    
   return result

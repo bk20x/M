@@ -14,7 +14,8 @@ type
     interned*     : Table[string, LispObject]
     loadedModules*: Table[string, Table[string, BuiltinFn]]
     parent*       : Env
- 
+    ctr*          : int
+    
   LispObject* = ref object
     case kind*: LispObjectKind:
       of Symbol:
@@ -51,7 +52,7 @@ func newTable*(): owned LispObject =
   return LispObject(kind: HashTable, table: initTable[LispObject, LispObject]())
 
 func newScope*(parent: Env): owned Env =
-  return Env(interned: initTable[string, LispObject](), loadedModules: initTable[string, Table[string, BuiltinFn]](), parent: parent)
+  return Env(interned: initTable[string, LispObject](), loadedModules: initTable[string, Table[string, BuiltinFn]](), parent: parent, ctr: 0)
   
 func newLambda*(env: Env, params, body: LispObject): owned LispObject =
   return LispObject(kind: Lambda, params: params, body: body, closure: env.newScope())
