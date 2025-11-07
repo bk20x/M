@@ -12,11 +12,14 @@
       (factorial (- n 1) (* acc n)))))
 
 
+
+(open Strings)
+
 (load "record.m")
 
-(define rec (
+(define boben (
   makeRecord (
    (Name "Boben")
    (Bober "Cerny")
-   (speak (-> () (putLn ($ rec Name))))
+   (sayHi (-> (n) (putLn (fmt "Hello $! im $ " n ($ boben Name)))))
 )))

@@ -187,7 +187,6 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
               currentForm = elseBranch.car 
             else:
               return NIL() 
-          
           continue 
         of "define":
           # (define name val)
@@ -196,7 +195,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             val  = currentEnv.eval(currentForm.third)
           currentEnv.intern(name.sym.name, val)
           return name
-        of "defmacro":
+        of "macro":
           let
             name      = currentForm.second
             params    = currentForm.third

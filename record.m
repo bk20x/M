@@ -10,16 +10,16 @@
         (putHash key val result)))
     result)))
 
-(defmacro makeRecord (pairs)
+(macro makeRecord (pairs)
  `(recordImpl ',pairs))
 
-(defmacro >> (obj message args)
+(macro >> (obj message args)
  `((getHash ',message ,obj) ,@args))
 
-(defmacro $ (obj field)
+(macro $ (obj field)
  `(getHash ',field ,obj))
 
-(defmacro $<- (obj field value)
+(macro $<- (obj field value)
   `(putHash ',field ,value ,obj))
 
 
