@@ -1,4 +1,4 @@
-(open Strings)
+(open Strings Tables)
 
 (define joinStr (-> (lines)
  (let ((result ""))
@@ -9,8 +9,6 @@
 
 
 (define length (-> (xs) (let ((acc 0)) (each (x xs) (setf acc (+ acc 1))) acc)))
-
-
 
 
 (define range (-> (lo hi)
@@ -25,6 +23,7 @@
 
 
 
-
-
-
+(defmacro make-record (pairs)
+  (let ((insertions (map pairs (-> (pair) `(putHash ',(car pair) ,(car (cdr pair)) result)))))
+    `(let ((result (makeTable)))
+      ,@(append insertions 'result)))))

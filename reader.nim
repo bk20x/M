@@ -18,7 +18,6 @@ proc expect*(p: var Reader, kind: TokenKind) =
 
 var parseSexp*: (var Reader) -> LispObject
 
-
 proc parseAtom*(p: var Reader): LispObject =
   case p.lexer.curTok.kind:
   of tkSym:
@@ -37,15 +36,27 @@ proc parseAtom*(p: var Reader): LispObject =
     let str = newStr p.lexer.curTok.str
     p.advance
     return str
-  of tkQuote:
+  of tkBquote: 
+    p.advance 
+    let quoted_form = parseSexp(p) 
+    return cons(newSym "backquote", cons(quoted_form, NIL()))
+  of tkComma: 
+    p.advance 
+    let unquoted_form = parseSexp(p) 
+    return cons(newSym "unquote", cons(unquoted_form, NIL()))
+  of tkSplice:
+    p.advance 
+    let spliced_form = parseSexp(p) 
+    return cons(newSym "unquote-splicing", cons(spliced_form, NIL()))
+  of tkQuote: 
     p.advance
     let quoted = parseSexp(p)
-    return cons(newSym "quote", quoted)
+    return cons(newSym "quote", cons(quoted, NIL()))
   of tkEof:
     raise newException(IndexDefect, "Unexpected end of token stream")
   else:
     raise newException(ValueError, fmt"Invalid token kind for atom: {$p.lexer.curTok.kind}")
-
+    
 proc parseList*(p: var Reader): LispObject =
   p.expect tkLpar 
   result = NIL() 

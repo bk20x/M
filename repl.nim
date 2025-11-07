@@ -1,5 +1,5 @@
 import std/[strformat, rdstdin]
-import lispobject, environment
+import environment
 import reader
 
 

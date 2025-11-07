@@ -41,7 +41,12 @@ proc lookupValue(env: var Env, symbolName: string): LispObject =
     currentEnv = currentEnv.parent
   raise newException(ValueError, fmt"Unbound symbol: {symbolName}")
 
-
+func safeCdr(obj: LispObject): LispObject =
+  if obj.kind == Cons:
+    return obj.cdr
+  else:
+    return NIL()
+    
 var ## All used in `eval`
   lookupPlace: proc(env: var Env, form: LispObject): ptr LispObject
   ifImpl:      proc(env: var Env, form: LispObject): LispObject
@@ -49,8 +54,8 @@ var ## All used in `eval`
   eachImpl:    proc(env: var Env, form: LispObject): LispObject
   evalLambda:  proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): Tailcall {.inline.}
   load:        proc(env: var Env, form: LispObject): LispObject
-
-
+  qqExpand:    proc(env: var Env, form: LispObject): LispObject
+  macroExpand: proc(env: var Env, form: LispObject, rawArgsList: LispObject): LispObject
 proc readAllSexprs(filename: string): seq[LispObject] =
   result = @[]
   var s = newFileStream(filename, fmRead)
@@ -88,8 +93,8 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
     currentForm = initialForm
     currentEnv  = env
     tailcall: Tailcall 
-
-  while true: 
+  while true:
+    # Self evaluating Objects
     if currentForm.kind in {Int, Float, String, BigInt}:
       return currentForm
     elif currentForm.isNil:
@@ -99,7 +104,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
     elif currentForm.kind == Cons:
       if currentForm.isNil:
         return LispObject(kind: Nil)
-        
+      # Special Forms
       if currentForm.car.kind == Symbol:
         case currentForm.car.sym.name:
         of "->":
@@ -109,8 +114,10 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             lambda = currentEnv.newLambda(params, body)
           return lambda
         of "quote":
-          let quoted = currentForm.cdr
+          let quoted = currentForm.second
           return quoted
+        of "backquote":
+          return env.qqExpand(currentForm.second)
         of "eval":
           let
             form   = currentForm.second
@@ -165,13 +172,20 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
               return NIL() 
           
           continue 
-          
         of "define":
           # (define name val)
           let
             name = currentForm.second
             val  = currentEnv.eval(currentForm.third)
           currentEnv.intern(name.sym.name, val)
+          return name
+        of "defmacro":
+          let
+            name      = currentForm.second
+            params    = currentForm.third
+            body      = currentForm.cdr.cdr.cdr.car
+            macroForm = currentEnv.newMacro(params, body)
+          currentEnv.intern(name.sym.name, macroForm)
           return name
         of "setf":
           let
@@ -211,35 +225,56 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
         else:
           discard
           
+      let op = currentEnv.eval(currentForm.car)
       
-      var
-        evaluated: seq[LispObject] = @[]
-        args = currentForm.cdr
-      while not args.isNil:
-        evaluated.add: currentEnv.eval: args.car
-        args = args.cdr # goto next Cons cell
-
-              
-      # eval the operator
-      let op = currentEnv.eval: currentForm.car
-        
-
       if op.kind == Builtin:  
-        let consArgs = evaluated.list
+        var
+          evaluatedArgs: seq[LispObject]
+          args = currentForm.cdr
+        while not args.isNil:
+          evaluatedArgs.add: currentEnv.eval(args.car)
+          args = args.cdr 
+        let consArgs = evaluatedArgs.list
         return op.fun(consArgs)
-        
-
       elif op.kind == Lambda:
-        tailcall = currentEnv.evalLambda(op, evaluated)
+        var
+          evaluatedArgs: seq[LispObject]
+          args = currentForm.cdr
+        while not args.isNil:
+          evaluatedArgs.add: currentEnv.eval(args.car)
+          args = args.cdr
+          
+        tailcall = currentEnv.evalLambda(op, evaluatedArgs)
         currentForm = tailcall.form
         currentEnv  = tailcall.closure
         continue 
-        
+      elif op.kind == Macro:
+        let
+          rawArgs     = currentForm.cdr # get the arguments unevaluated
+          expanded    = currentEnv.macroExpand(op, rawArgs) # := the new AST
+        currentForm   = expanded 
+        continue 
       else:
-        raise newException(ValueError, fmt"Can't apply non-function object: {op} OF {$op.kind}")
+        raise newException(ValueError, fmt"Can't apply non-function/macro object: {op} OF {$op.kind}")
     else:
       raise newException(ValueError,   fmt"Can't eval object: {currentForm} OF {$currentForm.kind}")
 
+macroExpand = proc(env: var Env, macroObj: LispObject, rawArgsAst: LispObject): LispObject =
+  var
+    scope  = macroObj.closure.newScope() 
+    params = macroObj.params
+    args   = rawArgsAst
+    
+  while not params.isNil and not args.isNil:
+    let name = params.first.sym.name
+    scope.intern(name, args.first) 
+    params = params.safeCdr
+    args   = args.safeCdr
+
+ 
+
+  result = scope.eval(macroObj.body)
+  
 
 
 proc apply*(env: var Env, fun: LispObject, args: seq[LispObject]): LispObject =
@@ -269,6 +304,61 @@ proc apply*(env: var Env, fun: LispObject, args: seq[LispObject]): LispObject =
         return ret.retVal
     else:
       raise newException(ValueError, fmt"Can't eval object in `apply`;; scrutinee: {currentForm}")
+
+
+qqExpand = proc(env: var Env, form: LispObject): LispObject =
+  proc expandRec(env: var Env, currentForm: LispObject): LispObject =
+    if currentForm.isAtom:
+      return currentForm
+    var
+      resultHead = NIL()
+      resultTail = NIL()
+      current    = currentForm
+
+    let head = currentForm.first
+    if head.isSymbol and head.sym.name == "unquote":
+      return env.eval(current.second) 
+
+    while not current.isNil:
+      let item = current.first
+      
+     
+      if not item.isAtom and item.first.isSymbol and item.first.sym.name == "unquote-splicing":
+        let splicedList = env.eval(item.second)
+        
+        if splicedList.isAtom and not splicedList.isNil:
+           raise newException(ValueError, "Unquote-splicing result must be a list.")
+        if resultHead.isNil:
+          resultHead = splicedList
+          resultTail = splicedList
+        else:
+          resultTail.cdr = splicedList
+
+
+        while not resultTail.isNil and resultTail.kind == Cons and not resultTail.safeCdr.isNil:
+          resultTail = resultTail.safeCdr
+
+
+        current = current.safeCdr.safeCdr
+
+      else:
+        let
+          expanded = env.expandRec(item)
+          newForm = cons(expanded, NIL()) 
+
+        if resultHead.isNil:
+          resultHead = newForm
+          resultTail = newForm
+        else:
+          resultTail.cdr = newForm
+          resultTail     = newForm
+        
+
+        current = current.safeCdr
+        
+    return resultHead
+  return env.expandRec(form)
+
 
 
 
@@ -419,7 +509,7 @@ proc newEnv*(): owned Env =
         let cell = args.first
         return if cell.kind == Cons: cell.cdr else: NIL()
         
-    list: BuiltinFn =
+    listt: BuiltinFn =
       proc(args: LispObject): LispObject =
         return args
 
@@ -457,7 +547,10 @@ proc newEnv*(): owned Env =
           return list.list
         list.add elem
         return list.list
-      
+
+
+    
+          
    # setf: Builtin =
    #   proc(args: LispObject): LispObject =
    #     echo args
@@ -478,7 +571,7 @@ proc newEnv*(): owned Env =
     "append"       : newBuiltin(append,              "append"),
     "map"          : newBuiltin(map,                 "map"),
     "filter"       : newBuiltin(filter,              "filter"),
-    "list"         : newBuiltin(list,                "list"),
+    "list"         : newBuiltin(listt,                "list"),
     "cons"         : newBuiltin(cons,                "cons"),
     "car"          : newBuiltin(car,                 "car"),
     "cdr"          : newBuiltin(cdr,                 "cdr"),

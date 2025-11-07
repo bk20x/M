@@ -1,5 +1,4 @@
-import std/tables, macros
-import lispobject
+import std/tables
 import Strings
 import Math
 import SysIo

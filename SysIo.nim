@@ -1,4 +1,4 @@
-import std/[tables, sequtils, sugar, os, osproc]
+import std/[tables, sequtils, sugar, osproc]
 import lispobject
 
 

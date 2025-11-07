@@ -3,7 +3,7 @@ import lispobject
 
 type
   TokenKind* = enum
-    tkLpar, tkRpar, tkDot, tkQuote, tkSym, tkFloat,tkInt, tkStr, tkEof
+    tkLpar, tkRpar, tkDot, tkQuote, tkSym, tkFloat,tkInt, tkStr, tkEof, tkBquote, tkComma, tkSplice
 
   Token* = object
     case kind*: TokenKind:
@@ -11,7 +11,6 @@ type
       of tkStr: str*:   string
       of tkFloat: flt*: float
       of tkInt:  intv*: int
-      
       else: discard
 
   MLexr* = object of BaseLexer
@@ -21,7 +20,7 @@ type
     
 
 const
-  SymbolChars = {'a'..'z', 'A'..'Z', '0'..'9', '*', '+', '-', '!', '?', '_', '>', '<', '$', '|', '='}
+  SymbolChars = {'a'..'z', 'A'..'Z', '0'..'9', '*', '+', '-', '!', '?', '_', '>', '<', '$', '|', '=', '@', ',', '`'}
 
 proc initLexer*(lx: var MLexr, input: Stream, filename: string = "") =
   lexbase.open(lx, input)
@@ -39,15 +38,14 @@ proc parseSym*(lx: var MLexr, start: int) =
   lx.curTok = Token(kind: tkSym, sym: newSym(symStr).sym)
 
 proc parseNumber*(lx: var MLexr, start: int) =
-  var pos = lx.bufpos
-  var isFloat = false
+  var
+    pos = lx.bufpos
+    isFloat = false
   
   while pos < lx.buf.len and (lx.buf[pos].isDigit or lx.buf[pos] == '.'):
     if lx.buf[pos] == '.':
       isFloat = true
     inc pos
-    
-
   if pos < lx.buf.len and lx.buf[pos] in {'e', 'E'}:
     isFloat = true
     inc pos
@@ -83,11 +81,11 @@ proc getTok*(lx: var MLexr) =
   lx.skip()
 
   let start = lx.bufpos
-  
-
-  case lx.buf[lx.bufpos]:
-  of '\0':
+  if lx.buf[lx.bufpos] == '\0':
     lx.curTok = Token(kind: tkEof)
+    return
+    
+  case lx.buf[lx.bufpos]:
   of '(':
     inc lx.bufpos
     lx.curTok = Token(kind: tkLpar)
@@ -100,6 +98,17 @@ proc getTok*(lx: var MLexr) =
   of '\'':
     inc lx.bufpos
     lx.curTok = Token(kind: tkQuote)
+  of '`':
+    inc lx.bufpos
+    lx.curTok = Token(kind: tkBquote)
+  of ',':
+    if (lx.bufpos + 1 < lx.buf.len) and (lx.buf[lx.bufpos + 1] == '@'):
+      inc lx.bufpos 
+      inc lx.bufpos 
+      lx.curTok = Token(kind: tkSplice)
+    else:
+      inc lx.bufpos
+      lx.curTok = Token(kind: tkComma)
   of '"':
     lx.parseStr()
   of '0'..'9':

@@ -3,7 +3,7 @@ import bigints
 
 type
   LispObjectKind* = enum
-    Nil, Int, Float, BigInt, Symbol, String, Cons, Builtin, Lambda, HashTable
+    Nil, Int, Float, BigInt, Symbol, String, Cons, Builtin, Lambda, Macro, HashTable
     
   SymbolRef* = ref object
     name*: string
@@ -32,7 +32,7 @@ type
       of Builtin:
         fun*: BuiltinFn
         name*: string
-      of Lambda:
+      of Lambda, Macro:
         params*, body*: LispObject
         closure*: Env
       of HashTable:
@@ -55,7 +55,10 @@ func newScope*(parent: Env): owned Env =
   
 func newLambda*(env: Env, params, body: LispObject): owned LispObject =
   return LispObject(kind: Lambda, params: params, body: body, closure: env.newScope())
-    
+  
+func newMacro*(env: Env, params, body: LispObject): owned LispObject =
+  return LispObject(kind: Macro, params: params, body: body, closure: env.newScope())
+  
 func newBuiltin*(fun: BuiltinFn, name: string): owned LispObject {.inline.} =
   return LispObject(kind: Builtin, fun: fun, name: name)
                     
@@ -128,6 +131,8 @@ proc `$`*(s: LispObject): string =
     return fmt"<#BUILTIN {s.name}>"
   of Lambda:
     return fmt"<#LAMBDA {s.params} {s.body}>"
+  of Macro:
+    return fmt"<#MACRO {s.params} {s.body}>"
   of HashTable:
     return $s.table
   of Float:
@@ -204,7 +209,7 @@ proc `==`*(x, y: LispObject): bool =
 
     return currX.isNil and currY.isNil
     
-  of Builtin, Lambda, HashTable:
+  of Builtin, Lambda, HashTable, Macro:
     return (cast[pointer](addr x) == cast[pointer](addr y))
 
 
@@ -233,5 +238,5 @@ func hash*(obj: LispObject): Hash =
       h = h !& hash(curr.car) 
       curr = curr.cdr
     return h
-  of Builtin, Lambda, HashTable:
+  of Builtin, Lambda, HashTable, Macro:
     return hash(cast[pointer](addr obj)) 
