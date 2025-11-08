@@ -85,7 +85,6 @@ proc stringFormat(args: LispObject): LispObject =
     vars      = args.cdr.toSeq 
     cursor    = 0
     i         = 0
-
   while i < formatStr.len:
     if formatStr[i] == '$':
       if i + 1 < formatStr.len and formatStr[i+1] == '$':
@@ -104,6 +103,14 @@ proc stringFormat(args: LispObject): LispObject =
     discard
   return newStr(str)
 
+
+proc substring(args: LispObject): LispObject =
+  let
+    str   = args.first
+    start = args.second
+    endp  = args.third
+  return newStr(str.str[start.intVal..endp.intVal])
+  
 const
   Module* = toTable {
     "strReplace" : BuiltinFn strReplace,
@@ -114,5 +121,6 @@ const
     "strContains": BuiltinFn strContains,
     "splitLines" : BuiltinFn splitLines,
     "fmt"        : BuiltinFn stringFormat,
-    "strip"      : BuiltinFn strip
+    "strip"      : BuiltinFn strip,
+    "substring" : BuiltinFn substring
   }

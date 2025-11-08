@@ -38,22 +38,22 @@ proc parseAtom*(p: var Reader): LispObject =
     return str
   of tkBquote: 
     p.advance 
-    let quoted_form = parseSexp(p) 
-    return cons(newSym "backquote", cons(quoted_form, NIL()))
+    let quoted = parseSexp(p) 
+    return cons(newSym "backquote", cons(quoted, NIL()))
   of tkComma: 
     p.advance 
-    let unquoted_form = parseSexp(p) 
-    return cons(newSym "unquote", cons(unquoted_form, NIL()))
+    let unquoted = parseSexp(p) 
+    return cons(newSym "unquote", cons(unquoted, NIL()))
   of tkSplice:
     p.advance 
-    let spliced_form = parseSexp(p) 
-    return cons(newSym "unquote-splicing", cons(spliced_form, NIL()))
+    let spliced = parseSexp(p) 
+    return cons(newSym "unquote-splicing", cons(spliced, NIL()))
   of tkQuote: 
     p.advance
     let quoted = parseSexp(p)
     return cons(newSym "quote", cons(quoted, NIL()))
   of tkEof:
-    raise newException(IndexDefect, "Unexpected end of token stream")
+    raise newException(ValueError, "Unexpected end of token stream")
   else:
     raise newException(ValueError, fmt"Invalid token kind for atom: {$p.lexer.curTok.kind}")
     

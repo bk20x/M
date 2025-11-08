@@ -1,4 +1,4 @@
-import std/[tables, sequtils, sugar, osproc]
+import std/[tables, sequtils, sugar, osproc, os]
 import lispobject
 
 
@@ -31,11 +31,28 @@ proc runCmdCode(args: LispObject): LispObject =
     res     = execCmdEx(command)
   return cons(newInt(res.exitCode), newStr(res.output))
 
+proc listDir(args: LispObject): LispObject =
+  let
+    dirName = args.first
+  var
+    files: seq[string]
+  for f in walkDir(dirName.str):
+    files.add f.path
+  return files.map(ln => newStr(ln)).list
 
+proc isFile(args: LispObject): LispObject =
+  let
+    filename = args.first
+  if filename.str.fileExists:
+    return T()
+  return NIL()
+  
 const
   Module* = toTable {
     "readFile"  : BuiltinFn SysIo.readFile,
     "readLines" : BuiltinFn SysIo.readLines,
     "writeFile" : BuiltinFn SysIo.writeFile,
-    "cmd!"      : BuiltinFn SysIo.runCmdCode
+    "listDir"   : BuiltinFn SysIo.listDir,
+    "cmd!"      : BuiltinFn SysIo.runCmdCode,
+    "isFile?"   : BuiltinFn SysIo.isFile
   }

@@ -11,15 +11,13 @@
        acc
       (factorial (- n 1) (* acc n)))))
 
+(open SysIo Strings Tables)
 
 
-(open Strings)
+(define dirRecord (-> (dir)
+ (let ((result (makeTable)))
+  (each (path (filter (listDir dir) isFile?))
+   (putHash path (readFile path) result))
+  result)))
 
-(load "record.m")
 
-(define boben (
-  makeRecord (
-   (Name "Boben")
-   (Bober "Cerny")
-   (sayHi (-> (n) (putLn (fmt "Hello $! im $ " n ($ boben Name)))))
-)))

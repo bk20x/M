@@ -475,10 +475,17 @@ proc newEnv*(): owned Env =
           list = args.first.toSeq
           fun  = args.second
         result = NIL()
+        if fun.kind == Builtin:
+          for i in countdown(list.high, 0):
+            let
+              new = fun.fun(cons(list[i], NIL()))
+            result = cons(new, result)
+          return result
         for i in countdown(list.high, 0):
           let
             new = env.apply(fun, @[list[i]])
           result = cons(new, result)
+        return result
           
     filter: BuiltinFn =
       proc(args: LispObject): LispObject =
@@ -486,12 +493,20 @@ proc newEnv*(): owned Env =
           list = args.first.toSeq
           fun  = args.second
         result = NIL()
+        if fun.kind == Builtin:
+          for i in countdown(list.high, 0):
+            let
+              new = fun.fun(cons(list[i], NIL()))
+            if new.isT:
+              result = cons(list[i], result)
+          return result
         for i in countdown(list.high, 0):
           let
             new = env.apply(fun, @[list[i]])
           if new.isT:
             result = cons(list[i], result)
-            
+        return result
+        
     cons: BuiltinFn =
       proc(args: LispObject): LispObject =
         return cons(args.first, args.second)
