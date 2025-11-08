@@ -1,4 +1,4 @@
-(open Tables)
+(open Tables Strings)
 
 
 
@@ -14,9 +14,15 @@
   (fn pairs)
  `',result))
 
+(macro $ (object field)
+ `(getHash ',field ,object))
 
-(macro defrecord (name record)
- `(define ,name (makeRecord ,record)))
+(macro $<- (field val object)
+ `(putHash ',field ,val ,object))
+
+(macro >> (obj message args)
+ `((getHash ',message ,obj) ,@args))
+
 
 (macro withKeys (binding body)
  (let ((k     (car binding))
@@ -25,18 +31,11 @@
     ,body)))
 
 
-(defrecord boben
- ((Name "Jaquarius Ebenezer Boben Junior III")
-  (Bobenized t)))
-
-
-(withKeys (key boben)
- (putLn (getHash key boben)))
-
-
-
-(macro >> (obj message args)
- `((getHash ',message ,obj) ,@args))
+(define Boben
+ (makeRecord
+  ((Name "Jaquarius Ebenezer Boben Jr. III")
+   (Id   92)
+   (sayHi (-> (name) (putLn (fmt "Yoben $! my name $" name ($ Boben Name))))))))
 
 
 

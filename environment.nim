@@ -551,27 +551,19 @@ proc newEnv*(): owned Env =
         
 
 
-    gensym: BuiltinFn =
-      proc(args: LispObject): LispObject =
-        result = NIL()
-        var prefix = "G"
-        if not args.isNil:
-          if args.kind == Cons and args.car.kind == String:
-            prefix = args.car.str    
-            let symbolName = prefix & $env.ctr
-            env.ctr.inc()
-            result = newSym(symbolName)
+    #gensym: BuiltinFn =
+    #  proc(args: LispObject): LispObject =
+    #    result = NIL()
+    #    var prefix = "G"
+    #    if not args.isNil:
+    #      if args.kind == Cons and args.car.kind == String:
+    #        prefix = args.car.str    
+    #        let symbolName = prefix & $env.ctr
+    #        env.ctr.inc()
+    #        result = newSym(symbolName)
         
 
-          
-   # setf: Builtin =
-   #   proc(args: LispObject): LispObject =
-   #     echo args
-   #     let
-   #       sym = args.first
-   #       val = args.second
-   #     env.interned[sym.sym.name] = val
-   #     return val
+
   result.loadedModules = Stdlib
   result.interned = toTable {
     "t"            : T(),
@@ -592,8 +584,8 @@ proc newEnv*(): owned Env =
     "second"       : newBuiltin(second,              "second"),
     "putLn"        : newBuiltin(putLn,               "putLn"),
     "body"         : newBuiltin(body,                "body"),
-    "typeOf"       : newBuiltin(typeOf,              "typeOf"),
-    "gensym"       : newBuiltin(gensym,              "gensym")
+    "typeOf"       : newBuiltin(typeOf,              "typeOf")
+
    }
    
   return result
