@@ -11,13 +11,6 @@
        acc
       (factorial (- n 1) (* acc n)))))
 
-(open SysIo Strings Tables)
 
-
-(define dirRecord (-> (dir)
- (let ((result (makeTable)))
-  (each (path (filter (listDir dir) isFile?))
-   (putHash path (readFile path) result))
-  result)))
 
 
