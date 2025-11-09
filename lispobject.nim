@@ -129,11 +129,11 @@ proc `$`*(s: LispObject): string =
     if s.sym.name == "t": return s.sym.name.toUpper
     return s.sym.name
   of Builtin:
-    return fmt"<#BUILTIN {s.name}>"
+    return fmt"#<Builtin {s.name}>"
   of Lambda:
-    return fmt"<#LAMBDA {s.params} {s.body}>"
+    return fmt"#<Lambda {s.params} {s.body}>"
   of Macro:
-    return fmt"<#MACRO {s.params} {s.body}>"
+    return fmt"#<Macro {s.params} {s.body}>"
   of HashTable:
     return $s.table
   of Float:
