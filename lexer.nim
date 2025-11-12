@@ -38,10 +38,13 @@ proc parseSym*(lx: var MLexr, start: int) =
   lx.curTok = Token(kind: tkSym, sym: newSym(symStr).sym)
 
 proc parseNumber*(lx: var MLexr, start: int) =
-  var
-    pos = lx.bufpos
+  var 
+    pos = start 
     isFloat = false
-  
+    
+  if lx.buf[pos] in {'+', '-'}:
+    inc pos
+
   while pos < lx.buf.len and (lx.buf[pos].isDigit or lx.buf[pos] == '.'):
     if lx.buf[pos] == '.':
       isFloat = true
@@ -53,16 +56,17 @@ proc parseNumber*(lx: var MLexr, start: int) =
       inc pos
     while pos < lx.buf.len and lx.buf[pos].isDigit:
       inc pos
-  let numStr = lx.buf.substr(start, pos - 1)
-  lx.bufpos = pos
+      
+  let numStr = lx.buf.substr(start, pos - 1) 
+  lx.bufpos = pos 
+  
   try:
     if isFloat:
       lx.curTok = Token(kind: tkFloat, flt: parseFloat(numStr))
     else:
       lx.curTok = Token(kind: tkInt, intv: parseInt(numStr))
   except:
-    raise newException(ValueError, fmt"Invalid number: {numStr} at {lx.bufpos}")
-
+    raise newException(ValueError, fmt"Invalid number: {numStr} at {start}")
 
 proc parseStr*(lx: var MLexr) =
   var str = ""
@@ -80,7 +84,8 @@ proc parseStr*(lx: var MLexr) =
 proc getTok*(lx: var MLexr) =
   lx.skip()
 
-  let start = lx.bufpos
+ 
+  let start = lx.bufpos 
   if lx.buf[lx.bufpos] == '\0':
     lx.curTok = Token(kind: tkEof)
     return
@@ -112,7 +117,7 @@ proc getTok*(lx: var MLexr) =
   of '"':
     lx.parseStr()
   of '0'..'9':
-    lx.parseNumber(start)
+    lx.parseNumber(start) 
   of '+', '-':
     if (lx.bufpos + 1 < lx.buf.len) and lx.buf[lx.bufpos + 1].isDigit:
       lx.parseNumber(start)
