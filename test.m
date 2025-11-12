@@ -21,3 +21,6 @@
  ((x 0) (y 0)))
 
 
+(define counter
+ (let ((x 0))
+  (-> () (setf x (+ x 1)))))

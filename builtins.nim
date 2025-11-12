@@ -1,4 +1,4 @@
-import std/[strformat, strutils, options]
+import std/[strformat, strutils]
 import lispobject
 import bigints
 
@@ -191,6 +191,8 @@ proc lispEquals*(args: LispObject): LispObject =
         areEqual = (x.str == y.str)
     elif x.kind == Symbol and y.kind == Symbol:
         areEqual = (x.sym.name == y.sym.name)
+    elif x.kind == Builtin and y.kind == Builtin:
+      areEqual = x.fun == y.fun
     elif x == y: 
         areEqual = true
     if areEqual:

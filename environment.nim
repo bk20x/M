@@ -10,7 +10,7 @@ type
   ReturnException* = ref object of CatchableError
     retVal*: LispObject
 
-  Tailcall* = object
+  Thunk* = object
     form: LispObject
     closure: Env
 
@@ -47,16 +47,17 @@ func safeCdr(obj: LispObject): LispObject =
   else:
     return NIL()
     
-var ## All used in `eval`
+var ## All used in `eval`, these are forward declared;; see implementations below `eval`
   lookupPlace: proc(env: var Env, form: LispObject): ptr LispObject
   ifImpl:      proc(env: var Env, form: LispObject): LispObject
   doTimes:     proc(env: var Env, form: LispObject): LispObject
   eachImpl:    proc(env: var Env, form: LispObject): LispObject
-  evalLambda:  proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): Tailcall {.inline.}
+  evalLambda:  proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): Thunk {.inline.}
   load:        proc(env: var Env, form: LispObject): LispObject
   qqExpand:    proc(env: var Env, form: LispObject): LispObject
   macroExpand: proc(env: var Env, form: LispObject, rawArgsList: LispObject): LispObject
   
+
 proc readAllSexprs(filename: string): seq[LispObject] =
   result = @[]
   var s = newFileStream(filename, fmRead)
@@ -87,14 +88,11 @@ proc readAllSexprs(filename: string): seq[LispObject] =
 
   s.close()
 
-
-
-
 proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
   var
     currentForm = initialForm
     currentEnv  = env
-    tailcall: Tailcall 
+    tailcall: Thunk
   while true:
     # Self evaluating Objects
     if currentForm.kind in {Int, Float, String, BigInt}:
@@ -300,7 +298,7 @@ proc apply*(env: var Env, fun: LispObject, args: seq[LispObject]): LispObject =
   var 
     currentForm: LispObject
     currentEnv: Env
-    tailcall: Tailcall
+    tailcall: Thunk
   tailcall    = env.evalLambda(fun, args)
   currentForm = tailcall.form
   currentEnv  = tailcall.closure
@@ -394,7 +392,7 @@ lookupPlace = proc(env: var Env, form: LispObject): ptr LispObject =
 
 
 evalLambda =
-    proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): Tailcall {.inline.} =
+    proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): Thunk {.inline.} =
       var
         lambda = form
         params = lambda.params
@@ -407,7 +405,7 @@ evalLambda =
         inc argIndex
       if argIndex != evaluated.len:
         raise newException(ValueError, "Wrong number of arguments for lambda")
-      result = Tailcall(form: lambda.body, closure: lambda.closure)
+      result = Thunk(form: lambda.body, closure: lambda.closure)
       
 ifImpl =
     proc(env: var Env, form: LispObject): LispObject =
