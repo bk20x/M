@@ -27,11 +27,11 @@
 (define xs (map (filter (range 1 1000) (-> (x) (= (mod x 2) 0))) (-> (x) (fact x 1))))
 
 
-(define fun (-> () (putLn "Hey everybody!")))
+(define fun (-> () (echo "Hey everybody!")))
 
 (fun)
 
-(setq (body fun) (putLn "Goodbye!"))
+(setq (body fun) (echo "Goodbye!"))
 
 (fun)
 

@@ -531,7 +531,7 @@ proc newEnv*(): owned Env =
         return args
 
 
-    putLn: BuiltinFn =
+    lecho: BuiltinFn =
       proc(args: LispObject): LispObject =
         case args.car.kind:
         of String:
@@ -640,7 +640,7 @@ proc newEnv*(): owned Env =
     "cdr"          : newBuiltin(cdr,                 "cdr"),
     "first"        : newBuiltin(first,               "first"),
     "second"       : newBuiltin(second,              "second"),
-    "putLn"        : newBuiltin(putLn,               "putLn"),
+    "echo"         : newBuiltin(lecho,               "echo"),
     "body"         : newBuiltin(body,                "body"),
     "lparams"      : newBuiltin(lparams,             "lparams"),
     "typeOf"       : newBuiltin(typeOf,              "typeOf"),
