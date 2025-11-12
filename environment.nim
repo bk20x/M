@@ -109,11 +109,18 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
       # Special Forms
       if currentForm.car.kind == Symbol:
         case currentForm.car.sym.name:
+        of "interned-symbols":
+          result = lispobject.newTable()
+          for k, v in currentEnv.interned:
+            let key = newSym(k)
+            result.table[key] = v
+          return result
         of "->":
           let
             params = currentForm.second
             body   = currentForm.third
-            lambda = currentEnv.newLambda(params, body)
+
+          let lambda = currentEnv.newLambda(params, body)          
           return lambda
         of "quote":
           let quoted = currentForm.second
@@ -135,13 +142,13 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           let
             bindings    = currentForm.second
             body        = currentForm.cdr.cdr
-          var scope     = currentEnv.newLambda(NIL(),body)
-          scope.closure = currentEnv.newScope()
+
+          var scope = currentEnv.newScope()
           for binding in bindings.toSeq:
             let name    = binding.car.sym.name
-            scope.closure.interned[name] = currentEnv.eval(binding.second)
+            scope.interned[name] = currentEnv.eval(binding.second)
           for progn in body.toSeq:
-            result      = scope.closure.eval(progn)
+            result      = scope.eval(progn)
           return result
         of "let*": 
           result = NIL()
@@ -259,7 +266,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           evaluatedArgs.add: currentEnv.eval(args.car)
           args = args.cdr
           
-        tailcall = currentEnv.evalLambda(op, evaluatedArgs)
+        tailcall    = currentEnv.evalLambda(op, evaluatedArgs)
         currentForm = tailcall.form
         currentEnv  = tailcall.closure
         continue 
@@ -379,8 +386,9 @@ lookupPlace = proc(env: var Env, form: LispObject): ptr LispObject =
         listVal = env.eval: listForm
       if listVal.kind == Cons:
         return addr listVal.car
-    raise newException(ValueError, "Invalid  place: " & $form.kind)
 
+    else:
+      return addr form
   else:
     raise newException(ValueError, "Invalid place: " & $form.kind)
 
@@ -391,7 +399,6 @@ evalLambda =
         lambda = form
         params = lambda.params
         argIndex = 0
-      lambda.closure = env.newScope()
       while not params.isNil:
         if argIndex >= evaluated.len:
           raise newException(ValueError, "Wrong number of arguments for lambda")
@@ -548,9 +555,61 @@ proc newEnv*(): owned Env =
           lambda = args.first
           body   = lambda.body
         return body
+
+    setb: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        result = NIL()
+        let
+          lambda = args.first
+          new    = args.second
+        lambda.body = new
         
+    setp: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        result = NIL()
+        let
+          lambda = args.first
+          new    = args.second
+        lambda.params = new
+      
+    clone: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        result = NIL()
+        let
+          obj = args.first
+        case obj.kind:
+        of HashTable:
+          result = lispobject.newTable()
+          result.table = obj.table
+          return result
+        of Int:
+          result = newInt(obj.intVal)
+          return result
+        of Float:
+          result = newFloat(obj.floatVal)
+          return result
+        of BigInt:
+          result = newBigInt(0)
+          result.bigNum = obj.bigNum
+          return result
+        of Lambda:
+          let scope = Env(interned: obj.closure.interned)
+          return newLambda(scope, obj.params, obj.body)
+        of Macro:
+          let scope = Env(interned: obj.closure.interned)
+          return newMacro(scope, obj.params, obj.body)
+        of String:
+          return newStr(obj.str)
+        of Symbol:
+          return newSym(obj.sym.name)
+        else:
+          return obj
 
-
+    lparams: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        let
+          lambda = args.first
+        return lambda.params
     #gensym: BuiltinFn =
     #  proc(args: LispObject): LispObject =
     #    result = NIL()
@@ -573,6 +632,7 @@ proc newEnv*(): owned Env =
     "mod"          : newBuiltin(lispMod,             "mod"),
     ">"            : newBuiltin(lispGreaterThan,     ">"),
     "="            : newBuiltin(lispEquals,          "="),
+    "!="           : newBuiltin(lispUneql,           "!="),
     "append"       : newBuiltin(append,              "append"),
     "map"          : newBuiltin(map,                 "map"),
     "filter"       : newBuiltin(filter,              "filter"),
@@ -584,7 +644,11 @@ proc newEnv*(): owned Env =
     "second"       : newBuiltin(second,              "second"),
     "putLn"        : newBuiltin(putLn,               "putLn"),
     "body"         : newBuiltin(body,                "body"),
-    "typeOf"       : newBuiltin(typeOf,              "typeOf")
+    "lparams"      : newBuiltin(lparams,             "lparams"),
+    "typeOf"       : newBuiltin(typeOf,              "typeOf"),
+    "clone"        : newBuiltin(clone,               "clone"),
+    "setb"         : newBuiltin(setb,                "setb"),
+    "setp"         : newBuiltin(setp,                "setp")
 
    }
    

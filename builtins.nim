@@ -1,4 +1,4 @@
-import std/[strformat, strutils]
+import std/[strformat, strutils, options]
 import lispobject
 import bigints
 
@@ -157,7 +157,9 @@ proc lispMod*(args: LispObject): LispObject =
     let
       xVal = x.toBigInt()
       yVal = y.toBigInt()
-      res  = xVal mod yVal
+    if xVal == initBigInt(0) or yVal == initBigInt(0):
+      raise newException(ValueError, "Cant divide by 0!!!")
+    let res  = xVal mod yVal
 
     return LispObject(kind: BigInt, bigNum: res)
 
@@ -196,6 +198,9 @@ proc lispEquals*(args: LispObject): LispObject =
     else:
       return NIL()
 
+proc lispUneql*(args: LispObject): LispObject =
+  return if lispEquals(args).isNil: T() else: NIL()
+  
 proc append*(args: LispObject): LispObject =
   result = NIL()
   var

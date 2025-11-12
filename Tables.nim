@@ -1,4 +1,4 @@
-import std/tables
+import std/[tables]
 import lispobject
 
 
@@ -34,7 +34,9 @@ func tableKeys(args: LispObject): LispObject =
     keys.add: k
   return keys.list
 
-func tableValues(args: LispObject): LispObject =
+proc tableValues(args: LispObject): LispObject =
+  if not args.len == 1:
+    raise newException(ValueError, "`tableValues` expects 1 argument but got " & $args)
   let
     table = args.first
   var
@@ -42,12 +44,31 @@ func tableValues(args: LispObject): LispObject =
   for v in table.table.values:
     values.add: v
   return values.list
-  
+
+proc hasKey(args: LispObject): LispObject =
+  if not args.len == 2:
+    raise newException(ValueError, "`hasKey` expects 2 arguments but got " & $args)
+  let
+    key   = args.first
+    table = args.second
+  return if table.table.hasKey key: T() else: NIL()
+
+proc delete(args: LispObject): LispObject =
+  if not args.len == 2:
+    raise newException(ValueError, "`hasKey` expects 2 arguments but got " & $args)
+  let
+    key    = args.first
+    table  = args.second
+  let exists =  table.table.hasKey(key)
+  table.table.del(key)
+  return if exists: T() else: NIL()
 const
   Module* = toTable {
     "makeTable"  : BuiltinFn makeTable,
     "getHash"    : BuiltinFn getHash,
     "putHash"    : BuiltinFn putHash,
     "tableKeys"  : BuiltinFn tableKeys,
-    "tableValues": BuiltinFn tableValues
+    "tableValues": BuiltinFn tableValues,
+    "hasKey"     : BuiltinFn hasKey,
+    "rmkey"      : BuiltinFn delete
   }

@@ -13,4 +13,11 @@
 
 
 
+(load "record.m")
+
+
+
+(@Record Vector2
+ ((x 0) (y 0)))
+
 

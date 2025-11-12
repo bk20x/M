@@ -1,11 +1,9 @@
 
 
-(macro progn (forms)
+(macro do (forms)
  `(let (())
    ,@forms))
 
 
-(define val (progn (
-  (putLn "Yoben")
-  (putLn "Boben")
-  (+ 5 20))))
+(define replace (-> (xs old new) (map xs (-> (x) (if (= x old) new x)))))
+
