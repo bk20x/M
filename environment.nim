@@ -177,10 +177,13 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
                 currentEnv.intern(name, val)
           return T()
         of "return":
-           let
-             valForm = currentForm.cdr.car
-             val     = currentEnv.eval(valForm)
-           raise ReturnException(retVal: val)
+            try:
+              let
+                valForm = currentForm.cdr.car
+                val     = currentEnv.eval(valForm)
+              raise ReturnException(retVal: val)
+            except ReturnException as r:
+              return r.retVal
         of "if":
           # (if (cond) (then) (else))
           let cond = currentEnv.eval(currentForm.second)
