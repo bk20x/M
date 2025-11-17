@@ -20,7 +20,7 @@ type
     
 
 const
-  SymbolChars = {'a'..'z', 'A'..'Z', '0'..'9', '*', '+', '-', '!', '?', '_', '>', '<', '$', '|', '=', '@', ',', '`'}
+  SymbolChars = {'a'..'z', 'A'..'Z', '0'..'9', '*', '+', '-', '!', '?', '_', '>', '<', '$', '|', '=', '@', ',', '`', '{', '}', ':'}
 
 proc initLexer*(lx: var MLexr, input: Stream, filename: string = "") =
   lexbase.open(lx, input)
@@ -71,25 +71,36 @@ proc parseNumber*(lx: var MLexr, start: int) =
 proc parseStr*(lx: var MLexr) =
   var str = ""
   inc lx.bufpos
-  while true:
-    if lx.buf[lx.bufpos] == '"':
+  while lx.buf[lx.bufpos] != '\0':
+    let c = lx.buf[lx.bufpos]
+    if c == '"':
       inc lx.bufpos
       break
-    if lx.buf[lx.bufpos] == '\0':
-      raise newException(ValueError, fmt"Unterminated string at {lx.bufpos}")
-    str.add: lx.buf[lx.bufpos]
-    inc lx.bufpos
+    elif c == '\\':
+      # Found an escape seq
+      inc lx.bufpos # Move past the backslash
+      let escapedChar = lx.buf[lx.bufpos]
+      case escapedChar
+      of '"': str.add('"')
+      of '\\': str.add('\\')
+      of 'n': str.add('\n')
+      of 'r': str.add('\r')
+      of 't': str.add('\t')
+      else:
+        str.add(escapedChar)
+    else:
+      str.add(c)
+    inc lx.bufpos 
+  if lx.buf[lx.bufpos] == '\0' and lx.buf[lx.bufpos - 1] != '"':
+    raise newException(ValueError, fmt"Unterminated string at {lx.bufpos}")
   lx.curTok = Token(kind: tkStr, str: str)
 
 proc getTok*(lx: var MLexr) =
   lx.skip()
-
- 
   let start = lx.bufpos 
   if lx.buf[lx.bufpos] == '\0':
     lx.curTok = Token(kind: tkEof)
-    return
-    
+    return    
   case lx.buf[lx.bufpos]:
   of '(':
     inc lx.bufpos

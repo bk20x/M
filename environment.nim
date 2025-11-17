@@ -14,12 +14,10 @@ type
     form: LispObject
     closure: Env
 
-proc lookupRef*(env: Env, symName: string): ptr LispObject =
-  if env.interned.hasKey(symName):
-    return addr env.interned[symName]
-  else:
-    raise newException(ValueError, fmt"Unbound reference {symName}")
-    
+
+const SelfEvaluatingTypes = {Int, Float, String, BigInt, AlienObj, HashTable}
+                            
+
 proc intern*(env: var Env, sym: string, val: LispObject) =
   if sym in env.interned:
     echo fmt"WARNING: Redefining {sym} in the current scope"
@@ -30,8 +28,6 @@ func wrapModule*(module: Table[string, BuiltinFn]): Table[string, LispObject] =
   result = initTable[string, LispObject]()
   for k, v in module:
     result[k] = newBuiltin(v, k)
-
-  
 
 proc lookupValue(env: var Env, symbolName: string): LispObject =
   var currentEnv = env
@@ -61,13 +57,12 @@ var ## All used in `eval`, these are forward declared;; see implementations belo
 proc readAllSexprs(filename: string): seq[LispObject] =
   result = @[]
   var s = newFileStream(filename, fmRead)
+  defer: close s
   if s == nil:
-    quit("Could not open file: " & filename)
-
+    raise newException(ValueError, "Could not open file: " & filename)
   var
     buffer = ""
     parenCount = 0
-
   while not s.atEnd:
     let c = s.readChar()
     case c:
@@ -86,7 +81,6 @@ proc readAllSexprs(filename: string): seq[LispObject] =
     else:
       buffer.add(c)
 
-  s.close()
 
 proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
   var
@@ -95,7 +89,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
     tailcall: Thunk
   while true:
     # Self evaluating Objects
-    if currentForm.kind in {Int, Float, String, BigInt}:
+    if currentForm.kind in SelfEvaluatingTypes:
       return currentForm
     elif currentForm.isNil:
       return LispObject(kind: Nil)
@@ -117,7 +111,6 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           let
             params = currentForm.second
             body   = currentForm.third
-
           let lambda = currentEnv.newLambda(params, body)          
           return lambda
         of "quote":
@@ -140,7 +133,6 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           let
             bindings    = currentForm.second
             body        = currentForm.cdr.cdr
-
           var scope = currentEnv.newScope()
           for binding in bindings.toSeq:
             let name    = binding.car.sym.name
@@ -265,8 +257,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           args = currentForm.cdr
         while not args.isNil:
           evaluatedArgs.add: currentEnv.eval(args.car)
-          args = args.cdr
-          
+          args = args.cdr      
         tailcall    = currentEnv.evalLambda(op, evaluatedArgs)
         currentForm = tailcall.form
         currentEnv  = tailcall.closure
@@ -307,7 +298,7 @@ proc apply*(env: var Env, fun: LispObject, args: seq[LispObject]): LispObject =
   currentEnv  = tailcall.closure
   
   while true:
-    if currentForm.kind in {Int, Float, String, BigInt}:
+    if currentForm.kind in SelfEvaluatingTypes:
       return currentForm
     elif currentForm.isNil:
       return LispObject(kind: Nil)
@@ -605,7 +596,12 @@ proc newEnv*(): owned Env =
           return newSym(obj.sym.name)
         else:
           return obj
-
+    nd: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        let
+          a = args.first
+          b = args.second
+        return if a.isT and b.isT: T() else: NIL()
     lparams: BuiltinFn =
       proc(args: LispObject): LispObject =
         let
@@ -632,7 +628,10 @@ proc newEnv*(): owned Env =
     "*"            : newBuiltin(lispMultiply,        "*"),
     "mod"          : newBuiltin(lispMod,             "mod"),
     ">"            : newBuiltin(lispGreaterThan,     ">"),
+    "=>"           : newBuiltin(lispGreaterThanEq,   "=>"),
     "="            : newBuiltin(lispEquals,          "="),
+    "<"            : newBuiltin(lispLessThan,        "<"),
+    "<="           : newBuiltin(lispLessThanEq,      "<="),
     "!="           : newBuiltin(lispUneql,           "!="),
     "append"       : newBuiltin(append,              "append"),
     "map"          : newBuiltin(map,                 "map"),
@@ -643,6 +642,7 @@ proc newEnv*(): owned Env =
     "cdr"          : newBuiltin(cdr,                 "cdr"),
     "first"        : newBuiltin(first,               "first"),
     "second"       : newBuiltin(second,              "second"),
+    "and"          : newBuiltin(nd,                  "and"),
     "echo"         : newBuiltin(lecho,               "echo"),
     "body"         : newBuiltin(body,                "body"),
     "lparams"      : newBuiltin(lparams,             "lparams"),

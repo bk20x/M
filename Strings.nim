@@ -122,5 +122,5 @@ const
     "splitLines" : BuiltinFn splitLines,
     "fmt"        : BuiltinFn stringFormat,
     "strip"      : BuiltinFn strip,
-    "substring" : BuiltinFn substring
+    "substring"  : BuiltinFn substring
   }

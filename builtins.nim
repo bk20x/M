@@ -21,20 +21,17 @@ proc lispAdd*(args: LispObject): LispObject =
     var
       isFloat   = false
       isBigInt  = false
-
     for num in nums:
       if num.kind == Float: isFloat = true; break
-      elif num.kind == BigInt: isBigInt = true
-
+      elif num.kind == LispObjectKind.BigInt: isBigInt = true
     if isFloat:
       var floatSum  = 0.0
       for num in nums:
         if   num.kind == Int:    floatSum += num.intVal.float
         elif num.kind == Float:  floatSum += num.floatVal
-        elif num.kind == BigInt: floatSum += num.bigNum.toFloat
+        elif num.kind == LispObjectKind.BigInt: floatSum += num.bigNum.toFloat
         else: raise newException(ValueError, fmt"`+` got {num.kind} but expected numeric types")
       return newFloat(floatSum)
-
     elif isBigInt:
       var bigIntSum = nums[0].toBigInt() 
       for i in 1..<nums.len:
@@ -48,9 +45,7 @@ proc lispAdd*(args: LispObject): LispObject =
             intSum += num.intVal # This might overflow
           else:
             raise newException(ValueError, fmt"`+` got {num.kind} but expected Int")
-        
         return newInt(intSum)
-
       except OverflowDefect:
         var bigIntSum = initBigInt(0)
         for num in nums:
@@ -59,7 +54,7 @@ proc lispAdd*(args: LispObject): LispObject =
 
 proc lispSub*(args: LispObject): LispObject =
   if args.len != 2:
-    raise newException(ValueError, "`-` expects exactly 2 arguments")
+    raise newException(ValueError, fmt"`-` expects 2 args of Int | Float | BigInt but got {args}")
   let
     x = args.first
     y = args.second
@@ -69,8 +64,7 @@ proc lispSub*(args: LispObject): LispObject =
       yVal = if y.kind == Float: y.floatVal elif y.kind == Int: y.intVal.float else: y.bigNum.toFloat
       res  = xVal - yVal
     return newFloat(res)
-    
-  elif x.kind == BigInt or y.kind == BigInt:
+  elif x.kind == LispObjectKind.BigInt or y.kind == LispObjectKind.BigInt:
     let
       xVal = x.toBigInt()
       yVal = y.toBigInt()
@@ -87,7 +81,7 @@ proc lispSub*(args: LispObject): LispObject =
 
 proc lispMultiply*(args: LispObject): LispObject =
     if args.len != 2:
-      raise newException(ValueError, "`*` expects exactly 2 arguments")
+      raise newException(ValueError, fmt"`*` expects 2 args of Int | Float | BigInt but got {args}")
     let
       x = args.first
       y = args.second
@@ -97,13 +91,12 @@ proc lispMultiply*(args: LispObject): LispObject =
         yVal = if y.kind == Float: y.floatVal elif y.kind == Int: y.intVal.float else: y.bigNum.toFloat
         res  = xVal * yVal
       return newFloat(res)
-    elif x.kind == BigInt or y.kind == BigInt:
+    elif x.kind == LispObjectKind.BigInt or y.kind == LispObjectKind.BigInt:
       let
         xVal = x.toBigInt()
         yVal = y.toBigInt()
         res  = xVal * yVal
       return LispObject(kind: BigInt, bigNum: res)
-
     else:
       try:
         let res = x.intVal * y.intVal
@@ -116,44 +109,39 @@ proc lispMultiply*(args: LispObject): LispObject =
 
 proc lispGreaterThan*(args: LispObject): LispObject =
     if args.len != 2:
-      raise newException(ValueError, "`>` expects 2 arguments")
+      raise newException(ValueError, fmt"`>` expects 2 args of Int | Float | BigInt but got {args}")
     let
       x = args.first
       y = args.second
-      
     var isGreater: bool
-
     if x.kind == Float or y.kind == Float:
       let
         xVal    = if x.kind == Float: x.floatVal elif x.kind == Int: x.intVal.float else: x.bigNum.toFloat
         yVal    = if y.kind == Float: y.floatVal elif y.kind == Int: y.intVal.float else: y.bigNum.toFloat
       isGreater = xVal > yVal
-
-    elif x.kind == BigInt or y.kind == BigInt:
+    elif x.kind == LispObjectKind.BigInt or y.kind == LispObjectKind.BigInt:
       let
         xVal    = x.toBigInt()
         yVal    = y.toBigInt()
       isGreater = xVal > yVal
-
     else:
-      isGreater = x.intVal > y.intVal
-      
+      isGreater = x.intVal > y.intVal      
     if isGreater:
       return T()
     else:
       return NIL()
 
+proc lispLessThan*(args: LispObject): LispObject =
+  return if lispGreaterThan(args).isT: NIL() else: T()
 
 proc lispMod*(args: LispObject): LispObject =
     if args.len != 2:
-      raise newException(ValueError, "`mod` expects 2 arguments")
+      raise newException(ValueError, fmt"`mod` expects 2 args of Int | Float | BigInt but got {args}")
     let
       x = args.first
       y = args.second
-
     if not (x.kind in {Int, BigInt}) or not (y.kind in {Int, BigInt}):
        raise newException(ValueError, fmt"`mod` expects Int or BigInt but got {x.kind} and {y.kind}")
-       
     let
       xVal = x.toBigInt()
       yVal = y.toBigInt()
@@ -165,6 +153,8 @@ proc lispMod*(args: LispObject): LispObject =
 
 
 proc lispEquals*(args: LispObject): LispObject =
+    if args.len != 2:
+      raise newException(ValueError, fmt"`=` expects 2 args but got {args}")
     let
       x = args.first 
       y = args.second
@@ -179,12 +169,11 @@ proc lispEquals*(args: LispObject): LispObject =
           xVal = if x.kind == Float: x.floatVal elif x.kind == Int: x.intVal.float else: x.bigNum.toFloat
           yVal = if y.kind == Float: y.floatVal elif y.kind == Int: y.intVal.float else: y.bigNum.toFloat
         areEqual = (xVal == yVal)
-      elif x.kind == BigInt or y.kind == BigInt:
+      elif x.kind == LispObjectKind.BigInt or y.kind == LispObjectKind.BigInt:
         let
           xVal = x.toBigInt()
           yVal = y.toBigInt()
         areEqual = (xVal == yVal)
-
       else:
         areEqual = (x.intVal == y.intVal)
     elif x.kind == String and y.kind == String:
@@ -200,6 +189,13 @@ proc lispEquals*(args: LispObject): LispObject =
     else:
       return NIL()
 
+
+proc lispLessThanEq*(args: LispObject): LispObject =
+  return if (lispLessThan(args).isT) or (lispEquals(args).isT): T() else: NIL()
+
+proc lispGreaterThanEq*(args: LispObject): LispObject =
+  return if (lispGreaterThan(args).isT) or (lispEquals(args).isT): T() else: NIL()
+  
 proc lispUneql*(args: LispObject): LispObject =
   return if lispEquals(args).isNil: T() else: NIL()
   

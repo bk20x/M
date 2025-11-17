@@ -11,18 +11,11 @@
        acc
       (factorial (- n 1) (* acc n)))))
 
-
-
-(load "record.m")
-
-(@Record Vector2
- ((x 0) (y 0)))
-
-(define velocity (new Vector2 ((x 150) (y 150))))
-
 (define counter
- (let ((x 0))
-  (-> () (setf x (+ x 1)))))
+ (let ((x 0)) (-> () (setf x (+ x 1)))))
+
+(echo "Hello World!")
+
 
 
 
