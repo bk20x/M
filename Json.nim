@@ -8,7 +8,7 @@ type
 
 method describe*(a: JsonObject): string = $a.data
   
-func newJsonObject(data: JsonNode): owned JsonObject =
+func newJsonObject(data: JsonNode): owned JsonObject {.inline.} =
   return JsonObject(tname: "JsonObject", data: data)
 
 proc parseFile(args: LispObject): LispObject =
@@ -77,13 +77,25 @@ proc toTable(args: LispObject): LispObject =
     table[newStr key] = newAlien(newJsonObject field)
   return lispobject.newTable(table)
     
-    
+
+proc field(args: LispObject): LispObject =
+  result = NIL()
+  if not args.len == 2 or not (args.first.kind == String and args.second.kind == AlienObj):
+    raise newException(ValueError, fmt"`field` is of type String -> JsonObject -> JsonObject but got {args}")
+  let
+    key = args.first.str
+    obj = JsonObject(args.second.alien)
+  if not (obj.data.kind == JObject):
+    raise newException(ValueError, "`field` expects a JsonObject of Kind JObject")
+  return if obj.data.contains(key): newAlien(newJsonObject(obj.data[key])) else: NIL()
+  
 const
   Module* = toTable {
     "parseFile": BuiltinFn Json.parseFile,
     "parseJson": BuiltinFn Json.parseJson,
     "listJson" : BuiltinFn Json.jsonToList,
     "unbox"    : BuiltinFn Json.unbox,
+    "field"    : BuiltinFn Json.field,
     "jsonKind" : BuiltinFn Json.nodeKind,
     "toTable"  : BuiltinFn Json.toTable
   }

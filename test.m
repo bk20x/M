@@ -1,3 +1,4 @@
+
 (define length (-> (xs) (let ((acc 0)) (each (x xs) (setf acc (+ acc 1))) acc)))
 
 
@@ -11,11 +12,17 @@
        acc
       (factorial (- n 1) (* acc n)))))
 
-(define counter
- (let ((x 0)) (-> () (setf x (+ x 1)))))
+(define counter (let ((x 0)) (-> () (setf x (+ x 1)))))
 
 (echo "Hello World!")
 
+
+
+(open Json)
+
+(define jnums (parseJson "[1, 2, 3, 4, 5, 6]"))
+
+(define nums (map (listJson jnums) unbox))
 
 
 
