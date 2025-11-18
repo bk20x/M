@@ -115,7 +115,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           return lambda
         of "quote":
           let quoted = currentForm.second
-          return quoted
+          return quoted          
         of "backquote":
           return env.qqExpand(currentForm.second)
         of "eval":
@@ -607,6 +607,18 @@ proc newEnv*(): owned Env =
         let
           lambda = args.first
         return lambda.params
+
+    unintern: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        result = NIL()
+        let sym  = args.first
+        if not (sym.kind == Symbol):
+          raise newException(ValueError, "`unintern` is of type Symbol -> T | () but got {args}")
+        let name = sym.sym.name
+        if env.interned.hasKey(name):
+          env.interned.del(name)
+          return T()
+          
     #gensym: BuiltinFn =
     #  proc(args: LispObject): LispObject =
     #    result = NIL()
@@ -642,6 +654,7 @@ proc newEnv*(): owned Env =
     "cdr"          : newBuiltin(cdr,                 "cdr"),
     "first"        : newBuiltin(first,               "first"),
     "second"       : newBuiltin(second,              "second"),
+    "unintern"     : newBuiltin(unintern,            "unintern"),
     "and"          : newBuiltin(nd,                  "and"),
     "echo"         : newBuiltin(lecho,               "echo"),
     "body"         : newBuiltin(body,                "body"),

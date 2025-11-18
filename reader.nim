@@ -64,7 +64,7 @@ proc parseList*(p: var Reader): LispObject =
   var l: seq[LispObject]
   while p.lexer.curTok.kind != tkRpar:
     if p.lexer.curTok.kind == tkEof:
-      raise newException(ValueError, "Unclosed list at end of input")
+      raise newException(ValueError, "Unmatched close parenthesis")
     l.add: parseSexp(p)
     
   p.expect tkRpar

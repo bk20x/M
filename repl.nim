@@ -26,7 +26,7 @@ while true:
         last   = result 
         stdout.write("=> "); stdout.styledWriteLine(fgGreen, styleBright,   fmt"{result}")
   except CatchableError as e:
-    stdout.styledWriteLine(fgRed, styleBright, fmt"!! Something happened but its okay {(e.name, e.msg)}")
+    stdout.styledWriteLine(fgRed, styleBright, fmt"Error: {e.msg}")
     continue
     
 disableTrueColors()
