@@ -13,63 +13,67 @@ proc toString(obj: LispObject): string =
 
 
 proc strReplace(args: LispObject): LispObject =
+  if not args.len == 3 or not (args.first.kind == String and args.second.kind == String and args.third.kind == String):
+    raise newException(ValueError, fmt"`strReplace` is of type String -> String -> String -> String but got {args}")
   let
     first  = args.first
     second = args.second
     third  = args.third
-  if not ((first.kind == String) or not (second.kind == String) or not (third.kind == String)):
-    raise newException(ValueError, fmt"`strReplace` is of type String -> String -> String -> String but got {first} as {first.kind} and {second} as {second.kind} and {third} as {third.kind}")
-  else:
-    return newStr(first.str.replace(second.str, third.str))
+  return newStr(first.str.replace(second.str, third.str))
 
 proc strConcat(args: LispObject): LispObject =
+  if not args.len == 2 or not (args.first.kind == String and args.second.kind == String):
+    raise newException(ValueError, fmt"`strConcat` is of type String -> String -> String but got {args}")
   let
     first  = args.first
     second = args.second
-  if not ((first.kind  == String) or not (second.kind == String)):
-    raise newException(ValueError, fmt"`strConcat` is of type String -> String -> String but got {first} as {first.kind} and {second} as {second.kind}")
-  else:
-    return newStr(first.str & second.str)
+  return newStr(first.str & second.str)
     
 proc strContains(args: LispObject): LispObject =
+  if not args.len == 2 or not (args.first.kind == String and args.second.kind == String):
+    raise newException(ValueError, fmt"`strConcat` is of type String -> String -> Bool but got {args}")
   let
     first  = args.first
     second = args.second
-  if not((first.kind == String) or not (second.kind == String)):
-    raise newException(ValueError, fmt"`strConcat` is of type String -> String -> Bool but got {first} as {first.kind} and {second} as {second.kind}")
   if first.str.contains(second.str):
     return T()
   return NIL()
 
 proc strLen(args: LispObject): LispObject =
-  if not (args.first.kind == String):
-    raise newException(ValueError, fmt"`strLen` is of type String -> String but got {$args.first.kind}")
+  if not args.len == 1 or not (args.first.kind == String):
+    raise newException(ValueError, fmt"`strLen` is of type String -> String but got {args}")
   else:
     return newInt(args.first.str.len)
 
 proc strDowncase(args: LispObject): LispObject =
-  if not (args.first.kind == String):
-    raise newException(ValueError, fmt"`toLower` is of type String -> String but got {$args.first.kind}")
+  if not args.len == 1 or not (args.first.kind == String):
+    raise newException(ValueError, fmt"`toLower` is of type String -> String but got {args}")
   else:
     return newStr(args.first.str.toLower)
 
 
 proc strUpcase(args: LispObject): LispObject =
-  if not (args.first.kind == String):
-    raise newException(ValueError, fmt"`toUpper` is of type String -> String but got {$args.first.kind}")
+  if not args.len == 1 or not (args.first.kind == String):
+    raise newException(ValueError, fmt"`toUpper` is of type String -> String but got {args}")
   else:
     return newStr(args.first.str.toUpper)
 
 proc splitLines(args: LispObject): LispObject =
+  if not args.len == 1 or not (args.first.kind == String):
+    raise newException(ValueError, fmt"`splitLines` is of type String -> String list but got {args}")
   return args.first.str.splitLines.map(ln => newStr ln).list
 
 proc strip(args: LispObject): LispObject =
+  if not args.len >= 1:
+    raise newException(ValueError, fmt"`strip` is of type String -> Bool -> !!optional!! Bool -> String")
   if args.len > 1:
     let
       str      = args.first.str
       leading  = if args.second.isT(): true else: false   
-      trailing = if args.third.isT() : true else: false
-    return newStr(str.strip(leading, trailing))
+    var trailing: bool = true
+    if args.len > 2:
+      trailing = if args.third.isT(): true else: false
+    return newStr(str.strip(leading = leading, trailing = trailing))
   else:
     let str = args.first.str
     return newStr(str.strip)
@@ -78,7 +82,7 @@ proc strip(args: LispObject): LispObject =
 
 proc stringFormat(args: LispObject): LispObject =
   if args.len < 1 or args.first.kind != String:
-    raise newException(ValueError, "`strFormat` expects a format string as its first argument.")
+    raise newException(ValueError, "`strFormat` is of type String -> Varargs[T] -> String but got {args}")
   var
     str       = ""
     formatStr = args.first.str
@@ -105,6 +109,8 @@ proc stringFormat(args: LispObject): LispObject =
 
 
 proc substring(args: LispObject): LispObject =
+  if not args.len == 3 and not (args.first.kind == String and args.second.kind == Int and args.third.kind == Int):
+    raise newException(ValueError, fmt"`substring` is of type String -> Int -> Int -> String but got {args}")
   let
     str   = args.first
     start = args.second

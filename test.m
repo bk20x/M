@@ -1,6 +1,9 @@
+(open SysIo Strings)
 
 (define length (-> (xs) (let ((acc 0)) (each (x xs) (setf acc (+ acc 1))) acc)))
 
+(macro defun (name params body)
+`(define ,name (-> ,params ,body)))
 
 (define range (-> (lo hi)
  (if (> lo hi) ()
@@ -14,15 +17,10 @@
 
 (define counter (let ((x 0)) (-> () (setf x (+ x 1)))))
 
-(echo "Hello World!")
 
 
+(define files (map (listDir ".") (-> (f) (strReplace f "./" ""))))
 
-(open Json)
-
-(define jnums (parseJson "[1, 2, 3, 4, 5, 6]"))
-
-(define nums (map (listJson jnums) unbox))
-
+(define fileContents (map (filter files isFile?) readFile))
 
 

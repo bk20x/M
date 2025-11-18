@@ -1,4 +1,4 @@
-import std/[tables, sequtils, sugar, osproc, os]
+import std/[tables, sequtils, sugar, osproc, os, strformat]
 import lispobject
 
 
@@ -6,17 +6,17 @@ import lispobject
 
 proc readFile(args: LispObject): LispObject =
   if not args.len == 1 and not (args.first.kind == String):
-    raise newException(ValueError, "`readFile` is of type String -> String but got {args}")
+    raise newException(ValueError, fmt"`readFile` is of type String -> String but got {args}")
   return newStr(readFile args.first.str)
 
 proc readLines(args: LispObject): LispObject =
   if not args.len == 2 and not (args.first.kind == String and args.second.kind == Int):
-    raise newException(ValueError, "`readLines` is of type String -> Int -> String list but got {args}")
+    raise newException(ValueError, fmt"`readLines` is of type String -> Int -> String list but got {args}")
   return readLines(args.first.str, args.second.intVal).map(ln => newStr ln).list
 
 proc writeFile(args: LispObject): LispObject =
   if not args.len == 2 and not (args.first.kind == String and args.second.kind == String):
-    raise newException(ValueError, "`writeFile` is of type String -> String -> () but got {args}")
+    raise newException(ValueError, fmt"`writeFile` is of type String -> String -> () but got {args}")
   let
     filename = args.first.str
     content  = args.second.str
@@ -25,7 +25,7 @@ proc writeFile(args: LispObject): LispObject =
 
 proc runCmdCode(args: LispObject): LispObject =
   if not args.len == 1 and not (args.first.kind  == String):
-    raise newException(ValueError, "`cmd!` is of type String -> Int but gut {args}")
+    raise newException(ValueError, fmt"`cmd!` is of type String -> Int but gut {args}")
   let
     command = args.first.str
     res     = execCmdEx(command)
@@ -33,28 +33,42 @@ proc runCmdCode(args: LispObject): LispObject =
 
 proc listDir(args: LispObject): LispObject =
   if not args.len == 1 and not (args.first.kind == String):
-    raise newException(ValueError, "`listDir` is of type String -> String list but got {args}")
-  let
-    dirName = args.first
-  var
-    files: seq[string]
+    raise newException(ValueError, fmt"`listDir` is of type String -> String list but got {args}")
+  let dirName = args.first
+  var files: seq[string]
   for f in walkDir(dirName.str):
     files.add f.path
   return files.map(ln => newStr(ln)).list
 
 proc isFile(args: LispObject): LispObject =
-  let
-    filename = args.first
+  if not args.len == 1 or not (args.first.kind == String):
+    raise newException(ValueError, fmt"`isFile` is of type String -> Bool but got {args}")
+  let filename = args.first
   if filename.str.fileExists:
     return T()
   return NIL()
+
+proc getEnv(args: LispObject): LispObject =
+  if not args.len == 1 or not (args.first.kind == String):
+    raise newException(ValueError, fmt"`getEnv` is of type String -> String but got {args}")
+  let env = getEnv(args.first.str)
+  return if env == "": NIL() else: newStr(env)
+
+proc getFileSize(args: LispObject): LispObject =
+  if not args.len == 1 or not (args.first.kind == String):
+    raise newException(ValueError, fmt"`getFileSize` is of type String -> Int but got {args}")
+  let filename = args.first.str
+  return if fileExists filename: newInt getFileSize(filename) else: NIL()
+  
   
 const
   Module* = toTable {
-    "readFile"  : BuiltinFn SysIo.readFile,
-    "readLines" : BuiltinFn SysIo.readLines,
-    "writeFile" : BuiltinFn SysIo.writeFile,
-    "listDir"   : BuiltinFn SysIo.listDir,
-    "cmd!"      : BuiltinFn SysIo.runCmdCode,
-    "isFile?"   : BuiltinFn SysIo.isFile
+    "readFile"    : BuiltinFn SysIo.readFile,
+    "readLines"   : BuiltinFn SysIo.readLines,
+    "writeFile"   : BuiltinFn SysIo.writeFile,
+    "listDir"     : BuiltinFn SysIo.listDir,
+    "cmd!"        : BuiltinFn SysIo.runCmdCode,
+    "isFile?"     : BuiltinFn SysIo.isFile,
+    "getEnv"      : BuiltinFn SysIo.getEnv,
+    "getFileSize" : BuiltinFn SysIo.getFileSize
   }
