@@ -13,7 +13,7 @@ func newJsonObject(data: JsonNode): owned JsonObject {.inline.} =
 
 proc parseFile(args: LispObject): LispObject =
   result = NIL()
-  if not args.len == 1 or not (args.first.kind == String):
+  if args.len != 1 or not (args.first.kind == String):
     raise newException(ValueError, fmt"`parseFile` is of type String -> JsonObject but got {args}")
   let
     filename = args.first.str
@@ -22,7 +22,7 @@ proc parseFile(args: LispObject): LispObject =
 
 proc parseJson(args: LispObject): LispObject =
   result = NIL()
-  if not args.len == 1 or not (args.first.kind == String):
+  if args.len != 1 or not (args.first.kind == String):
     raise newException(ValueError, fmt"`parseJson` is of type String -> JsonObject but got {args}")
   let
     jsonStr = args.first.str
@@ -31,7 +31,7 @@ proc parseJson(args: LispObject): LispObject =
     
 proc jsonToList(args: LispObject): LispObject =
   result = NIL()
-  if not args.len == 1 or not (args.first.kind == AlienObj):
+  if args.len != 1 or not (args.first.kind == AlienObj):
     raise newException(ValueError, fmt"`listJson` is of type JsonObject !JArray! -> JsonObject list but got {args}")
   let obj = JsonObject(args.first.alien)
   if obj.data.kind != JArray:
@@ -41,7 +41,7 @@ proc jsonToList(args: LispObject): LispObject =
     
 proc unbox(args: LispObject): LispObject =
   result = NIL()
-  if not args.len == 1 or not (args.first.kind == AlienObj):
+  if args.len != 1 or not (args.first.kind == AlienObj):
     raise newException(ValueError, fmt"`unbox` is of type JsonObject !∉ {{JObject, JArray}}! -> T but got {args}")
   let obj = JsonObject(args.first.alien)    
   case obj.data.kind:
@@ -60,7 +60,7 @@ proc unbox(args: LispObject): LispObject =
     
 proc nodeKind(args: LispObject): LispObject =
   result = NIL()
-  if not args.len == 1 or not (args.first.kind == AlienObj):
+  if args.len != 1 or not (args.first.kind == AlienObj):
     raise newException(ValueError, fmt"`nodeKind` is of type JsonObject -> Symbol but got {args}")
   let obj = JsonObject(args.first.alien)
   return newSym($obj.data.kind)
@@ -68,7 +68,7 @@ proc nodeKind(args: LispObject): LispObject =
 proc toTable(args: LispObject): LispObject =
   result = NIL()
   var table: Table[LispObject, LispObject]
-  if not args.len == 1 or not (args.first.kind == AlienObj):
+  if args.len != 1 or not (args.first.kind == AlienObj):
     raise newException(ValueError, fmt"`toTable` is of type JsonObject !JObject! -> HashTable but got {args}")
   let obj = JsonObject(args.first.alien)
   if not (obj.data.kind == JObject):
@@ -80,7 +80,7 @@ proc toTable(args: LispObject): LispObject =
 
 proc field(args: LispObject): LispObject =
   result = NIL()
-  if not args.len == 2 or not (args.first.kind == String and args.second.kind == AlienObj):
+  if args.len != 2 or not (args.first.kind == String and args.second.kind == AlienObj):
     raise newException(ValueError, fmt"`field` is of type String -> JsonObject -> JsonObject but got {args}")
   let
     key = args.first.str

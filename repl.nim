@@ -1,33 +1,24 @@
-import std/[strformat, rdstdin, tables, terminal]
+import std/[strformat, rdstdin, terminal]
 import environment, reader, lispobject
 
 
 
-var env = newEnv()
-
-var
-  ln: string
-  last: LispObject
-
-
-enableTrueColors()
-while true:
-  try:
-    let form = readLineFromStdin("#> ", ln)
-    if not form: break
-    if ln.len > 0:
-      if ln == "#interned?":
-        for k, v in env.interned:
-          echo fmt"{k} := {v}"
-      else:
+proc runRepl*(env: var Env) = 
+  var ln: string
+  enableTrueColors()
+  while true:
+    try:
+      let form = readLineFromStdin("#> ", ln)
+      if not form: break
+      if ln.len > 0:
         let
           parsed = parse ln
           result = env.eval parsed
-        last   = result 
+      
         stdout.write("=> "); stdout.styledWriteLine(fgGreen, styleBright,   fmt"{result}")
-  except CatchableError as e:
-    stdout.styledWriteLine(fgRed, styleBright, fmt"Error: {e.msg}")
-    continue
+    except CatchableError as e:
+      stdout.styledWriteLine(fgRed, styleBright, fmt"Error: {e.msg}")
+      continue
     
-disableTrueColors()
-stdout.resetAttributes()
+    disableTrueColors()
+    stdout.resetAttributes()

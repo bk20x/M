@@ -115,23 +115,23 @@ func len*(list: LispObject): int =
     return 1 + len(list.cdr)
     
 func first*(list: LispObject): owned LispObject =
-  if not list.len >= 1: return NIL()
+  if list.len < 1: return NIL()
   return list.car
 
 func second*(list: LispObject): owned LispObject =
-  if not list.len >= 2: return NIL()
+  if list.len < 2: return NIL()
   return list.cdr.car 
   
 func third*(list: LispObject): owned LispObject =
-  if not list.len >= 3: return NIL()
+  if list.len < 3: return NIL()
   return list.cdr.cdr.car
 
 func fourth*(list: LispObject): owned LispObject =
-  if not list.len >= 4: return NIL()
+  if list.len < 4: return NIL()
   return list.cdr.cdr.cdr.car 
 
 func fifth*(list: LispObject): owned LispObject =
-  if not list.len >= 5: return NIL()
+  if (list.len < 5): return NIL()
   return list.cdr.cdr.cdr.cdr.car
 
    

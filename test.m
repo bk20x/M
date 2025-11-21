@@ -19,8 +19,24 @@
 
 
 
-(define files (map (listDir ".") (-> (f) (strReplace f "./" ""))))
+(define flatten (-> (xs)
+  (let ((result ()))
+    (each (x xs)
+     (if (= (typeOf x) 'Cons)
+        (setf result (append result (flatten x)))
+        (setf result (append result (list x)))))
+   result)))
 
-(define fileContents (map (filter files isFile?) readFile))
 
 
+
+(define readDir (-> (dir) (map (filter (listDir dir) isFile?) readFile)))
+
+
+(macro do (forms)
+	    `(let (())
+	     ,@forms))
+
+
+
+(echo "Hello World!")

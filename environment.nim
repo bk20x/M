@@ -52,7 +52,7 @@ var ## All used in `eval`, these are forward declared;; see implementations belo
   load:        proc(env: var Env, form: LispObject): LispObject
   qqExpand:    proc(env: var Env, form: LispObject): LispObject
   macroExpand: proc(env: var Env, form: LispObject, rawArgsList: LispObject): LispObject
-  
+  whileImpl:   proc(env: var Env, form: LispObject): LispObject
 
 proc readAllSexprs(filename: string): seq[LispObject] =
   result = @[]
@@ -151,7 +151,6 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
               name  = binding.car.sym.name
               value = scope.eval(binding.second) 
             scope.interned[name] = value
-            
           for progn in body.toSeq:
             result = scope.eval(progn)
           return result
@@ -238,6 +237,8 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           return currentEnv.doTimes(currentForm.cdr)
         of "each":
           return currentEnv.eachImpl(currentForm.cdr)
+        of "while":
+          return currentEnv.whileImpl(currentForm.cdr)
         else:
           discard
       # Non Special forms :: Lambdas | Builtins | Macros
@@ -427,8 +428,20 @@ doTimes =
       while not (i == times.intVal - 1): # bc we return the last eval
         env.eval: body
         i += 1
-      return env.eval: body 
-
+      return env.eval: body
+        
+whileImpl =
+    proc(env: var Env, form: LispObject): LispObject =
+      result = NIL()
+      var
+        condForm = form.first
+        cond     = env.eval condForm
+      let body = form.second
+      while not (cond.isNil):
+        cond = env.eval condForm
+        if cond.isNil: break
+        env.eval body
+            
 
 eachImpl = proc(env: var Env, form: LispObject): LispObject =
     let
@@ -607,7 +620,9 @@ proc newEnv*(): owned Env =
         let
           lambda = args.first
         return lambda.params
+        
 
+        
     unintern: BuiltinFn =
       proc(args: LispObject): LispObject =
         result = NIL()

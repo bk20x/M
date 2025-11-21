@@ -26,6 +26,8 @@
 (macro $ (obj field)
  `(getHash ',field ,obj))
 
+(macro $<- (obj field val)
+ `(putHash ',field ,val ,obj))
 
 (macro >> (obj message args)
    `((getHash ',message ,obj) ,@args))

@@ -5,17 +5,17 @@ import lispobject
 
 
 proc readFile(args: LispObject): LispObject =
-  if not args.len == 1 and not (args.first.kind == String):
+  if args.len != 1 or not (args.first.kind == String):
     raise newException(ValueError, fmt"`readFile` is of type String -> String but got {args}")
   return newStr(readFile args.first.str)
 
 proc readLines(args: LispObject): LispObject =
-  if not args.len == 2 and not (args.first.kind == String and args.second.kind == Int):
+  if args.len != 2 or not (args.first.kind == String and args.second.kind == Int):
     raise newException(ValueError, fmt"`readLines` is of type String -> Int -> String list but got {args}")
   return readLines(args.first.str, args.second.intVal).map(ln => newStr ln).list
 
 proc writeFile(args: LispObject): LispObject =
-  if not args.len == 2 and not (args.first.kind == String and args.second.kind == String):
+  if args.len != 2 or not (args.first.kind == String and args.second.kind == String):
     raise newException(ValueError, fmt"`writeFile` is of type String -> String -> () but got {args}")
   let
     filename = args.first.str
@@ -24,7 +24,7 @@ proc writeFile(args: LispObject): LispObject =
   return NIL()
 
 proc runCmdCode(args: LispObject): LispObject =
-  if not args.len == 1 and not (args.first.kind  == String):
+  if args.len != 1 or not (args.first.kind  == String):
     raise newException(ValueError, fmt"`cmd!` is of type String -> Int but gut {args}")
   let
     command = args.first.str
@@ -32,7 +32,7 @@ proc runCmdCode(args: LispObject): LispObject =
   return cons(newInt(res.exitCode), newStr(res.output))
 
 proc listDir(args: LispObject): LispObject =
-  if not args.len == 1 and not (args.first.kind == String):
+  if args.len != 1 or not (args.first.kind == String):
     raise newException(ValueError, fmt"`listDir` is of type String -> String list but got {args}")
   let dirName = args.first
   var files: seq[string]
@@ -41,7 +41,7 @@ proc listDir(args: LispObject): LispObject =
   return files.map(ln => newStr(ln)).list
 
 proc isFile(args: LispObject): LispObject =
-  if not args.len == 1 or not (args.first.kind == String):
+  if args.len != 1 or not (args.first.kind == String):
     raise newException(ValueError, fmt"`isFile` is of type String -> Bool but got {args}")
   let filename = args.first
   if filename.str.fileExists:
@@ -49,13 +49,13 @@ proc isFile(args: LispObject): LispObject =
   return NIL()
 
 proc getEnv(args: LispObject): LispObject =
-  if not args.len == 1 or not (args.first.kind == String):
+  if args.len != 1 or not (args.first.kind == String):
     raise newException(ValueError, fmt"`getEnv` is of type String -> String but got {args}")
   let env = getEnv(args.first.str)
   return if env == "": NIL() else: newStr(env)
 
 proc getFileSize(args: LispObject): LispObject =
-  if not args.len == 1 or not (args.first.kind == String):
+  if args.len != 1 or not (args.first.kind == String):
     raise newException(ValueError, fmt"`getFileSize` is of type String -> Int but got {args}")
   let filename = args.first.str
   return if fileExists filename: newInt getFileSize(filename) else: NIL()
