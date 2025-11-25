@@ -14,7 +14,7 @@ proc sin(args: LispObject): LispObject =
   
   
 proc pow(args: LispObject): LispObject =
-  if args.len != 2 or not (args.kind in {Int, FLoat}):
+  if args.len != 2 or not ({args.first.kind, args.second.kind} <= {Int, FLoat}):
     raise newException(ValueError, fmt"`pow` is of type Int | Float -> Int | Float -> Float but got {args}")
   let
     x = args.first

@@ -17,8 +17,6 @@
 
 (define counter (let ((x 0)) (-> () (setf x (+ x 1)))))
 
-
-
 (define flatten (-> (xs)
   (let ((result ()))
     (each (x xs)
@@ -28,15 +26,10 @@
    result)))
 
 
-
-
 (define readDir (-> (dir) (map (filter (listDir dir) isFile?) readFile)))
-
 
 (macro do (forms)
 	    `(let (())
 	     ,@forms))
 
 
-
-(echo "Hello World!")

@@ -3,7 +3,7 @@ import lispobject
 
 type
   TokenKind* = enum
-    tkLpar, tkRpar, tkDot, tkQuote, tkSym, tkFloat,tkInt, tkStr, tkEof, tkBquote, tkComma, tkSplice
+    tkLpar, tkRpar, tkDot, tkQuote, tkSym, tkFloat,tkInt, tkStr, tkEof, tkBquote, tkComma, tkSplice, tkComment
 
   Token* = object
     case kind*: TokenKind:
@@ -26,25 +26,23 @@ proc initLexer*(lx: var MLexr, input: Stream, filename: string = "") =
   lexbase.open(lx, input)
   lx.filename = filename
 
-proc skip*(lx: var MLexr) =
+func skip*(lx: var MLexr) =
   while lx.bufpos < lx.buf.len and lx.buf[lx.bufpos] in {' ', '\t', '\n', '\r'}:
     inc lx.bufpos
 
 
-proc parseSym*(lx: var MLexr, start: int) =
+func parseSym*(lx: var MLexr, start: int) =
   while lx.buf[lx.bufpos] in SymbolChars:
     inc lx.bufpos
   let symStr = lx.buf.substr(start, lx.bufpos - 1)
   lx.curTok = Token(kind: tkSym, sym: newSym(symStr).sym)
 
-proc parseNumber*(lx: var MLexr, start: int) =
+func parseNumber*(lx: var MLexr, start: int) =
   var 
     pos = start 
     isFloat = false
-    
   if lx.buf[pos] in {'+', '-'}:
     inc pos
-
   while pos < lx.buf.len and (lx.buf[pos].isDigit or lx.buf[pos] == '.'):
     if lx.buf[pos] == '.':
       isFloat = true
@@ -56,10 +54,8 @@ proc parseNumber*(lx: var MLexr, start: int) =
       inc pos
     while pos < lx.buf.len and lx.buf[pos].isDigit:
       inc pos
-      
   let numStr = lx.buf.substr(start, pos - 1) 
   lx.bufpos = pos 
-  
   try:
     if isFloat:
       lx.curTok = Token(kind: tkFloat, flt: parseFloat(numStr))
@@ -68,7 +64,7 @@ proc parseNumber*(lx: var MLexr, start: int) =
   except:
     raise newException(ValueError, fmt"Invalid number: {numStr} at {start}")
 
-proc parseStr*(lx: var MLexr) =
+func parseStr*(lx: var MLexr) =
   var str = ""
   inc lx.bufpos
   while lx.buf[lx.bufpos] != '\0':
@@ -95,7 +91,7 @@ proc parseStr*(lx: var MLexr) =
     raise newException(ValueError, fmt"Unterminated string at {lx.bufpos}")
   lx.curTok = Token(kind: tkStr, str: str)
 
-proc getTok*(lx: var MLexr) =
+func getTok*(lx: var MLexr) =
   lx.skip()
   let start = lx.bufpos 
   if lx.buf[lx.bufpos] == '\0':
@@ -125,6 +121,9 @@ proc getTok*(lx: var MLexr) =
     else:
       inc lx.bufpos
       lx.curTok = Token(kind: tkComma)
+  of ';':
+    inc lx.bufpos
+    lx.curTok = Token(kind: tkComment)
   of '"':
     lx.parseStr()
   of '0'..'9':

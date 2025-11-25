@@ -9,13 +9,12 @@ type
   SymbolRef* = ref object
     name*: string
   
-  BuiltinFn* = proc(args: LispObject): LispObject
+  BuiltinFn* = proc (args: LispObject): LispObject
                
   Env* = ref object
     interned*     : Table[string, LispObject]
     loadedModules*: Table[string, Table[string, BuiltinFn]]
     parent*       : Env
-    ctr*          : int
     
   LispObject* = ref object
     case kind*: LispObjectKind:
@@ -44,9 +43,6 @@ type
       of Nil:
        discard
 
-
-
-
 func T*(): owned LispObject   {.inline.} = LispObject(kind: Symbol, sym: SymbolRef(name: "t"))
 func NIL*(): owned LispObject {.inline.} = LispObject(kind: Nil)
 
@@ -56,11 +52,11 @@ func newAlien*(alien: Alien): owned LispObject =
 func newTable*(): owned LispObject =
   return LispObject(kind: HashTable, table: initTable[LispObject, LispObject]())
 
-func newTable*(table: Table[LispObject, LispObject]): LispObject =
+func newTable*(table: Table[LispObject, LispObject]): owned LispObject =
   return LispObject(kind: HashTable, table: table)
   
 func newScope*(parent: Env): owned Env =
-  return Env(interned: initTable[string, LispObject](), loadedModules: initTable[string, Table[string, BuiltinFn]](), parent: parent, ctr: 0)
+  return Env(interned: initTable[string, LispObject](), loadedModules: initTable[string, Table[string, BuiltinFn]](), parent: parent)
   
 func newLambda*(env: Env, params, body: LispObject): owned LispObject =
   return LispObject(kind: Lambda, params: params, body: body, closure: env.newScope())
@@ -89,15 +85,12 @@ func newStr*(s: sink string): owned LispObject =
 func cons*(car, cdr: LispObject): owned LispObject =
   return LispObject(kind: Cons, car: car, cdr: cdr)
 
-
-
-
 func list*(objs: seq[LispObject]): owned LispObject =
   result = NIL()
   for i in countdown(objs.high, 0):
     result = cons(objs[i], result)
-
-
+  return result
+  
 func `==`*(a, b: SymbolRef)    : bool   = a.name == b.name
 func isNil*(obj: LispObject)   : bool   =
   if obj.kind == Symbol:  obj.sym.name == "nil" else: obj.kind == Nil
@@ -169,20 +162,17 @@ proc `$`*(s: LispObject): string =
     var
       current = s
       first = true
-
     while not current.isNil and current.kind == Cons:
       if not first:
         result &= " "
       result &= $(current.car) 
       current = current.cdr 
       first = false
-
     if not current.isNil:
       result &= " . " & $current
-    result &= ")"
-    
+    result &= ")"    
     return result
-
+  
 func toSeq*(list: LispObject): owned seq[LispObject] =
   var current: LispObject = list
   while not current.isNil:
@@ -192,16 +182,12 @@ func toSeq*(list: LispObject): owned seq[LispObject] =
       current = current.cdr
     else:
       result.add(current)
-      break 
-      
+      break       
   return result
-
-
 
 proc `==`*(x, y: LispObject): bool =
   if x.kind != y.kind:
     return false
-  
   case x.kind
   of Int:
     return x.intVal == y.intVal

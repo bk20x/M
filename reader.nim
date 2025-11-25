@@ -7,10 +7,10 @@ type
     lexer: MLexr
 
 
-proc advance*(p: var Reader) =
+func advance*(p: var Reader) =
   p.lexer.getTok
 
-proc expect*(p: var Reader, kind: TokenKind) =
+func expect*(p: var Reader, kind: TokenKind) =
   if p.lexer.curTok.kind != kind:
     raise newException(ValueError, fmt"Expected {$kind} but got {$p.lexer.curTok.kind}")
   p.advance
@@ -36,7 +36,7 @@ proc parseAtom*(p: var Reader): LispObject =
     let str = newStr p.lexer.curTok.str
     p.advance
     return str
-  of tkBquote: 
+  of tkBquote:
     p.advance 
     let quoted = parseSexp(p) 
     return cons(newSym "backquote", cons(quoted, NIL()))
@@ -52,6 +52,9 @@ proc parseAtom*(p: var Reader): LispObject =
     p.advance
     let quoted = parseSexp(p)
     return cons(newSym "quote", cons(quoted, NIL()))
+  of tkComment:
+    p.advance
+    return NIL()
   of tkEof:
     raise newException(ValueError, "Unexpected end of token stream")
   else:
@@ -60,17 +63,14 @@ proc parseAtom*(p: var Reader): LispObject =
 proc parseList*(p: var Reader): LispObject =
   p.expect tkLpar 
   result = NIL() 
-
   var l: seq[LispObject]
   while p.lexer.curTok.kind != tkRpar:
     if p.lexer.curTok.kind == tkEof:
       raise newException(ValueError, "Unmatched close parenthesis")
     l.add: parseSexp(p)
-    
   p.expect tkRpar
   for i in countdown(l.len - 1, 0):
     result = cons(l[i], result)
-    
   return result
 
 parseSexp = proc(p: var Reader): LispObject =

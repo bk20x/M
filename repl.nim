@@ -3,7 +3,7 @@ import environment, reader, lispobject
 
 
 
-proc runRepl*(env: var Env) = 
+proc runRepl*(env: var Env) =
   var ln: string
   enableTrueColors()
   while true:
@@ -14,11 +14,9 @@ proc runRepl*(env: var Env) =
         let
           parsed = parse ln
           result = env.eval parsed
-      
-        stdout.write("=> "); stdout.styledWriteLine(fgGreen, styleBright,   fmt"{result}")
+        stdout.write("=> "); styledEcho(fgGreen, styleBright, fmt"{result}")
     except CatchableError as e:
-      stdout.styledWriteLine(fgRed, styleBright, fmt"Error: {e.msg}")
+      styledEcho(fgRed, styleBright, fmt"Error: {e.msg}")
       continue
-    
     disableTrueColors()
     stdout.resetAttributes()

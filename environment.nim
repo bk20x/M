@@ -29,7 +29,7 @@ func wrapModule*(module: Table[string, BuiltinFn]): Table[string, LispObject] =
   for k, v in module:
     result[k] = newBuiltin(v, k)
 
-proc lookupValue(env: var Env, symbolName: string): LispObject =
+func lookupValue(env: var Env, symbolName: string): LispObject =
   var currentEnv = env
   while currentEnv != nil:
     if currentEnv.interned.hasKey(symbolName):
@@ -133,7 +133,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           let
             bindings    = currentForm.second
             body        = currentForm.cdr.cdr
-          var scope = currentEnv.newScope()
+          var scope     = currentEnv.newScope()
           for binding in bindings.toSeq:
             let name    = binding.car.sym.name
             scope.interned[name] = currentEnv.eval(binding.second)
@@ -472,17 +472,18 @@ load =
       env.eval sexp
     return T()
 
-proc registerModule*(env: var Env, name: string, module: Table[string, BuiltinFn]) =
+func registerModule*(env: var Env, name: string, module: Table[string, BuiltinFn]) =
   for k, v in module:
     env.loadedModules[name] = module
-  
-    
+      
 proc newEnv*(): owned Env =
   new result
   var env = result
   let
     map: BuiltinFn =
       proc(args: LispObject): LispObject =
+        if args.len != 2 or not (args.first.kind == Cons and args.second.kind in {Lambda, Builtin}):
+          raise newException(ValueError, fmt"`map` is of type Cons -> Lambda | Builtin -> Cons but got {args}")
         let
           list = args.first.toSeq
           fun  = args.second
@@ -501,6 +502,8 @@ proc newEnv*(): owned Env =
           
     filter: BuiltinFn =
       proc(args: LispObject): LispObject =
+        if args.len != 2 or not (args.first.kind == Cons and args.second.kind in {Lambda, Builtin}):
+          raise newException(ValueError, fmt"`filter` is of type Cons -> Lambda | Builtin -> Cons but got {args}")
         let
           list = args.first.toSeq
           fun  = args.second
@@ -521,15 +524,21 @@ proc newEnv*(): owned Env =
         
     cons: BuiltinFn =
       proc(args: LispObject): LispObject =
+        if args.len != 2:
+          raise newException(ValueError, fmt"`cons` is of type T | () -> T | () -> Cons but got {args}")
         return cons(args.first, args.second)
         
     car: BuiltinFn =
       proc(args: LispObject): LispObject =
+        if args.len != 1:
+          raise newException(ValueError, fmt"`car` is of type Cons -> T | () but got {args}")
         let cell = args.first
         return if cell.kind == Cons: cell.car else: NIL()
         
     cdr: BuiltinFn =
       proc(args: LispObject): LispObject =
+        if args.len != 1:
+          raise newException(ValueError, fmt"`cdr` is of type Cons -> T | () but got {args}")
         let cell = args.first
         return if cell.kind == Cons: cell.cdr else: NIL()
         
@@ -550,6 +559,10 @@ proc newEnv*(): owned Env =
         
     typeOf: BuiltinFn =
       proc(args: LispObject): LispObject =
+        if args.len != 1:
+          raise newException(ValueError, fmt"`typeOf` is of type T -> Symbol but got {args}")
+        if args.first.kind == AlienObj:
+          return newSym(args.first.alien.tname)
         return newSym($args.first.kind)
 
           
@@ -579,9 +592,10 @@ proc newEnv*(): owned Env =
       
     clone: BuiltinFn =
       proc(args: LispObject): LispObject =
+        if args.len != 1:
+          raise newException(ValueError, fmt"`clone` is of type T -> T but got {args}")
         result = NIL()
-        let
-          obj = args.first
+        let obj = args.first
         case obj.kind:
         of HashTable:
           result = lispobject.newTable()
@@ -615,38 +629,34 @@ proc newEnv*(): owned Env =
           a = args.first
           b = args.second
         return if a.isT and b.isT: T() else: NIL()
+        
     lparams: BuiltinFn =
       proc(args: LispObject): LispObject =
+        if args.len != 1 or not (args.first.kind == Lambda):
+          raise newException(ValueError, fmt"`lparams` is of type Lambda -> Cons but got {args}")
         let
           lambda = args.first
         return lambda.params
         
 
-        
+    toString: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        if args.len != 1:
+          raise newException(ValueError, fmt"`toString` is of type T -> String but got {args}")
+        let obj = args.first
+        return newStr($obj)
+          
     unintern: BuiltinFn =
       proc(args: LispObject): LispObject =
         result = NIL()
         let sym  = args.first
         if not (sym.kind == Symbol):
-          raise newException(ValueError, "`unintern` is of type Symbol -> T | () but got {args}")
+          raise newException(ValueError, fmt"`unintern` is of type Symbol -> T | () but got {args}")
         let name = sym.sym.name
         if env.interned.hasKey(name):
           env.interned.del(name)
           return T()
-          
-    #gensym: BuiltinFn =
-    #  proc(args: LispObject): LispObject =
-    #    result = NIL()
-    #    var prefix = "G"
-    #    if not args.isNil:
-    #      if args.kind == Cons and args.car.kind == String:
-    #        prefix = args.car.str    
-    #        let symbolName = prefix & $env.ctr
-    #        env.ctr.inc()
-    #        result = newSym(symbolName)
-        
-
-
+      
   result.loadedModules = Stdlib
   result.interned = toTable {
     "t"            : T(),
@@ -655,7 +665,7 @@ proc newEnv*(): owned Env =
     "*"            : newBuiltin(lispMultiply,        "*"),
     "mod"          : newBuiltin(lispMod,             "mod"),
     ">"            : newBuiltin(lispGreaterThan,     ">"),
-    "=>"           : newBuiltin(lispGreaterThanEq,   "=>"),
+    ">="           : newBuiltin(lispGreaterThanEq,   ">="),
     "="            : newBuiltin(lispEquals,          "="),
     "<"            : newBuiltin(lispLessThan,        "<"),
     "<="           : newBuiltin(lispLessThanEq,      "<="),
@@ -677,9 +687,8 @@ proc newEnv*(): owned Env =
     "typeOf"       : newBuiltin(typeOf,              "typeOf"),
     "clone"        : newBuiltin(clone,               "clone"),
     "setb"         : newBuiltin(setb,                "setb"),
-    "setp"         : newBuiltin(setp,                "setp")
-
+    "setp"         : newBuiltin(setp,                "setp"),
+    "strRepr"      : newBuiltin(toString,            "strRepr")
    }
-   
   return result
 
