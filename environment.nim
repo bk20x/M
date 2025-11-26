@@ -663,6 +663,7 @@ proc newEnv*(): owned Env =
     "+"            : newBuiltin(lispadd,             "+"),
     "-"            : newBuiltin(lispSub,             "-"),
     "*"            : newBuiltin(lispMultiply,        "*"),
+    "/"            : newBuiltin(lispDiv,             "/"),
     "mod"          : newBuiltin(lispMod,             "mod"),
     ">"            : newBuiltin(lispGreaterThan,     ">"),
     ">="           : newBuiltin(lispGreaterThanEq,   ">="),

@@ -77,8 +77,34 @@ proc lispSub*(args: LispObject): LispObject =
     except OverflowDefect:
       let res = initBigInt(x.intVal) - initBigInt(y.intVal)
       return LispObject(kind: BigInt, bigNum: res)
-      
 
+      
+proc lispDiv*(args: LispObject): LispObject =
+  if args.len != 2:
+    raise newException(ValueError, fmt"`/` expects 2 args of Int | Float | BigInt but got {args}")
+  let
+    x = args.first
+    y = args.second
+  if x.kind == Float or y.kind == Float:
+    let
+      xVal = if x.kind == Float: x.floatVal elif x.kind == Int: x.intVal.float else: x.bigNum.toFloat
+      yVal = if y.kind == Float: y.floatVal elif y.kind == Int: y.intVal.float else: y.bigNum.toFloat
+      res  = xVal / yVal
+    return newFloat(res)
+  elif x.kind == LispObjectKind.BigInt or y.kind == LispObjectKind.BigInt:
+    let
+      xVal = x.toBigInt()
+      yVal = y.toBigInt()
+      res  = xVal div yVal
+    return LispObject(kind: BigInt, bigNum: res)
+  else:
+    try:
+      let res = x.intVal / y.intVal
+      return newFloat(res)
+    except OverflowDefect:
+      let res = initBigInt(x.intVal) div initBigInt(y.intVal)
+      return LispObject(kind: BigInt, bigNum: res)
+      
 proc lispMultiply*(args: LispObject): LispObject =
     if args.len != 2:
       raise newException(ValueError, fmt"`*` expects 2 args of Int | Float | BigInt but got {args}")
