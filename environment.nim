@@ -108,6 +108,8 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             result.table[key] = v
           return result
         of "->":
+          if not (currentForm.len == 3):
+            raise newException(ValueError, fmt"Malformed lambda literal: {currentForm}")
           let
             params = currentForm.second
             body   = currentForm.third
@@ -129,10 +131,12 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           currentForm = form
           continue # eval form
         of "let":
+          if not (currentForm.len >= 3):
+            raise newException(ValueError, fmt"Malformed let binding: {currentForm}")
           result = NIL()
           let
             bindings    = currentForm.second
-            body        = currentForm.cdr.cdr
+            body        = currentForm.third
           var scope     = currentEnv.newScope()
           for binding in bindings.toSeq:
             let name    = binding.car.sym.name
@@ -140,7 +144,9 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           for progn in body.toSeq:
             result      = scope.eval(progn)
           return result
-        of "let*": 
+        of "let*":
+          if not (currentForm.len >= 3):
+            raise newException(ValueError, fmt"Malformed let binding: {currentForm}")
           result = NIL()
           let
             bindings    = currentForm.second
@@ -155,10 +161,14 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             result = scope.eval(progn)
           return result
         of "load":
+          if currentForm.cdr.isNil:
+            raise newException(ValueError, "load expects a String for filename")
           let
             file = currentForm.second
           return currentEnv.load file
         of "open":
+          if currentForm.cdr.isNil:
+            raise newException(ValueError, fmt"open expects a Module or Modules but got {currentForm}")
           for m in currentForm.cdr.toSeq:
             let module = m.sym.name
             if currentEnv.loadedModules.hasKey module:
@@ -177,6 +187,8 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
               return r.retVal
         of "if":
           # (if (cond) (then) (else))
+          if not (currentForm.len == 4):
+            raise newException(ValueError, fmt"Malformed if expression: {currentForm}")
           let cond = currentEnv.eval(currentForm.second)
           if not cond.isNil:
             currentForm = currentForm.third 
@@ -189,12 +201,16 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           continue 
         of "define":
           # (define name val)
+          if not (currentForm.len == 3):
+            raise newException(ValueError, fmt"Malformed define: {currentForm}")
           let
             name = currentForm.second
             val  = currentEnv.eval(currentForm.third)
           currentEnv.intern(name.sym.name, val)
           return name
         of "macro":
+          if not (currentForm.len == 4):
+            raise newException(ValueError, fmt"Malformed macrodef: {currentForm}")
           let
             name      = currentForm.second
             params    = currentForm.third
@@ -203,6 +219,8 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           currentEnv.intern(name.sym.name, macroForm)
           return name
         of "setf":
+          if not (currentForm.len == 3):
+            raise newException(ValueError, fmt"Malformed setf: {currentForm}")
           let
             placeForm = currentForm.cdr.car
             valForm   = currentForm.cdr.cdr.car
@@ -214,6 +232,8 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           placeRef[] = val
           return val
         of "setq":
+          if not (currentForm.len == 3):
+            raise newException(ValueError, fmt"Malformed setf: {currentForm}")
           let
             placeForm = currentForm.cdr.car
             valForm   = currentForm.cdr.cdr.car        
