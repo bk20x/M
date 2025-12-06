@@ -136,7 +136,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           result = NIL()
           let
             bindings    = currentForm.second
-            body        = currentForm.third
+            body        = currentForm.cdr.cdr
           var scope     = currentEnv.newScope()
           for binding in bindings.toSeq:
             let name    = binding.car.sym.name
@@ -150,7 +150,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           result = NIL()
           let
             bindings    = currentForm.second
-            body        = currentForm.cdr.cdr          
+            body        = currentForm.cdr.cdr        
           var scope = currentEnv.newScope()
           for binding in bindings.toSeq:
             let
