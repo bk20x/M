@@ -224,18 +224,24 @@ proc lispGreaterThanEq*(args: LispObject): LispObject =
   
 proc lispUneql*(args: LispObject): LispObject =
   return if lispEquals(args).isNil: T() else: NIL()
-  
+
 proc append*(args: LispObject): LispObject =
-  result = NIL()
   var
-    list = args.first.toSeq
+    head = args.first  
+    tail = args.first  
     elem = args.second
-  if elem.kind == Cons:
-    for e in elem.toSeq:
-      list.add e
-    return list.list
-  list.add elem
-  return list.list
+    
+  if head.isNil:
+    return elem
+    
+  while not tail.cdr.isNil:
+    tail = tail.cdr
+    
+  if elem.kind == Cons and elem.cdr.isNil:
+    tail.cdr = elem
+  else:
+    tail.cdr = cons(elem, NIL())
+  return head
 
 
   

@@ -1,4 +1,4 @@
-import std/[strformat, tables, streams, strutils]
+import std/[strformat, tables, streams, strutils, sugar]
 import lispobject, reader
 
 import builtins
@@ -44,15 +44,16 @@ func safeCdr(obj: LispObject): LispObject =
     return NIL()
     
 var ## All used in `eval`, these are forward declared;; see implementations below `eval`
-  lookupPlace: proc(env: var Env, form: LispObject): ptr LispObject
-  ifImpl:      proc(env: var Env, form: LispObject): LispObject
-  doTimes:     proc(env: var Env, form: LispObject): LispObject
-  eachImpl:    proc(env: var Env, form: LispObject): LispObject
-  evalLambda:  proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): Thunk {.inline.}
-  load:        proc(env: var Env, form: LispObject): LispObject
-  qqExpand:    proc(env: var Env, form: LispObject): LispObject
-  macroExpand: proc(env: var Env, form: LispObject, rawArgsList: LispObject): LispObject
-  whileImpl:   proc(env: var Env, form: LispObject): LispObject
+  lookupPlace: (var Env, LispObject) -> ptr LispObject
+  ifImpl:      (var Env, LispObject) -> LispObject
+  doTimes:     (var Env, LispObject) -> LispObject
+  eachImpl:    (var Env, LispObject) -> LispObject
+  load:        (var Env, LispObject) -> LispObject
+  qqExpand:    (var Env, LispObject) -> LispObject
+  whileImpl:   (var Env, LispObject) -> LispObject 
+  macroExpand: (var Env, LispObject,  LispObject) -> LispObject
+  evalLambda:  (var Env, LispObject, seq[LispObject]) -> Thunk 
+
 
 proc readAllSexprs(filename: string): seq[LispObject] =
   result = @[]
@@ -407,7 +408,7 @@ lookupPlace = proc(env: var Env, form: LispObject): ptr LispObject =
 
 
 evalLambda =
-    proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): Thunk {.inline.} =
+    proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): Thunk =
       var
         lambda = form
         params = lambda.params
