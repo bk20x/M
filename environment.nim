@@ -188,7 +188,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
               return r.retVal
         of "if":
           # (if (cond) (then) (else))
-          if not (currentForm.len == 4):
+          if not (currentForm.len in {3, 4}):
             raise newException(ValueError, fmt"Malformed if expression: {currentForm}")
           let cond = currentEnv.eval(currentForm.second)
           if not cond.isNil:
@@ -677,7 +677,14 @@ proc newEnv*(): owned Env =
         if env.interned.hasKey(name):
           env.interned.del(name)
           return T()
-      
+
+    read: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        if args.len != 1 or not (args.first.kind == String):
+          raise newException(ValueError, fmt"~read is of type String -> ? but got {args}")
+        let form = args.first.str
+        return parse form
+        
   result.loadedModules = Stdlib
   result.interned = toTable {
     "t"            : T(),
@@ -710,7 +717,8 @@ proc newEnv*(): owned Env =
     "clone"        : newBuiltin(clone,               "clone"),
     "setb"         : newBuiltin(setb,                "setb"),
     "setp"         : newBuiltin(setp,                "setp"),
-    "strRepr"      : newBuiltin(toString,            "strRepr")
+    "strRepr"      : newBuiltin(toString,            "strRepr"),
+    "~read"        : newBuiltin(read,                "~read")
    }
   return result
 
