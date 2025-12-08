@@ -20,7 +20,7 @@ type
     
 
 const
-  SymbolChars = {'a'..'z', 'A'..'Z', '0'..'9', '*', '+', '-', '!', '?', '_', '>', '<', '$', '|', '=', '@', ',', '`', '{', '}', ':', '^', '/'}
+  SymbolChars = {'a'..'z', 'A'..'Z', '0'..'9', '*', '+', '-', '!', '?', '_', '>', '<', '$', '|', '=', '@', ',', '`', '{', '}', ':', '^', '/', '~'}
 
 proc initLexer*(lx: var MLexr, input: Stream, filename: string = "") =
   lexbase.open(lx, input)
