@@ -33,3 +33,11 @@
 	     ,@forms))
 
 
+(define isEven? (-> (x) (= (mod x 2) 0)))
+
+
+(define collectIf (-> (pred xs)
+		   (let ((result ()))
+		    (each (x xs)
+		     (if (pred x) (setf result (append result x))))
+		    result)))

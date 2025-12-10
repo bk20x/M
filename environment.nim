@@ -118,7 +118,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           return lambda
         of "quote":
           let quoted = currentForm.second
-          return quoted          
+          return quoted
         of "backquote":
           return env.qqExpand(currentForm.second)
         of "eval":
@@ -719,6 +719,7 @@ proc newEnv*(): owned Env =
     "setp"         : newBuiltin(setp,                "setp"),
     "strRepr"      : newBuiltin(toString,            "strRepr"),
     "~read"        : newBuiltin(read,                "~read")
+
    }
   return result
 

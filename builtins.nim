@@ -226,22 +226,17 @@ proc lispUneql*(args: LispObject): LispObject =
   return if lispEquals(args).isNil: T() else: NIL()
 
 proc append*(args: LispObject): LispObject =
+  result = NIL()
   var
-    head = args.first  
-    tail = args.first  
+    list = args.first.toSeq
     elem = args.second
-    
-  if head.isNil:
-    return elem
-    
-  while not tail.cdr.isNil:
-    tail = tail.cdr
-    
-  if elem.kind == Cons and elem.cdr.isNil:
-    tail.cdr = elem
-  else:
-    tail.cdr = cons(elem, NIL())
-  return head
+  if elem.kind == Cons:
+    for e in elem.toSeq:
+      list.add e
+    return list.list
+  list.add elem
+  return list.list
+
 
 
   
