@@ -1,5 +1,5 @@
 # λ ((M))
-# "The Power to Serve"
+"The Power to Serve"
 ```
 (open SysIo Strings)
 
