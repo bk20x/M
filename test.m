@@ -31,16 +31,7 @@
    (if (pred x) (setf result (append result x))))
   result)))
 
-(macro defun (name params body)
-`(define ,name (-> ,params ,body)))
-
-(defun isEven? (x) (= (mod x 2) 0))
-
-
-(open Json)
-
-(define jnums (parseJson "[1,2,3,4]"))
-(define nums (map (listJson jnums) unbox))
+(factorial 5000 1)
 
 
 
