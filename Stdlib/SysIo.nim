@@ -1,5 +1,5 @@
 import std/[tables, sequtils, sugar, osproc, os, strformat]
-import lispobject
+import ../lispobject
 
 
 

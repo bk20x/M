@@ -1,5 +1,5 @@
 import std/[math, strformat, tables]
-import lispobject
+import ../lispobject
 
 
 proc sin(args: LispObject): LispObject =

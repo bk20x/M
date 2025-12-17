@@ -11,11 +11,9 @@ proc readAllSexprs(filename: string): seq[LispObject] =
   var s = newFileStream(filename, fmRead)
   if s == nil:
     quit("Could not open file: " & filename)
-
   var
     buffer = ""
     parenCount = 0
-
   while not s.atEnd:
     let c = s.readChar()
     case c:
@@ -33,7 +31,6 @@ proc readAllSexprs(filename: string): seq[LispObject] =
         buffer.add(c)
     else:
       buffer.add(c)
-
   s.close()
   
 proc doFile(env: var Env, file: string) =

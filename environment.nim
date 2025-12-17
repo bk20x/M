@@ -2,7 +2,8 @@ import std/[strformat, tables, streams, strutils, sugar]
 import lispobject, reader
 
 import builtins
-import Std
+import Stdlib/Std
+
 
 
 

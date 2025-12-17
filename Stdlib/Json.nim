@@ -1,4 +1,4 @@
-import lispobject, alien
+import ../lispobject, ../alien
 import std/[json, strformat, tables, sequtils]
 
 
