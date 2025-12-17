@@ -99,7 +99,6 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
     elif currentForm.kind == Cons:
       if currentForm.isNil:
         return LispObject(kind: Nil)
-      # Special Forms
       if currentForm.car.kind == Symbol:
         case currentForm.car.sym.name:
         of "interned-symbols":
@@ -108,6 +107,11 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             let key = newSym(k)
             result.table[key] = v
           return result
+        of "who":
+          let
+            obj = currentForm.second
+            place = currentEnv.lookupPlace(obj)
+          return newStr(fmt"{cast[int](place):#x}")
         of "->":
           if not (currentForm.len == 3):
             raise newException(ValueError, fmt"Malformed lambda literal: {currentForm}")
@@ -131,13 +135,14 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             continue # eval result
           currentForm = form
           continue # eval form
+        # (let (bindings) ...forms)
         of "let":
           if not (currentForm.len >= 3):
             raise newException(ValueError, fmt"Malformed let binding: {currentForm}")
           result = NIL()
           let
             bindings    = currentForm.second
-            body        = currentForm.cdr.cdr
+            body        = currentForm.cdr.cdr # The rest since let has implicit progn
           var scope     = currentEnv.newScope()
           for binding in bindings.toSeq:
             let name    = binding.car.sym.name
@@ -202,15 +207,15 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           continue 
         of "define":
           # (define name val)
-          if not (currentForm.len == 3):
+          if (currentForm.len != 3) or (currentForm.second.kind != Symbol):
             raise newException(ValueError, fmt"Malformed define: {currentForm}")
           let
             name = currentForm.second
             val  = currentEnv.eval(currentForm.third)
           currentEnv.intern(name.sym.name, val)
           return name
-        of "macro":
-          if not (currentForm.len == 4):
+        of "macro":     
+          if (currentForm.len != 4) or (currentForm.third.kind != Cons): # params
             raise newException(ValueError, fmt"Malformed macrodef: {currentForm}")
           let
             name      = currentForm.second
