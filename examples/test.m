@@ -31,7 +31,7 @@
    (if (pred x) (setf result (append result x))))
   result)))
 
-(factorial 5000 1)
+(factorial 10000 1)
 
 
 

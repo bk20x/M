@@ -16,7 +16,7 @@ type
     closure: Env
 
 
-const SelfEvaluatingTypes = {Int, Float, String, BigInt, AlienObj, HashTable}
+const SelfEvaluatingTypes = {Int, Float, String, BigInt, AlienObj, HashTable, Nil}
                             
 
 proc intern*(env: var Env, sym: string, val: LispObject) =
@@ -55,13 +55,10 @@ var ## All used in `eval`, these are forward declared;; see implementations belo
   macroExpand: (var Env, LispObject,  LispObject) -> LispObject
   evalLambda:  (var Env, LispObject, seq[LispObject]) -> Thunk 
 
-
-proc readAllSexprs(filename: string): seq[LispObject] =
+proc findForms(mass: string): seq[string] =
   result = @[]
-  var s = newFileStream(filename, fmRead)
+  var s = newStringStream(mass)
   defer: close s
-  if s == nil:
-    raise newException(ValueError, "Could not open file: " & filename)
   var
     buffer = ""
     parenCount = 0
@@ -75,7 +72,7 @@ proc readAllSexprs(filename: string): seq[LispObject] =
       parenCount -= 1
       buffer.add(c)
       if parenCount == 0:
-        result.add: parse buffer.strip()
+        result.add: buffer.strip()
         buffer = ""
     of ' ', '\n', '\t':
       if parenCount > 0:
@@ -83,6 +80,12 @@ proc readAllSexprs(filename: string): seq[LispObject] =
     else:
       buffer.add(c)
 
+proc compileFile(filename: string): seq[LispObject] =
+  result = @[]
+  let code = readFile(filename)
+  for form in findForms(code):
+    result.add parse form
+    
 
 proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
   var
@@ -93,13 +96,9 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
     # Self evaluating Objects
     if currentForm.kind in SelfEvaluatingTypes:
       return currentForm
-    elif currentForm.isNil:
-      return LispObject(kind: Nil)
     elif currentForm.kind == Symbol:
       return currentEnv.lookupValue(currentForm.sym.name)
     elif currentForm.kind == Cons:
-      if currentForm.isNil:
-        return LispObject(kind: Nil)
       if currentForm.car.kind == Symbol:
         case currentForm.car.sym.name:
         of "interned-symbols":
@@ -127,15 +126,9 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
         of "backquote":
           return env.qqExpand(currentForm.second)
         of "eval":
-          let
-            form   = currentForm.second
-          if form.kind == Symbol:
-            let
-              form = currentEnv.eval(form)
-            currentForm = form
-            continue # eval result
+          let form = currentEnv.eval(currentForm.second)
           currentForm = form
-          continue # eval form
+          continue
         # (let (bindings) ...forms)
         of "let":
           if not (currentForm.len >= 3):
@@ -494,9 +487,9 @@ eachImpl = proc(env: var Env, form: LispObject): LispObject =
 
 load =
   proc(env: var Env, form: LispObject): LispObject =
-    let sexprs = readAllSexprs form.str
-    for sexp in sexprs:
-      env.eval sexp
+    let forms = compileFile(form.str)
+    for form in forms:
+      env.eval form
     return T()
 
 func registerModule*(env: var Env, name: string, module: Table[string, BuiltinFn]) =
@@ -690,7 +683,16 @@ proc newEnv*(): owned Env =
           raise newException(ValueError, fmt"~read is of type String -> ? but got {args}")
         let form = args.first.str
         return parse form
-        
+
+    findFormz: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        result = NIL()
+        if args.len != 1 or not (args.first.kind == String):
+          raise newException(ValueError, fmt"~findForms is of type String -> String list but got {args}")
+        let forms = findForms(args.first.str)
+        for i in countdown(forms.high, 0):
+          result = lispobject.cons(newStr(forms[i]), result)
+          
   result.loadedModules = Stdlib
   result.interned = toTable {
     "t"            : T(),
@@ -724,7 +726,8 @@ proc newEnv*(): owned Env =
     "setb"         : newBuiltin(setb,                "setb"),
     "setp"         : newBuiltin(setp,                "setp"),
     "strRepr"      : newBuiltin(toString,            "strRepr"),
-    "~read"        : newBuiltin(read,                "~read")
+    "~read"        : newBuiltin(read,                "~read"),
+    "~findForms"   : newBuiltin(findFormz,           "~findForms")
 
    }
   return result

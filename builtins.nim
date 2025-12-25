@@ -208,8 +208,8 @@ proc lispEquals*(args: LispObject): LispObject =
         areEqual = (x.sym.name == y.sym.name)
     elif x.kind == Builtin and y.kind == Builtin:
       areEqual = x.fun == y.fun
-    elif x == y: 
-        areEqual = true
+    elif x == y:
+      areEqual = true
     if areEqual:
       return T()
     else:

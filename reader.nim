@@ -23,6 +23,7 @@ proc parseAtom*(p: var Reader): LispObject =
   of tkSym:
     let sym = newSym p.lexer.curTok.sym.name
     p.advance
+    if sym.sym.name == "nil": return NIL()
     return sym
   of tkInt:
     let num = newInt p.lexer.curTok.intv

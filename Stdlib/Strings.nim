@@ -109,14 +109,22 @@ proc stringFormat(args: LispObject): LispObject =
 
 
 proc substring(args: LispObject): LispObject =
-  if args.len != 3 and not (args.first.kind == String and args.second.kind == Int and args.third.kind == Int):
+  if args.len != 3 or not (args.first.kind == String and args.second.kind == Int and args.third.kind == Int):
     raise newException(ValueError, fmt"`substring` is of type String -> Int -> Int -> String but got {args}")
   let
     str   = args.first
     start = args.second
     endp  = args.third
   return newStr(str.str[start.intVal..endp.intVal])
+
+
+proc parseI(args: LispObject): LispObject =
+  if args.len != 1 or not (args.first.kind == String):
+    raise newException(ValueError, fmt"`parseInt` is of type String -> Int but got {args}")
+  let str = args.first
+  return newInt(parseInt str.str)
   
+    
 const
   Module* = toTable {
     "strReplace" : BuiltinFn strReplace,
@@ -128,5 +136,6 @@ const
     "splitLines" : BuiltinFn splitLines,
     "fmt"        : BuiltinFn stringFormat,
     "strip"      : BuiltinFn strip,
-    "substring"  : BuiltinFn substring
+    "substring"  : BuiltinFn substring,
+    "parseInt"   : BuiltinFn parseI
   }

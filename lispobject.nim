@@ -185,35 +185,6 @@ func toSeq*(list: LispObject): owned seq[LispObject] =
       break       
   return result
 
-proc `==`*(x, y: LispObject): bool =
-  if x.kind != y.kind:
-    return false
-  case x.kind
-  of Int:
-    return x.intVal == y.intVal
-  of Float:
-    return x.floatVal == y.floatVal
-  of String:
-    return x.str == y.str
-  of Symbol:
-    return x.sym.name == y.sym.name
-  of BigInt:
-    return x.bigNum == y.bigNum
-  of Nil: 
-    return true
-  of Cons:
-    var
-      currX = x
-      currY = y
-    while not currX.isNil and not currY.isNil:
-      if not (currX.car == currY.car): 
-        return false
-      currX = currX.cdr
-      currY = currY.cdr
-    return currX.isNil and currY.isNil    
-  of Builtin, Lambda, HashTable, Macro, AlienObj:
-    return (cast[pointer](addr x) == cast[pointer](addr y))
-
 
 func hash*(obj: LispObject): Hash =
   case obj.kind
@@ -242,3 +213,42 @@ func hash*(obj: LispObject): Hash =
     return h
   of Builtin, Lambda, HashTable, Macro, AlienObj:
     return hash(cast[pointer](addr obj)) 
+
+proc `==`*(x, y: LispObject): bool =
+  if x.kind != y.kind:
+    return false
+  case x.kind
+  of Int:
+    return x.intVal == y.intVal
+  of Float:
+    return x.floatVal == y.floatVal
+  of String:
+    return x.str == y.str
+  of Symbol:
+    return x.sym.name == y.sym.name
+  of BigInt:
+    return x.bigNum == y.bigNum
+  of Nil: 
+    return true
+  of Cons:
+    var
+      currX = x
+      currY = y
+    while not currX.isNil and not currY.isNil:
+      if not (currX.car == currY.car): 
+        return false
+      currX = currX.cdr
+      currY = currY.cdr
+    return currX.isNil and currY.isNil
+  of HashTable:
+    if x.table.len != y.table.len: return false
+    for k, v in x.table:
+      if not y.table.contains(k) or y.table[k] != v: return false
+  of Lambda:
+    return x.params == y.params and x.body == y.body and x.closure == y.closure
+  of Macro:
+    return x.params == y.params and x.body == y.body and x.closure == y.closure
+  of Builtin, AlienObj:
+    return (cast[pointer](addr x) == cast[pointer](addr y))
+
+
