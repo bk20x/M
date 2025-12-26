@@ -241,9 +241,7 @@ proc `==`*(x, y: LispObject): bool =
       currY = currY.cdr
     return currX.isNil and currY.isNil
   of HashTable:
-    if x.table.len != y.table.len: return false
-    for k, v in x.table:
-      if not y.table.contains(k) or y.table[k] != v: return false
+    return x.table == y.table
   of Lambda:
     return x.params == y.params and x.body == y.body and x.closure == y.closure
   of Macro:
