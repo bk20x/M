@@ -77,26 +77,31 @@ proc parseList(p: var Reader): owned LispObject =
   return result
 
 
-
 proc parseTableLit(p: var Reader): owned LispObject =
   result = newTable()
   result.literal = true
-  p.expect tkLBrace
-  var braceCount = 1
-  while braceCount > 0:
+  p.expect tkLBrace 
+
+  # it's an empty table
+  if p.lexer.curTok.kind == tkRBrace:
+    p.advance
+    return result
+    
+  while true:
     let key = parseSexp(p)
     p.expect tkColon
     let val = parseSexp(p)
     result.table[key] = val
-    if p.lexer.curTok.kind == tkLBrace:
-      inc braceCount
-    if p.lexer.curTok.kind == tkRBrace:
-      dec braceCount
-    if braceCount > 0:
-      p.expect(tkComma, "parseTableLit")
-  p.advance
-    
-  
+    if p.lexer.curTok.kind == tkComma:
+      p.advance
+      if p.lexer.curTok.kind == tkRBrace:
+        break
+    elif p.lexer.curTok.kind == tkRBrace:
+      break 
+    else:
+      raise newException(ValueError, fmt"Expected ',' or '}}`' after table entry, got  {p.lexer.curTok.kind}")
+  p.expect tkRBrace 
+
 
   
 parseSexp = proc(p: var Reader): owned LispObject =
