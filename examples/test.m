@@ -25,13 +25,13 @@
 
 (define readDir (-> (dir) (map (filter (listDir dir) isFile?) readFile)))
 
-(define collectIf (-> (pred xs)
- (let ((result ()))
-  (each (x xs)
-   (if (pred x) (setf result (append result x))))
-  result)))
-
 (factorial 10000 1)
 
+
+
+(macro collect (binding body)
+ (let ((var        (car binding))
+       (collection (car (cdr binding))))
+  `(map ,collection (-> (,var) ,body))))
 
 

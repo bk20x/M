@@ -16,7 +16,7 @@ type
     closure: Env
 
 
-const SelfEvaluatingTypes = {Int, Float, String, BigInt, AlienObj, HashTable, Nil}
+const SelfEvaluatingTypes = {Int, Float, String, BigInt, AlienObj, Nil} # HashTable is technichally self evaluating too
                             
 
 proc intern*(env: var Env, sym: string, val: LispObject) =
@@ -95,6 +95,11 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
   while true:
     # Self evaluating Objects
     if currentForm.kind in SelfEvaluatingTypes:
+      return currentForm
+    elif currentForm.kind == HashTable:
+      if currentForm.literal:
+        for k, v in currentForm.table:
+          currentForm.table[k] = currentEnv.eval(v)
       return currentForm
     elif currentForm.kind == Symbol:
       return currentEnv.lookupValue(currentForm.sym.name)

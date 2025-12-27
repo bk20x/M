@@ -3,7 +3,7 @@ import lispobject
 
 type
   TokenKind* = enum
-    tkLpar, tkRpar, tkDot, tkQuote, tkSym, tkFloat,tkInt, tkStr, tkEof, tkBquote, tkComma, tkSplice, tkComment
+    tkLpar, tkRpar, tkDot, tkQuote, tkSym, tkFloat,tkInt, tkStr, tkEof, tkBquote, tkComma, tkSplice, tkComment, tkColon, tkLBrace, tkRBrace
 
   Token* = object
     case kind*: TokenKind:
@@ -20,7 +20,7 @@ type
     
 
 const
-  SymbolChars = {'a'..'z', 'A'..'Z', '0'..'9', '*', '+', '-', '!', '?', '_', '>', '<', '$', '|', '=', '@', ',', '`', '{', '}', ':', '^', '/', '~'}
+  SymbolChars = {'a'..'z', 'A'..'Z', '0'..'9', '*', '+', '-', '!', '?', '_', '>', '<', '$', '|', '=', '@', ',', '`', '^', '/', '~'}
 
 proc initLexer*(lx: var MLexr, input: Stream, filename: string = "") =
   lexbase.open(lx, input)
@@ -98,6 +98,15 @@ func getTok*(lx: var MLexr) =
     lx.curTok = Token(kind: tkEof)
     return    
   case lx.buf[lx.bufpos]:
+  of '{':
+    inc lx.bufpos
+    lx.curTok = Token(kind: tkLBrace)
+  of '}':
+    inc lx.bufpos
+    lx.curTok = Token(kind: tkRBrace)
+  of ':':
+    inc lx.bufpos
+    lx.curTok = Token(kind: tkColon)
   of '(':
     inc lx.bufpos
     lx.curTok = Token(kind: tkLpar)

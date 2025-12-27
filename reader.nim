@@ -1,24 +1,25 @@
 import std/[sugar, strformat, streams]
 import lispobject, lexer
-
+from std/tables import `[]`, `[]=`
 
 type
   Reader* = object
     lexer: MLexr
 
+var parseSexp*: (var Reader) -> owned LispObject
+
 
 func advance*(p: var Reader) =
   p.lexer.getTok
 
-func expect*(p: var Reader, kind: TokenKind) =
+func expect*(p: var Reader, kind: TokenKind, callsite="") =
   if p.lexer.curTok.kind != kind:
-    raise newException(ValueError, fmt"Expected {$kind} but got {$p.lexer.curTok.kind}")
+    raise newException(ValueError, fmt"Reader expected TokenKind: {$kind} but got {p.lexer.curTok.kind}")
   p.advance
 
 
-var parseSexp*: (var Reader) -> LispObject
-
-proc parseAtom*(p: var Reader): LispObject =
+  
+proc parseAtom(p: var Reader): owned LispObject =
   case p.lexer.curTok.kind:
   of tkSym:
     let sym = newSym p.lexer.curTok.sym.name
@@ -60,8 +61,9 @@ proc parseAtom*(p: var Reader): LispObject =
     raise newException(ValueError, "Unexpected end of token stream")
   else:
     raise newException(ValueError, fmt"Invalid token kind for atom: {$p.lexer.curTok.kind}")
+
     
-proc parseList*(p: var Reader): LispObject =
+proc parseList(p: var Reader): owned LispObject =
   p.expect tkLpar 
   result = NIL() 
   var l: seq[LispObject]
@@ -74,20 +76,45 @@ proc parseList*(p: var Reader): LispObject =
     result = cons(l[i], result)
   return result
 
-parseSexp = proc(p: var Reader): LispObject =
+
+
+proc parseTableLit(p: var Reader): owned LispObject =
+  result = newTable()
+  result.literal = true
+  p.expect tkLBrace
+  var braceCount = 1
+  while braceCount > 0:
+    let key = parseSexp(p)
+    p.expect tkColon
+    let val = parseSexp(p)
+    result.table[key] = val
+    if p.lexer.curTok.kind == tkLBrace:
+      inc braceCount
+    if p.lexer.curTok.kind == tkRBrace:
+      dec braceCount
+    if braceCount > 0:
+      p.expect(tkComma, "parseTableLit")
+  p.advance
+    
+  
+
+  
+parseSexp = proc(p: var Reader): owned LispObject =
   case p.lexer.curTok.kind:
   of tkLpar:
     return parseList(p)
   of tkRpar: 
     p.expect tkRpar
     return NIL()
+  of tkLBrace:
+    return parseTableLit(p)
   else:
     return parseAtom(p)
         
       
           
       
-proc parse*(input: string): LispObject =
+proc parse*(input: string): owned LispObject =
   var
     parser: Reader
     inputstrm = newStringStream(input)

@@ -37,6 +37,7 @@ type
         params*, body*: LispObject
         closure*: Env
       of HashTable:
+        literal*: bool
         table*: Table[LispObject, LispObject]
       of AlienObj:
         alien*: Alien
