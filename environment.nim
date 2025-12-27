@@ -6,7 +6,6 @@ import Stdlib/Std
 
 
 
-
 type
   ReturnException* = ref object of CatchableError
     retVal*: LispObject

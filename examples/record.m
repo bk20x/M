@@ -9,7 +9,7 @@
 	      (let* ((key (car pair))
 		    (valueExpr (car (cdr pair)))
 		    (val (eval valueExpr)))
-	       (putHash key val result)))
+	       (put key val result)))
 	      result)
 	    )))
   (fn pairs)
@@ -25,13 +25,13 @@
     ,body)))
 
 (macro $ (obj field)
- `(getHash ',field ,obj))
+ `(get ',field ,obj))
 
 (macro $<- (obj field val)
- `(putHash ',field ,val ,obj))
+ `(put ',field ,val ,obj))
 
 (macro >> (obj message args)
-   `((getHash ',message ,obj) ,@args))
+   `((get ',message ,obj) ,@args))
 
 (macro isDefined? (sym)
  `(hasKey ',sym (interned-symbols)))
@@ -43,5 +43,5 @@
       (each (bind ',binds)
        (let* ((valueExpr (car (cdr bind)))
 	     (val       (eval valueExpr)))
-	(if (hasKey (car bind) result) (putHash (car bind) val result))))
+	(if (hasKey (car bind) result) (put (car bind) val result))))
       result)))

@@ -64,10 +64,10 @@ proc delete(args: LispObject): LispObject =
 const
   Module* = toTable {
     "makeTable"  : BuiltinFn makeTable,
-    "getHash"    : BuiltinFn getHash,
-    "putHash"    : BuiltinFn putHash,
     "tableKeys"  : BuiltinFn tableKeys,
     "tableValues": BuiltinFn tableValues,
     "hasKey"     : BuiltinFn hasKey,
-    "rmkey"      : BuiltinFn delete
+    "rmkey"      : BuiltinFn delete,
+    "get"        : BuiltinFn getHash,
+    "put"        : BuiltinFn putHash
   }
