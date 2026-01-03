@@ -103,6 +103,8 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
         result = lispobject.newTable()
         result.table = table
         return result
+    elif currentForm.kind == FieldAccess:
+      return currentEnv.lookupValue(currentForm.tableSym.sym.name).table[newSym currentForm.field.sym.name]
     elif currentForm.kind == Symbol:
       return currentEnv.lookupValue(currentForm.sym.name)
     elif currentForm.kind == Cons:
@@ -269,7 +271,9 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
         else:
           discard
       # Non Special forms :: Lambdas | Builtins | Macros
-      let op = currentEnv.eval(currentForm.car)      
+      var op = currentEnv.eval(currentForm.car)
+      if currentForm.car.kind == FieldAccess:
+        op = currentEnv.eval(currentForm.car)
       if op.kind == Builtin:  
         var
           evaluatedArgs: seq[LispObject]

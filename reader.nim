@@ -8,7 +8,6 @@ type
 
 var parseSexp*: (var Reader) -> owned LispObject
 
-
 func advance*(p: var Reader) =
   p.lexer.getTok
 
@@ -16,14 +15,18 @@ func expect*(p: var Reader, kind: TokenKind, callsite="") =
   if p.lexer.curTok.kind != kind:
     raise newException(ValueError, fmt"Reader expected TokenKind: {$kind} but got {p.lexer.curTok.kind}")
   p.advance
-
-
-  
+ 
 proc parseAtom(p: var Reader): owned LispObject =
   case p.lexer.curTok.kind:
   of tkSym:
     let sym = newSym p.lexer.curTok.sym.name
     p.advance
+    if p.lexer.curTok.kind == tkDot:
+      p.advance
+      if p.lexer.curTok.kind == tkSym:
+        let field = newSym p.lexer.curTok.sym.name
+        p.advance 
+        return newFieldAccess(tableSym = sym, field = field)
     if sym.sym.name == "nil": return NIL()
     return sym
   of tkInt:
@@ -102,7 +105,6 @@ proc parseTableLit(p: var Reader): owned LispObject =
       raise newException(ValueError, fmt"Expected ',' or '}}`' after table entry, got  {p.lexer.curTok.kind}")
   p.expect tkRBrace 
 
-
   
 parseSexp = proc(p: var Reader): owned LispObject =
   case p.lexer.curTok.kind:
@@ -116,9 +118,7 @@ parseSexp = proc(p: var Reader): owned LispObject =
   else:
     return parseAtom(p)
         
-      
-          
-      
+           
 proc parse*(input: string): owned LispObject =
   var
     parser: Reader

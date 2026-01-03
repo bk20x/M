@@ -4,7 +4,7 @@ import alien
 
 type
   LispObjectKind* = enum
-    Nil, Int, Float, BigInt, Symbol, String, Cons, Builtin, Lambda, Macro, HashTable, AlienObj
+    Nil, Int, Float, BigInt, Symbol, String, Cons, Builtin, Lambda, Macro, HashTable, AlienObj, FieldAccess
     
   SymbolRef* = ref object
     name*: string
@@ -41,12 +41,18 @@ type
         table*: Table[LispObject, LispObject]
       of AlienObj:
         alien*: Alien
+      of FieldAccess:
+        tableSym*: LispObject
+        field*   : LispObject
       of Nil:
        discard
 
 func T*(): owned LispObject   {.inline.} = LispObject(kind: Symbol, sym: SymbolRef(name: "t"))
 func NIL*(): owned LispObject {.inline.} = LispObject(kind: Nil)
 
+func newFieldAccess*(tableSym: sink LispObject; field: sink LispObject): owned LispObject =
+  return LispObject(kind: FieldAccess, tableSym: tableSym, field: field)
+  
 func newAlien*(alien: Alien): owned LispObject =
   return LispObject(kind: AlienObj, alien: alien)
 
@@ -59,13 +65,13 @@ func newTable*(table: Table[LispObject, LispObject]): owned LispObject =
 func newScope*(parent: Env): owned Env =
   return Env(interned: initTable[string, LispObject](), loadedModules: initTable[string, Table[string, BuiltinFn]](), parent: parent)
   
-func newLambda*(env: Env, params, body: LispObject): owned LispObject =
+func newLambda*(env: Env; params, body: LispObject): owned LispObject =
   return LispObject(kind: Lambda, params: params, body: body, closure: env.newScope())
   
-func newMacro*(env: Env, params, body: LispObject): owned LispObject =
+func newMacro*(env: Env; params, body: LispObject): owned LispObject =
   return LispObject(kind: Macro, params: params, body: body, closure: env.newScope())
   
-func newBuiltin*(fun: BuiltinFn, name: string): owned LispObject {.inline.} =
+func newBuiltin*(fun: BuiltinFn; name: string): owned LispObject {.inline.} =
   return LispObject(kind: Builtin, fun: fun, name: name)
                     
 func newSym*(sym: sink string): owned LispObject =
@@ -92,13 +98,15 @@ func list*(objs: seq[LispObject]): owned LispObject =
     result = cons(objs[i], result)
   return result
   
-func `==`*(a, b: SymbolRef)    : bool   = a.name == b.name
-func isNil*(obj: LispObject)   : bool   =
-  if obj.kind == Symbol:  obj.sym.name == "nil" else: obj.kind == Nil
+func `==`*(a, b: SymbolRef)    : bool   = a.name == b.name    
 func isAtom*(obj: LispObject)  : bool   = obj.kind != Cons
 func isSymbol*(obj: LispObject): bool   = obj.kind == Symbol
 func isT*(obj: LispObject)     : bool   = obj.kind != Nil
-
+func isNil*(obj: LispObject)   : bool   =
+  if obj.kind == Symbol:
+    obj.sym.name == "nil"
+  else:
+    obj.kind == Nil
 
 
   
@@ -145,6 +153,8 @@ proc `$`*(s: LispObject): string =
     return fmt"#<Macro {s.params} {s.body}>"
   of HashTable:
     return $s.table
+  of FieldAccess:
+    return fmt"#<FieldAccess table = {s.tableSym} field = {s.field}"
   of AlienObj:
     return fmt"#<{s.alien.tname} {describe s.alien}>"
   of Float:
@@ -213,7 +223,9 @@ func hash*(obj: LispObject): Hash =
       curr = curr.cdr
     return h
   of Builtin, Lambda, HashTable, Macro, AlienObj:
-    return hash(cast[pointer](addr obj)) 
+    return hash(cast[pointer](addr obj))
+  of FieldAccess:
+    return hash(obj.tableSym.sym.name & "." & obj.field.sym.name)
 
 proc `==`*(x, y: LispObject): bool =
   if x.kind != y.kind:
@@ -249,5 +261,6 @@ proc `==`*(x, y: LispObject): bool =
     return x.params == y.params and x.body == y.body and x.closure == y.closure
   of Builtin, AlienObj:
     return (cast[pointer](addr x) == cast[pointer](addr y))
+  else: discard
 
 

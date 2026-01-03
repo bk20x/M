@@ -7,10 +7,10 @@ type
 
   Token* = object
     case kind*: TokenKind:
-      of tkSym: sym*:   SymbolRef
-      of tkStr: str*:   string
+      of tkSym:   sym*:   SymbolRef
+      of tkStr:   str*:   string
       of tkFloat: flt*: float
-      of tkInt:  intv*: int
+      of tkInt:   intv*: int
       else: discard
 
   MLexr* = object of BaseLexer
