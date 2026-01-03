@@ -4,6 +4,7 @@
 
 # Features
 * Close to Native speed; recursive factorial of 10000 computes at `|real 0m0.034s| | sys 0m0.003s |`
+* Extremely lightweight; uses about 1.6 to 2.2 mb of memory on startup and ALWAYS will only use memory that is actually in use
 * Safe and fast Infinite recursion
 * First class functions and symbols
 * Powerful Macros and Backquote
