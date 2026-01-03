@@ -22,17 +22,13 @@
 
 (define table {x: 250.0, y: 250.0}) 
 
-
-
 ;; you can even use them as modules
 
 (define Vectors {
   newVector2: (-> (x y) {x: x, y: y})
 })
 
-
 (define pos (Vectors.newVector2 25.0 25.0)) 
-
 
 ;; recursion examples, recursion is fast, completely separated from the hardware callstack
 
@@ -45,8 +41,6 @@
 ;; retrieve a functions body as a mutable cons
 (echo (body factorial)) 
 
-
-
 ;; macro examples
 
 (macro collect (binding body)
@@ -55,8 +49,6 @@
   `(map ,collection (-> (,var) ,body))))  ; macros and backquote inspired by CL
 
 (define xs (collect (x (range 1 1000)) (* x x))) 
-
-
 
 ;; IO and data transformation capabilities 
 
