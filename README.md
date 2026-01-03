@@ -2,6 +2,15 @@
 ## "The Power to Serve"
 #### This is designed to be something one person can master; The core of the language excluding Stdlib is only about 1400 lines of structured self documenting code; Using nothing but the Nim standard library (Besides BigInts which is made and maintained by the Nim team as well)
 #### Still a work in progress but it is already a capable tool for systems scripting or embedding in any Nim Application. you can instantiate the interpreter in 1 line of code and its trivial to extend with builtins 
+
+# Features
+* Safe Infinite recursion
+* Object literals and dot notation
+* Trivially extensible with native code and embedded within applications
+* Complete transparency and complex metaprogramming (Lambdas are just mutable data structures allowing for hot reloading / hot swapping)
+* Completely cross platform; can fit in flash memory
+* many more ...
+
 ```
 (open SysIo Strings)
 
