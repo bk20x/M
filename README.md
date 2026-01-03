@@ -3,27 +3,37 @@
 ```
 (open SysIo Strings)
 
+;; table examples
+;; support for table literals inspired by Lua
 
-(define factorial (-> (n acc)
-  (if (= n 0)
-       acc
-      (factorial (- n 1) (* acc n))))) ; recursion is fast, completely separated from the hardware callstack
-
-
-(echo (body factorial)) ; retrieve a functions body as a mutable cons
+(define table {x: 250.0, y: 250.0}) 
 
 
-(define table {x: 250.0, y: 250.0}) ; support for table literals inspired by Lua
 
+;; you can even use them as modules
 
 (define Vectors {
   newVector2: (-> (x y) {x: x, y: y})
 })
 
 
-(define pos (Vectors.newVector2 25.0 25.0)) ; you can even use them as modules
+(define pos (Vectors.newVector2 25.0 25.0)) 
 
 
+;; recursion examples, recursion is fast, completely separated from the hardware callstack
+
+(define factorial (-> (n acc)
+  (if (= n 0)
+       acc
+      (factorial (- n 1) (* acc n))))) 
+
+
+;; retrieve a functions body as a mutable cons
+(echo (body factorial)) 
+
+
+
+;; macro examples
 
 (macro collect (binding body)
  (let ((var        (car binding))
@@ -32,6 +42,9 @@
 
 (define xs (collect (x (range 1 1000)) (* x x))) 
 
+
+
+;; IO and data transformation capabilities 
 
 (define readDir (-> (dir) (map (filter (listDir dir) isFile?) readFile))) ; clean one liner
 
