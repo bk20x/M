@@ -45,3 +45,10 @@
 	     (val       (eval valueExpr)))
 	(if (hasKey (car bind) result) (put (car bind) val result))))
       result)))
+
+
+
+
+
+
+

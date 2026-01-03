@@ -25,6 +25,7 @@
 
 (define readDir (-> (dir) (map (filter (listDir dir) isFile?) readFile)))
 
+
 (factorial 10000 1)
 
 
@@ -33,5 +34,4 @@
  (let ((var        (car binding))
        (collection (car (cdr binding))))
   `(map ,collection (-> (,var) ,body))))
-
 

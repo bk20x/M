@@ -2,9 +2,11 @@
 
 
 
-(macro withKeys (binding body)
- (let ((k     (car binding))
+(define TableMacros (
+ (let (())
+    (macro withKeys (binding body)
+     (let ((k     (car binding))
        (table (car (cdr binding))))
-  `(each (,k (tableKeys ,table))
-    ,body)))
-
+      `(each (,k (tableKeys ,table))
+	,body)))
+  {withKeys: withKeys})))
