@@ -1,5 +1,5 @@
 # λ ((M))  
-#### This is designed to be something one person can master; The core of the language excluding Stdlib is only about 1400 lines of structured self documenting code; Using nothing but the Nim standard library (Besides BigInts which is made and maintained by the Nim team as well)
+#### This is designed to be something one person can master; The core of the language excluding Stdlib is only about 1400 lines of structured self documenting code; Using nothing but the Nim standard library Besides BigInts from the Nim Team
 #### Still a work in progress but it is already a capable tool for systems scripting or embedding in any Nim Application.  you can instantiate the interpreter in 1 line of code and its trivial to extend with builtins 
 ###### to build, clone the repo and run: `nimble build`, to launch the interpreter in repl mode run `m -i` otherwise run `m filename.m`
 
