@@ -5,11 +5,11 @@
 # Features
 * Safe and fast Infinite recursion
 * First class functions and symbols
-* Powerful Macros and Backquote 
+* Powerful Macros and Backquote
+* Direct metaprogramming (Lambdas are structures allowing for hot reloading / hot swapping); code is data in a much more literal sense than Scheme or CL
 * Object literals and dot notation
 * Batteries included Standard library (Still WIP)
 * Trivially extensible with native code and embedded within applications
-* Complete transparency and complex metaprogramming (Lambdas are just mutable data structures allowing for hot reloading / hot swapping)
 * Completely cross platform; can fit in flash memory
 * many more ...
 
