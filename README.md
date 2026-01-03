@@ -5,12 +5,16 @@
 
 # Features
 * Safe Infinite recursion
+* First class functions and symbols
+* Powerful Macros and Backquote 
 * Object literals and dot notation
+* Batteries included Standard library (Still WIP)
 * Trivially extensible with native code and embedded within applications
 * Complete transparency and complex metaprogramming (Lambdas are just mutable data structures allowing for hot reloading / hot swapping)
 * Completely cross platform; can fit in flash memory
 * many more ...
 
+# Some Examples :)
 ```
 (open SysIo Strings)
 
