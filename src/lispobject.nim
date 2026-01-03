@@ -154,7 +154,7 @@ proc `$`*(s: LispObject): string =
   of HashTable:
     return $s.table
   of FieldAccess:
-    return fmt"#<FieldAccess table = {s.tableSym} field = {s.field}"
+    return fmt"#<FieldAccess table = {s.tableSym} field = {s.field}>"
   of AlienObj:
     return fmt"#<{s.alien.tname} {describe s.alien}>"
   of Float:
