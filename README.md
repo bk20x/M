@@ -3,7 +3,7 @@
 #### Still a work in progress but it is already a capable tool for systems scripting or embedding in any Nim Application. you can instantiate the interpreter in 1 line of code and its trivial to extend with builtins 
 
 # Features
-* Safe Infinite recursion
+* Safe and fast Infinite recursion
 * First class functions and symbols
 * Powerful Macros and Backquote 
 * Object literals and dot notation
