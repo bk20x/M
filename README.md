@@ -14,7 +14,7 @@
 * Completely cross platform; can fit in flash memory
 * many more ...
 
-# Some Examples :)
+# Some Examples ^_^
 ```
 (open SysIo Strings)
 
