@@ -1,5 +1,6 @@
 # λ ((M))  
 ## "The Power to Serve"
+#### This is designed to be something one person can master; The core of the language excluding Stdlib is only about 1400 lines of structured self documenting code; Using nothing but the Nim standard library (Besides BigInts which is made and maintained by the Nim team as well)
 ```
 (open SysIo Strings)
 
