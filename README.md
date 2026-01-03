@@ -3,6 +3,7 @@
 #### Still a work in progress but it is already a capable tool for systems scripting or embedding in any Nim Application.  you can instantiate the interpreter in 1 line of code and its trivial to extend with builtins 
 
 # Features
+* Close to Native speed; recursive factorial of 10000 computes at `|real 0m0.034s| | sys 0m0.003s |`
 * Safe and fast Infinite recursion
 * First class functions and symbols
 * Powerful Macros and Backquote
