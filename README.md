@@ -1,5 +1,6 @@
 # λ ((M))  
 ## "The Power to Serve"
+### Using nothing but the Nim standard library (Besides BigInts which is made and maintained by the Nim team as well)
 ```
 (open SysIo Strings)
 
