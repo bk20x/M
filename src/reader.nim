@@ -19,16 +19,19 @@ func expect*(p: var Reader, kind: TokenKind, callsite="") =
 proc parseAtom(p: var Reader): owned LispObject =
   case p.lexer.curTok.kind:
   of tkSym:
-    let sym = newSym p.lexer.curTok.sym.name
+    var res = newSym p.lexer.curTok.sym.name
     p.advance
-    if p.lexer.curTok.kind == tkDot:
-      p.advance
+    while p.lexer.curTok.kind == tkDot:
+      p.advance 
       if p.lexer.curTok.kind == tkSym:
         let field = newSym p.lexer.curTok.sym.name
         p.advance 
-        return newFieldAccess(tableSym = sym, field = field)
-    if sym.sym.name == "nil": return NIL()
-    return sym
+        res = newFieldAccess(tableSym = res, field = field)
+      else:
+        raise newException(ValueError, fmt"Reader expected symbol after '.' but got {p.lexer.curTok.kind}")
+    if res.kind == Symbol and res.isNil: 
+      return NIL()
+    return res
   of tkInt:
     let num = newInt p.lexer.curTok.intv
     p.advance
