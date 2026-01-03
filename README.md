@@ -40,6 +40,10 @@
        acc
       (factorial (- n 1) (* acc n))))) 
 
+(define range (-> (lo hi)
+ (if (> lo hi) ()
+  (cons lo (range (+ lo 1) hi)))))
+  
 
 ;; retrieve a functions body as a mutable cons
 
