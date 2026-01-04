@@ -1,7 +1,7 @@
 # λ ((M))  
 #### This is designed to be something one person can master; The core of the language excluding Stdlib is only about 1400 lines of structured self documenting code; Using nothing but the Nim standard library Besides BigInts from the Nim Team
 #### Still a work in progress but it is already a capable tool for systems scripting or embedding in any Nim Application.  you can instantiate the interpreter in 1 line of code and its trivial to extend with builtins 
-###### to build, clone the repo and run: `nimble build`, to launch the interpreter in repl mode run `m -i` otherwise run `m filename.m`;  code examples are below the Features section and in the `examples` directory 
+###### to install M from nimble run: `nimble install m`. to build from source , clone the repo and run: `nimble build`, to launch the interpreter in repl mode run `m -i` otherwise run `m filename.m`;  code examples are below the Features section and in the `examples` directory 
 
 # Features
 * Close to Native speed; recursive factorial of 10000 computes at `|real 0m0.034s| | sys 0m0.003s |`
