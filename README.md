@@ -27,10 +27,10 @@
 (define vec2 {x: 250.0, y: 250.0}) 
 
 (define Vectors {
-  newVector2: (-> (x y) {x: x, y: y})
+  Vector2: (-> (x y) {x: x, y: y})
 })
 
-(define pos (Vectors.newVector2 25.0 25.0)) 
+(define pos (Vectors.Vector2 25.0 25.0)) 
 
 
 ;; recursion examples, recursion is fast, completely separated from the hardware callstack
