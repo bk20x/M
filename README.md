@@ -20,6 +20,8 @@
 ```
 (open SysIo Strings)
 
+(echo "Hello World!")
+
 ;; table examples
 ;; support for table literals inspired by Lua
 ;; you can even use them as modules
@@ -32,6 +34,7 @@
 
 (define pos (Vectors.Vector2 25.0 25.0)) 
 
+(echo (fmt "x=$  y=$" pos.x pos.y))
 
 ;; recursion examples, recursion is fast, completely separated from the hardware callstack
 
