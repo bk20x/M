@@ -17,6 +17,7 @@
 * many more ...
 
 # Some Examples ^_^
+![](doc/ex1.png)
 ```
 (open SysIo Strings)
 
