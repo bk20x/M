@@ -10,4 +10,4 @@ bin           = @["m"]
 
 # Dependencies
 requires "bigints >= 1.0.0"
-requires "nim >= 2.2.6"
+requires "nim >= 2.0.0"
