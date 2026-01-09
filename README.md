@@ -10,7 +10,7 @@
 * First class functions and symbols
 * Powerful Macros and Backquote
 * Direct metaprogramming (Lambdas are structures allowing for hot reloading / hot swapping); code is data in a much more literal sense than Scheme or CL
-* Object literals and dot notation
+* Table literals and dot notation for field access
 * Batteries included Standard library (Still WIP)
 * Trivially extensible with native code and embedded within applications
 * Completely cross platform; can fit in flash memory
