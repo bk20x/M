@@ -43,7 +43,7 @@ func safeCdr(obj: LispObject): LispObject =
   else:
     return NIL()
     
-var ## All used in `eval`, these are forward declared;; see implementations below `eval`
+var ## All used in `eval`, these are forward declared because they call `eval`;; see implementations below `eval`
   lookupPlace: (var Env, LispObject) -> ptr LispObject
   ifImpl:      (var Env, LispObject) -> LispObject
   doTimes:     (var Env, LispObject) -> LispObject
