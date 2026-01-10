@@ -223,7 +223,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           currentEnv.intern(name.sym.name, val)
           return name
         of "macro":     
-          if (currentForm.len != 4) or (currentForm.third.kind != Cons): # params
+          if (currentForm.len != 4) or (currentForm.third.kind notin {Cons, Nil}): # params
             raise newException(ValueError, fmt"Malformed macrodef: {currentForm}")
           let
             name      = currentForm.second
