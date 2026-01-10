@@ -2,9 +2,8 @@ version       = "0.1.0"
 author        = "bk20x"
 description   = "Lightweight and easily extendable / embeddable Lisp dialect with no VM and deterministic performance"
 license       = "BSD-3-Clause"
-
+installExt    = @["nim"]
 srcDir        = "src"
-installDirs   = @["m"] 
 bin           = @["m"]
 
 # Dependencies
