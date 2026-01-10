@@ -5,6 +5,7 @@ author        = "bk20x"
 description   = "Lightweight and easily extendable / embeddable Lisp dialect with no VM and deterministic performance"
 license       = "BSD-3-Clause"
 srcDir        = "src"
+installExt    = @["nim"]
 bin           = @["m"]
 
 

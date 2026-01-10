@@ -1,5 +1,5 @@
 import std/[cmdline, strutils, streams]
-import repl, environment, reader, lispobject
+import m/[repl, environment, reader, lispobject]
 
 
 
