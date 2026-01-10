@@ -21,14 +21,15 @@ proc parseAtom(p: var Reader): owned LispObject =
   of tkSym:
     var res = newSym p.lexer.curTok.sym.name
     p.advance
+    # Check for field access w dot notation
     while p.lexer.curTok.kind == tkDot:
       p.advance 
       if p.lexer.curTok.kind == tkSym:
         let field = newSym p.lexer.curTok.sym.name
         p.advance 
-        res = newFieldAccess(tableSym = res, field = field)
+        res = newFieldAccess(tableSym=res, field=field)
       else:
-        raise newException(ValueError, fmt"Reader expected symbol after '.' but got {p.lexer.curTok.kind}")
+        raise newException(ValueError, fmt"Reader expected symbol after '.' for FieldAccess but got {p.lexer.curTok.kind}")
     if res.kind == Symbol and res.isNil: 
       return NIL()
     return res
