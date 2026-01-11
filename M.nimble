@@ -5,6 +5,7 @@ license       = "BSD-3-Clause"
 installExt    = @["nim"]
 srcDir        = "src"
 bin           = @["m"]
+installDirs   = @["src/m"]
 
 # Dependencies
 requires "bigints >= 1.0.0"
