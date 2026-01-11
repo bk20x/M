@@ -264,6 +264,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             if not currentEnv.interned.hasKey(placeForm.sym.name):
               raise newException(ValueError, fmt"setq: unbound symbol {placeForm.sym.name}")
             currentEnv.interned[placeForm.sym.name] = valForm
+            return valForm
           case placeForm.kind
           of Cons:
             let
