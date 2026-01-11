@@ -268,9 +268,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           of Cons:
             let
               formToAssign = placeForm.cdr.car
-              place        = currentEnv.eval(formToAssign)
-            if place.kind == Lambda:
-              place.body   = valForm   
+              place        = currentEnv.eval(formToAssign)   
             else:
               var place    = currentEnv.lookupPlace(placeForm)
               place[]      = valForm
