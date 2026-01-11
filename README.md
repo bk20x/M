@@ -19,6 +19,7 @@
 # Some Examples ^_^
 ![](doc/ex1.png)
 - Embed in any nim app in 2 lines
+---
 ![](doc/embedex1.png)
 ```
 (open SysIo Strings)
