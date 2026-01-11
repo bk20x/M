@@ -108,7 +108,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
       if targetTable.kind != HashTable:
         raise newException(ValueError, fmt"Property access on non-table object: {targetTable.kind}")
       if not targetTable.table.hasKey(currentForm.field):
-        raise newException(ValueError, fmt"Key not found: {currentForm.field.sym.name}")
+        return NIL()
       return targetTable.table[currentForm.field]
     elif currentForm.kind == Symbol:
       return currentEnv.lookupValue(currentForm.sym.name)
