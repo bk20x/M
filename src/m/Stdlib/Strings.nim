@@ -1,6 +1,6 @@
 import std/[strformat, strutils, tables, sugar, sequtils]
 import ../lispobject
-
+import unicode
 
 
 proc toString(obj: LispObject): string =
@@ -44,6 +44,12 @@ proc strLen(args: LispObject): LispObject =
     raise newException(ValueError, fmt"`strLen` is of type String -> String but got {args}")
   else:
     return newInt(args.first.str.len)
+
+proc strCharLen(args: LispObject): LispObject =
+  if args.len != 1 or not (args.first.kind == String):
+    raise newException(ValueError, fmt"`strCharLen` is of type String -> String but got {args}")
+  else:
+    return newInt(args.first.str.runeLen)
 
 proc strDowncase(args: LispObject): LispObject =
   if args.len != 1 or not (args.first.kind == String):
@@ -130,6 +136,7 @@ const
     "strReplace" : BuiltinFn strReplace,
     "strConcat"  : BuiltinFn strConcat,
     "strLen"     : BuiltinFn strLen,
+    "strCharLen" : BuiltinFn strCharLen,
     "strDowncase": BuiltinFn strDowncase,
     "strUpcase"  : BuiltinFn strUpcase,
     "strContains": BuiltinFn strContains,
