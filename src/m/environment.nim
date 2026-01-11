@@ -238,13 +238,22 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           let
             placeForm = currentForm.cdr.car
             valForm   = currentForm.cdr.cdr.car
-          let
-            val = currentEnv.eval(valForm)
-            placeRef = currentEnv.lookupPlace(placeForm)
-          if placeRef.isNil:
-            raise newException(ValueError, "setf: place does not exist")
-          placeRef[] = val
-          return val
+          # For setting table fields with dot access like (setf pos.x 56.0)
+          if placeForm.kind == FieldAccess: 
+            let
+              table = currentEnv.eval(placeForm.tableSym)
+              key   = placeForm.field
+              val   = currentEnv.eval(valForm)
+            table.table[key] = val
+            return val
+          else:
+            let
+              val = currentEnv.eval(valForm)
+              placeRef = currentEnv.lookupPlace(placeForm)
+            if placeRef.isNil:
+              raise newException(ValueError, "setf: place does not exist")
+            placeRef[] = val
+            return val
         of "setq":
           if not (currentForm.len == 3):
             raise newException(ValueError, fmt"Malformed setf: {currentForm}")
@@ -255,7 +264,8 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             if not currentEnv.interned.hasKey(placeForm.sym.name):
               raise newException(ValueError, fmt"setq: unbound symbol {placeForm.sym.name}")
             currentEnv.interned[placeForm.sym.name] = valForm
-          elif placeForm.kind == Cons:
+          case placeForm.kind
+          of Cons:
             let
               formToAssign = placeForm.cdr.car
               place        = currentEnv.eval(formToAssign)
@@ -264,6 +274,10 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             else:
               var place    = currentEnv.lookupPlace(placeForm)
               place[]      = valForm
+          of FieldAccess:
+            var table = currentEnv.eval(placeForm.tableSym)
+            let key   = placeForm.field
+            table.table[key] = valForm            
           else:
             raise newException(ValueError, fmt"setq: invalid place form {placeForm}")
           return valForm
@@ -415,7 +429,6 @@ lookupPlace = proc(env: var Env, form: LispObject): ptr LispObject =
         listVal = env.eval: listForm
       if listVal.kind == Cons:
         return addr listVal.car
-
     else:
       return addr form
   else:
