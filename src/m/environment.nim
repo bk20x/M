@@ -264,16 +264,20 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             if not currentEnv.interned.hasKey(placeForm.sym.name):
               raise newException(ValueError, fmt"setq: unbound symbol {placeForm.sym.name}")
             currentEnv.interned[placeForm.sym.name] = valForm
-          if placeForm.kind == Cons:
+          case placeForm.kind
+          of Cons:
             let
               formToAssign = placeForm.cdr.car
-              placeForm    = currentEnv.eval(formToAssign)
-              place        = currentEnv.lookupPlace(placeForm)
-            place[] = valForm
-          elif placeForm.kind == FieldAccess:
+              place        = currentEnv.eval(formToAssign)
+            if place.kind == Lambda:
+              place.body   = valForm   
+            else:
+              var place    = currentEnv.lookupPlace(placeForm)
+              place[]      = valForm
+          of FieldAccess:
             var table = currentEnv.eval(placeForm.tableSym)
             let key   = placeForm.field
-            table.table[key] = valForm
+            table.table[key] = valForm            
           else:
             raise newException(ValueError, fmt"setq: invalid place form {placeForm}")
           return valForm
