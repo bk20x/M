@@ -71,4 +71,8 @@
 
 (define readDir (-> (dir) (map (filter (listDir dir) isFile?) readFile))) ; clean one liner
 
+;; String indexing
+
+(define str "Yoben Boben")
+(echo (str[5..(- (strLen str) 1)]))
 ```
