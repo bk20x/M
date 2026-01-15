@@ -4,7 +4,20 @@ import alien
 
 type
   LispObjectKind* = enum
-    Nil, Int, Float, BigInt, Symbol, String, Cons, Builtin, Lambda, Macro, HashTable, AlienObj, FieldAccess
+    Nil,
+    Int,
+    Float,
+    BigInt,
+    Symbol,
+    String,
+    Cons,
+    Builtin,
+    Lambda,
+    Macro,
+    HashTable,
+    AlienObj,
+    FieldAccess,
+    StringIndex
     
   SymbolRef* = ref object
     name*: string
@@ -42,13 +55,18 @@ type
       of AlienObj:
         alien*: Alien
       of FieldAccess:
-        tableSym*: LispObject
-        field*   : LispObject
+        tableSym*, field*: LispObject
+      of StringIndex:
+        strObj*: LispObject
+        startIdx*, endIdx*: LispObject          
       of Nil:
        discard
 
 func T*(): owned LispObject   {.inline.} = LispObject(kind: Symbol, sym: SymbolRef(name: "t"))
 func NIL*(): owned LispObject {.inline.} = LispObject(kind: Nil)
+
+func newStringIndex*(str: sink LispObject; startIdx, endIdx: sink LispObject): owned LispObject =
+  return LispObject(kind: StringIndex, strObj: str, startIdx: startIdx, endIdx: endIdx)
 
 func newFieldAccess*(tableSym: sink LispObject; field: sink LispObject): owned LispObject =
   return LispObject(kind: FieldAccess, tableSym: tableSym, field: field)
@@ -107,9 +125,7 @@ func isNil*(obj: LispObject)   : bool   =
     obj.sym.name == "nil"
   else:
     obj.kind == Nil
-
-
-  
+    
 func len*(list: LispObject): int =
   if list.isNil:
     return 0
@@ -137,8 +153,8 @@ func fifth*(list: LispObject): owned LispObject =
   return list.cdr.cdr.cdr.cdr.car
 
    
-import std/strformat
-proc `$`*(s: LispObject): string =
+from std/strformat import fmt
+proc `$`*(s: LispObject): owned string =
   case s.kind:
   of Nil:
     return "NIL"
@@ -160,7 +176,7 @@ proc `$`*(s: LispObject): string =
   of Float:
     result = $s.floatVal
     if result.find('.') == -1:
-      result &= ".0"
+      result.add ".0"
     return result
   of Int:
     return $s.intVal
@@ -168,6 +184,10 @@ proc `$`*(s: LispObject): string =
     return $s.bigNum
   of String:
     return s.str.escape
+  of StringIndex:
+    if s.startIdx == s.endIdx:
+      return fmt"{s.strObj}[{s.startIdx}]"
+    return fmt"{s.strObj}[{s.startIdx}..{s.endIdx}]"
   of Cons:
     result = "("
     var
@@ -175,13 +195,13 @@ proc `$`*(s: LispObject): string =
       first = true
     while not current.isNil and current.kind == Cons:
       if not first:
-        result &= " "
-      result &= $(current.car) 
+        result.add " "
+      result.add $(current.car) 
       current = current.cdr 
       first = false
     if not current.isNil:
-      result &= " . " & $current
-    result &= ")"    
+      result.add " . " & $current
+    result.add ")"    
     return result
   
 func toSeq*(list: LispObject): owned seq[LispObject] =
@@ -197,7 +217,7 @@ func toSeq*(list: LispObject): owned seq[LispObject] =
   return result
 
 
-func hash*(obj: LispObject): Hash =
+proc hash*(obj: LispObject): owned Hash =
   case obj.kind
   of Int:
     result = hash(obj.intVal)
@@ -225,7 +245,10 @@ func hash*(obj: LispObject): Hash =
   of Builtin, Lambda, HashTable, Macro, AlienObj:
     return hash(cast[pointer](addr obj))
   of FieldAccess:
-    return hash(obj.tableSym.sym.name & "." & obj.field.sym.name)
+    return hash($obj)
+  of StringIndex:
+    return hash($obj)
+  
 
 proc `==`*(x, y: LispObject): bool =
   if x.kind != y.kind:
@@ -261,6 +284,7 @@ proc `==`*(x, y: LispObject): bool =
     return x.params == y.params and x.body == y.body and x.closure == y.closure
   of Builtin, AlienObj:
     return (cast[pointer](addr x) == cast[pointer](addr y))
-  else: discard
+  else:
+    discard
 
 

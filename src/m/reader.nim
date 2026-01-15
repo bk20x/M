@@ -11,17 +11,42 @@ var parseSexp*: (var Reader) -> owned LispObject
 func advance*(p: var Reader) =
   p.lexer.getTok
 
-func expect*(p: var Reader, kind: TokenKind, callsite="") =
+func expect*(p: var Reader; kind: TokenKind; callsite="") =
   if p.lexer.curTok.kind != kind:
-    raise newException(ValueError, fmt"Reader expected TokenKind: {$kind} but got {p.lexer.curTok.kind}")
+    raise newException(ValueError, fmt"at {callsite} Reader expected TokenKind: {$kind} but got {p.lexer.curTok.kind}")
   p.advance
- 
+
+proc parseStringIndex(p: var Reader; strObj: sink LispObject): owned LispObject =
+  proc parseIdx(p: var Reader): owned LispObject = 
+    result = p.parseSexp()
+    case result.kind
+    of Symbol, Int: # Allowed Kinds
+      return result
+    else:
+      raise newException(ValueError, fmt"parseStringIndex: invalid type for String index {result.kind}")
+  var
+    startIdx: LispObject
+    endIdx: LispObject
+  p.expect(tkLBracket, callsite="parseStringIndex")
+  startIdx = p.parseIdx()
+  p.advance()
+  if p.lexer.curTok.kind == tkDot:
+    p.expect(tkDot, callsite="parseStringIndex")
+    endIdx = p.parseIdx()
+  else:
+    endIdx = startIdx
+  return newStringIndex(strObj, startIdx, endIdx)
+
+
+    
 proc parseAtom(p: var Reader): owned LispObject =
   case p.lexer.curTok.kind:
   of tkSym:
     var res = newSym p.lexer.curTok.sym.name
     p.advance
     # Check for field access w dot notation
+    if p.lexer.curTok.kind == tkLBracket:
+      return p.parseStringIndex(res)
     while p.lexer.curTok.kind == tkDot:
       p.advance 
       if p.lexer.curTok.kind == tkSym:
@@ -34,17 +59,19 @@ proc parseAtom(p: var Reader): owned LispObject =
       return NIL()
     return res
   of tkInt:
-    let num = newInt p.lexer.curTok.intv
+    let num = newInt(p.lexer.curTok.intv)
     p.advance
     return num
   of tkFloat:
-    let num = newFloat p.lexer.curTok.flt
+    let num = newFloat(p.lexer.curTok.flt)
     p.advance
     return num
   of tkStr:
-    let str = newStr p.lexer.curTok.str
+    let strObj = newStr(p.lexer.curTok.str)
     p.advance
-    return str
+    if p.lexer.curTok.kind == tkLBracket:
+      return p.parseStringIndex(strObj)
+    return strObj
   of tkBquote:
     p.advance 
     let quoted = parseSexp(p) 

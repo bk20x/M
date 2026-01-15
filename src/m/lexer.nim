@@ -3,7 +3,24 @@ import lispobject
 
 type
   TokenKind* = enum
-    tkLpar, tkRpar, tkDot, tkQuote, tkSym, tkFloat,tkInt, tkStr, tkEof, tkBquote, tkComma, tkSplice, tkComment, tkColon, tkLBrace, tkRBrace
+    tkSym
+    tkFloat,
+    tkInt,
+    tkStr,
+    tkEof,
+    tkLpar,    # (
+    tkRpar,    # )
+    tkDot,     # .
+    tkQuote,   # '
+    tkBquote,  # `
+    tkComma,   # ,
+    tkSplice,  # ,@
+    tkComment, # ;
+    tkColon,   # :
+    tkLBrace,  # {
+    tkRBrace   # }
+    tkLBracket # [
+    tkRBracket # ]
 
   Token* = object
     case kind*: TokenKind:
@@ -41,12 +58,22 @@ func parseNumber*(lx: var MLexr, start: int) =
   var 
     pos = start 
     isFloat = false
+  
   if lx.buf[pos] in {'+', '-'}:
     inc pos
-  while pos < lx.buf.len and (lx.buf[pos].isDigit or lx.buf[pos] == '.'):
-    if lx.buf[pos] == '.':
+
+  while pos < lx.buf.len:
+    let c = lx.buf[pos]
+    if c.isDigit:
+      inc pos
+    elif c == '.':
+      if pos + 1 < lx.buf.len and lx.buf[pos+1] == '.': # ignore if there is `..` because its StringIndex initializer; see `parseStringIndex` in `reader.nim`
+        break 
       isFloat = true
-    inc pos
+      inc pos
+    else:
+      break
+
   if pos < lx.buf.len and lx.buf[pos] in {'e', 'E'}:
     isFloat = true
     inc pos
@@ -54,15 +81,17 @@ func parseNumber*(lx: var MLexr, start: int) =
       inc pos
     while pos < lx.buf.len and lx.buf[pos].isDigit:
       inc pos
-  let numStr = lx.buf.substr(start, pos - 1) 
-  lx.bufpos = pos 
+
+  let numStr = lx.buf.substr(start, pos - 1)
+  lx.bufpos = pos
   try:
     if isFloat:
       lx.curTok = Token(kind: tkFloat, flt: parseFloat(numStr))
     else:
       lx.curTok = Token(kind: tkInt, intv: parseInt(numStr))
   except:
-    raise newException(ValueError, fmt"Invalid number: {numStr} at {start}")
+    raise newException(ValueError, fmt"Invalid number: {numStr}")
+
 
 func parseStr*(lx: var MLexr) =
   var str = ""
@@ -104,6 +133,12 @@ func getTok*(lx: var MLexr) =
   of '}':
     inc lx.bufpos
     lx.curTok = Token(kind: tkRBrace)
+  of '[':
+    inc lx.bufpos
+    lx.curTok = Token(kind: tkLBracket)
+  of ']':
+    inc lx.bufpos
+    lx.curTok = Token(kind: tkRBracket)
   of ':':
     inc lx.bufpos
     lx.curTok = Token(kind: tkColon)

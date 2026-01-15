@@ -94,7 +94,9 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
   while true:
     # Self evaluating Objects
     if currentForm.kind in SelfEvaluatingTypes:
-      return currentForm
+      return currentForm        
+    elif currentForm.kind == Symbol:
+      return currentEnv.lookupValue(currentForm.sym.name)
     elif currentForm.kind == HashTable:
       if currentForm.literal:
         var table = currentForm.table
@@ -104,14 +106,24 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
         result.table = table
         return result
     elif currentForm.kind == FieldAccess:
-      let targetTable = currentEnv.eval(currentForm.tableSym) 
+      let targetTable = currentEnv.eval(currentForm.tableSym)
       if targetTable.kind != HashTable:
         raise newException(ValueError, fmt"Property access on non-table object: {targetTable.kind}")
       if not targetTable.table.hasKey(currentForm.field):
         return NIL()
       return targetTable.table[currentForm.field]
-    elif currentForm.kind == Symbol:
-      return currentEnv.lookupValue(currentForm.sym.name)
+    elif currentForm.kind == StringIndex:
+      let
+        strObj   = currentEnv.eval(currentForm.strObj)
+        startIdx = currentEnv.eval(currentForm.startIdx)
+        endIdx   = currentEnv.eval(currentForm.endIdx)
+      if strObj.kind != String:
+        raise newException(ValueError, fmt"Attempt to index non String object {currentForm}")
+      try:
+        let str = strObj.str
+        return newStr(str[startIdx.intVal..endIdx.intVal])
+      except IndexDefect:
+        raise newException(ValueError, fmt"Out of bounds string index! {currentForm}")
     elif currentForm.kind == Cons:
       if currentForm.car.kind == Symbol:
         case currentForm.car.sym.name:
