@@ -6,7 +6,7 @@ type
   Reader* = object
     lexer: MLexr
 
-var parseSexp*: (var Reader, bool) -> owned LispObject
+var parseSexp*: proc(p: var Reader, parsingIndex:bool=false): owned LispObject
 
 func advance*(p: var Reader) =
   p.lexer.getTok
