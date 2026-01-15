@@ -85,6 +85,9 @@ proc compileFile(filename: string): seq[LispObject] =
   for form in findForms(code):
     result.add parse form
     
+proc checkInt(obj: LispObject) {.inline.} = 
+  if obj.kind != Int:
+    raise newException(ValueError, fmt"Attempt to use non Integer object as index {obj}")    
 
 proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
   var
@@ -119,11 +122,8 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
         endIdx   = currentEnv.eval(currentForm.endIdx)
       if strObj.kind != String:
         raise newException(ValueError, fmt"Attempt to index non String object: {currentForm}")
-      template check(obj: LispObject) = # prob rename to something else later incase i create another 'check' somewhere else
-        if obj.kind != Int:
-          raise newException(ValueError, fmt"Attempt to use non Integer object as index {obj}")
-      check(startIdx)
-      check(endIdx)
+      checkInt(startIdx)
+      checkInt(endIdx)
       try:
         let str = strObj.str
         return newStr(str[startIdx.intVal..endIdx.intVal])
@@ -263,6 +263,20 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
               val   = currentEnv.eval(valForm)
             table.table[key] = val
             return val
+          elif placeForm.kind == StringIndex:
+            let
+              strObj    = currentEnv.eval(placeForm.strObj)
+              startIdx  = currentEnv.eval(placeForm.startIdx)
+              endIdx    = currentEnv.eval(placeForm.endIdx)
+            checkInt(startIdx)
+            checkInt(endIdx)
+            if strObj.kind != String:
+              raise newException(ValueError, fmt"invalid String index {placeForm}")
+            try:
+              strObj.str[startIdx.intVal..endIdx.intVal] = $valForm
+              return strObj
+            except IndexDefect:
+              raise newException(ValueError, fmt"Attempt to setf out of bounds index! {placeForm}")
           else:
             let
               val = currentEnv.eval(valForm)
@@ -295,7 +309,21 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           of FieldAccess:
             var table = currentEnv.eval(placeForm.tableSym)
             let key   = placeForm.field
-            table.table[key] = valForm            
+            table.table[key] = valForm
+          of StringIndex:
+            let
+              strObj    = currentEnv.eval(placeForm.strObj)
+              startIdx  = currentEnv.eval(placeForm.startIdx)
+              endIdx    = currentEnv.eval(placeForm.endIdx)
+            checkInt(startIdx)
+            checkInt(endIdx)
+            if strObj.kind != String:
+              raise newException(ValueError, fmt"Invalid String index {placeForm}")
+            try:
+              strObj.str[startIdx.intVal..endIdx.intVal] = $valForm
+              return strObj
+            except IndexDefect:
+              raise newException(ValueError, fmt"Attempt to set out of bounds index! {placeForm}")
           else:
             raise newException(ValueError, fmt"setq: invalid place form {placeForm}")
           return valForm
