@@ -20,25 +20,24 @@ proc parseStringIndex(p: var Reader; strObj: sink LispObject): owned LispObject 
   proc parseIdx(p: var Reader): owned LispObject = 
     result = p.parseSexp(true)
     case result.kind
-    of Symbol, Int, Cons: 
+    of Symbol, Int, Cons, FieldAccess: 
       return result
     else:
-      raise newException(ValueError, fmt"parseStringIndex: invalid type for String index {result.kind}")
-  var
-    startIdx: LispObject
-    endIdx: LispObject
+      raise newException(ValueError, fmt"parseStringIndex: invalid type {result.kind}")
+
+  var startIdx, endIdx: LispObject
   p.expect(tkLBracket, callsite="parseStringIndex")
+  
   startIdx = p.parseIdx()
+  
   if p.lexer.curTok.kind == tkDot:
-    p.advance() 
-    if p.lexer.curTok.kind == tkDot:
-        p.advance() 
-        endIdx = p.parseIdx()
-    else:
-        endIdx = p.parseIdx()
+    p.expect(tkDot, "range start") 
+    p.expect(tkDot, "range end")   
+    endIdx = p.parseIdx()
   else:
     endIdx = startIdx
-  p.expect(tkRBracket, callsite="parseStringIndex") 
+    
+  p.expect(tkRBracket, callsite="parseStringIndex")
   return newStringIndex(strObj, startIdx, endIdx)
 
 proc parseAtom(p: var Reader; parsingIndex=false): owned LispObject =
@@ -49,7 +48,8 @@ proc parseAtom(p: var Reader; parsingIndex=false): owned LispObject =
     if p.lexer.curTok.kind == tkLBracket:
       return p.parseStringIndex(res)
     while p.lexer.curTok.kind == tkDot:
-      if parsingIndex: break 
+      if parsingIndex:
+          break 
       p.advance 
       if p.lexer.curTok.kind == tkSym:
         let field = newSym p.lexer.curTok.sym.name
@@ -58,7 +58,6 @@ proc parseAtom(p: var Reader; parsingIndex=false): owned LispObject =
       else:
         raise newException(ValueError, fmt"Reader expected symbol after '.' but got {p.lexer.curTok.kind}")
     
-    if res.kind == Symbol and res.isNil: return NIL()
     return res
     
   of tkInt:
