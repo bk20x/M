@@ -117,9 +117,9 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
       return targetTable.table[currentForm.field]
     elif currentForm.kind == StringIndex:
       let
-        strObj   = currentEnv.eval(currentForm.strObj)
-        startIdx = currentEnv.eval(currentForm.startIdx)
-        endIdx   = currentEnv.eval(currentForm.endIdx)
+        strObj   = if currentForm.strObj.kind   == String: currentForm.strObj   else: currentEnv.eval(currentForm.strObj)
+        startIdx = if currentForm.startIdx.kind == Int:    currentForm.startIdx else: currentEnv.eval(currentForm.startIdx)
+        endIdx   = if currentForm.endIdx.kind   == Int:    currentForm.endIdx   else: currentEnv.eval(currentForm.endIdx)
       if strObj.kind != String:
         raise newException(ValueError, fmt"Attempt to index non String object: {currentForm}")
       checkInt(startIdx)
@@ -265,9 +265,9 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             return val
           elif placeForm.kind == StringIndex:
             let
-              strObj    = currentEnv.eval(placeForm.strObj)
-              startIdx  = currentEnv.eval(placeForm.startIdx)
-              endIdx    = currentEnv.eval(placeForm.endIdx)
+              strObj   = if currentForm.strObj.kind   == String: currentForm.strObj   else: currentEnv.eval(currentForm.strObj)
+              startIdx = if currentForm.startIdx.kind == Int:    currentForm.startIdx else: currentEnv.eval(currentForm.startIdx)
+              endIdx   = if currentForm.endIdx.kind   == Int:    currentForm.endIdx   else: currentEnv.eval(currentForm.endIdx)
             checkInt(startIdx)
             checkInt(endIdx)
             if strObj.kind != String:
@@ -312,9 +312,9 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             table.table[key] = valForm
           of StringIndex:
             let
-              strObj    = currentEnv.eval(placeForm.strObj)
-              startIdx  = currentEnv.eval(placeForm.startIdx)
-              endIdx    = currentEnv.eval(placeForm.endIdx)
+              strObj   = if currentForm.strObj.kind   == String: currentForm.strObj   else: currentEnv.eval(currentForm.strObj)
+              startIdx = if currentForm.startIdx.kind == Int:    currentForm.startIdx else: currentEnv.eval(currentForm.startIdx)
+              endIdx   = if currentForm.endIdx.kind   == Int:    currentForm.endIdx   else: currentEnv.eval(currentForm.endIdx)
             checkInt(startIdx)
             checkInt(endIdx)
             if strObj.kind != String:
