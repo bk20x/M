@@ -42,6 +42,9 @@ func safeCdr(obj: LispObject): LispObject =
     return obj.cdr
   else:
     return NIL()
+
+
+
     
 var ## All used in `eval`, these are forward declared because they call `eval`;; see implementations below `eval`
   lookupPlace: (var Env, LispObject) -> ptr LispObject
@@ -89,6 +92,14 @@ proc checkIndexIsInt(obj: LispObject) {.inline.} =
   if obj.kind != Int:
     raise newException(ValueError, fmt"Attempt to use non Integer object as index {obj}")    
 
+
+template image(obj: LispObject): string =
+  if obj.kind == String:
+    obj.str
+  else:
+    $(obj)
+
+    
 proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
   var
     currentForm = initialForm
@@ -273,7 +284,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             if strObj.kind != String:
               raise newException(ValueError, fmt"invalid String index {placeForm}")
             try:
-              strObj.str[startIdx.intVal..endIdx.intVal] = $valForm
+              strObj.str[startIdx.intVal..endIdx.intVal] = valForm.image
               return strObj
             except IndexDefect:
               raise newException(ValueError, fmt"Attempt to setf out of bounds index! {placeForm}")
@@ -320,7 +331,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             if strObj.kind != String:
               raise newException(ValueError, fmt"Invalid String index {placeForm}")
             try:
-              strObj.str[startIdx.intVal..endIdx.intVal] = $valForm
+              strObj.str[startIdx.intVal..endIdx.intVal] = valForm.image
               return strObj
             except IndexDefect:
               raise newException(ValueError, fmt"Attempt to set out of bounds index! {placeForm}")
@@ -735,9 +746,9 @@ proc newEnv*(): owned Env =
     toString: BuiltinFn =
       proc(args: LispObject): LispObject =
         if args.len != 1:
-          raise newException(ValueError, fmt"`toString` is of type T -> String but got {args}")
+          raise newException(ValueError, fmt"`image` is of type T -> String but got {args}")
         let obj = args.first
-        return newStr($obj)
+        return newStr(obj.image)
           
     unintern: BuiltinFn =
       proc(args: LispObject): LispObject =
@@ -807,7 +818,7 @@ proc newEnv*(): owned Env =
     "clone"        : newBuiltin(clone,               "clone"),
     "setb"         : newBuiltin(setb,                "setb"),
     "setp"         : newBuiltin(setp,                "setp"),
-    "strRepr"      : newBuiltin(toString,            "strRepr"),
+    "image"        : newBuiltin(toString,            "image"),
     "~read"        : newBuiltin(read,                "~read"),
     "~findForms"   : newBuiltin(findFormz,           "~findForms")
 

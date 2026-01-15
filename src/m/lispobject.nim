@@ -154,7 +154,7 @@ func fifth*(list: LispObject): owned LispObject =
 
    
 from std/strformat import fmt
-proc `$`*(s: LispObject; escape=false): owned string =
+proc `$`*(s: LispObject;): owned string =
   case s.kind:
   of Nil:
     return "NIL"
@@ -183,10 +183,7 @@ proc `$`*(s: LispObject; escape=false): owned string =
   of BigInt:
     return $s.bigNum
   of String:
-    if escape:
-      return s.str.escape
-    else:
-      return s.str
+    return s.str.escape
   of StringIndex:
     if s.startIdx == s.endIdx:
       return fmt"{s.strObj}[{s.startIdx}]"
