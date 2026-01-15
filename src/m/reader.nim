@@ -20,7 +20,7 @@ proc parseStringIndex(p: var Reader; strObj: sink LispObject): owned LispObject 
   proc parseIdx(p: var Reader): owned LispObject = 
     result = p.parseSexp()
     case result.kind
-    of Symbol, Int: # Allowed Kinds
+    of Symbol, Int, Cons: # Allowed Kinds
       return result
     else:
       raise newException(ValueError, fmt"parseStringIndex: invalid type for String index {result.kind}")
