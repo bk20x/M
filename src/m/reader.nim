@@ -35,6 +35,7 @@ proc parseStringIndex(p: var Reader; strObj: sink LispObject): owned LispObject 
     endIdx = p.parseIdx()
   else:
     endIdx = startIdx
+  p.advance()
   return newStringIndex(strObj, startIdx, endIdx)
 
 
