@@ -790,7 +790,7 @@ proc newEnv*(): owned Env =
     "<"            : newBuiltin(lispLessThan,        "<"),
     "<="           : newBuiltin(lispLessThanEq,      "<="),
     "!="           : newBuiltin(lispUneql,           "!="),
-    "ftoi"         : newBuiltin(ftoi,                "Float->Int"),
+    "Float->Int"   : newBuiltin(ftoi,                "Float->Int"),
     "append"       : newBuiltin(append,              "append"),
     "map"          : newBuiltin(map,                 "map"),
     "filter"       : newBuiltin(filter,              "filter"),
