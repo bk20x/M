@@ -265,9 +265,9 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             return val
           elif placeForm.kind == StringIndex:
             let
-              strObj   = if placeForm.strObj.kind   == String: placeForm.strObj   else: currentEnv.eval(placeForm.strObj)
-              startIdx = if placeForm.startIdx.kind == Int:    placeForm.startIdx else: currentEnv.eval(placeForm.startIdx)
-              endIdx   = if placeForm.endIdx.kind   == Int:    placeForm.endIdx   else: currentEnv.eval(placeForm.endIdx)
+              strObj   = currentEnv.eval(placeForm.strObj)
+              startIdx = currentEnv.eval(placeForm.startIdx)
+              endIdx   = currentEnv.eval(placeForm.endIdx)
             checkIndexIsInt(startIdx)
             checkIndexIsInt(endIdx)
             if strObj.kind != String:
@@ -312,9 +312,9 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             table.table[key] = valForm
           of StringIndex:
             let
-              strObj   = if placeForm.strObj.kind   == String: placeForm.strObj   else: currentEnv.eval(placeForm.strObj)
-              startIdx = if placeForm.startIdx.kind == Int:    placeForm.startIdx else: currentEnv.eval(placeForm.startIdx)
-              endIdx   = if placeForm.endIdx.kind   == Int:    placeForm.endIdx   else: currentEnv.eval(placeForm.endIdx)
+              strObj   = currentEnv.eval(placeForm.strObj)
+              startIdx = currentEnv.eval(placeForm.startIdx)
+              endIdx   = currentEnv.eval(placeForm.endIdx)
             checkIndexIsInt(startIdx)
             checkIndexIsInt(endIdx)
             if strObj.kind != String:
