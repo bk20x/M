@@ -121,68 +121,72 @@ func parseStr*(lx: var MLexr) =
   lx.curTok = Token(kind: tkStr, str: str)
 
 func getTok*(lx: var MLexr) =
-  if lx.bufpos == 0 and lx.buf[lx.bufpos] == '#' and lx.buf[lx.bufpos + 1] == '!':
-    while lx.buf[lx.bufpos] notin {'\c', '\L', '\0'}:
+  while true:
+    lx.skip()
+    let start = lx.bufpos 
+    
+    if lx.buf[lx.bufpos] == '\0':
+      lx.curTok = Token(kind: tkEof)
+      return
+      
+    if lx.bufpos == 0 and lx.buf[lx.bufpos] == '#' and lx.buf[lx.bufpos + 1] == '!':
+      while lx.buf[lx.bufpos] notin {'\c', '\L', '\0'}:
+        inc lx.bufpos
+      continue
+      
+    case lx.buf[lx.bufpos]:
+    of '{':
       inc lx.bufpos
-
-  lx.skip()
-  let start = lx.bufpos 
-  if lx.buf[lx.bufpos] == '\0':
-    lx.curTok = Token(kind: tkEof)
-    return    
-  case lx.buf[lx.bufpos]:
-  of '{':
-    inc lx.bufpos
-    lx.curTok = Token(kind: tkLBrace)
-  of '}':
-    inc lx.bufpos
-    lx.curTok = Token(kind: tkRBrace)
-  of '[':
-    inc lx.bufpos
-    lx.curTok = Token(kind: tkLBracket)
-  of ']':
-    inc lx.bufpos
-    lx.curTok = Token(kind: tkRBracket)
-  of ':':
-    inc lx.bufpos
-    lx.curTok = Token(kind: tkColon)
-  of '(':
-    inc lx.bufpos
-    lx.curTok = Token(kind: tkLpar)
-  of ')':
-    inc lx.bufpos
-    lx.curTok = Token(kind: tkRpar)
-  of '.':
-    inc lx.bufpos
-    lx.curTok = Token(kind: tkDot)
-  of '\'':
-    inc lx.bufpos
-    lx.curTok = Token(kind: tkQuote)
-  of '`':
-    inc lx.bufpos
-    lx.curTok = Token(kind: tkBquote)
-  of ',':
-    if (lx.bufpos + 1 < lx.buf.len) and (lx.buf[lx.bufpos + 1] == '@'):
-      inc lx.bufpos 
-      inc lx.bufpos 
-      lx.curTok = Token(kind: tkSplice)
-    else:
+      lx.curTok = Token(kind: tkLBrace)
+    of '}':
       inc lx.bufpos
-      lx.curTok = Token(kind: tkComma)
-  of ';':
-    inc lx.bufpos
-    lx.curTok = Token(kind: tkComment)
-  of '"':
-    lx.parseStr()
-  of '0'..'9':
-    lx.parseNumber(start) 
-  of '+', '-':
-    if (lx.bufpos + 1 < lx.buf.len) and lx.buf[lx.bufpos + 1].isDigit:
-      lx.parseNumber(start)
+      lx.curTok = Token(kind: tkRBrace)
+    of '[':
+      inc lx.bufpos
+      lx.curTok = Token(kind: tkLBracket)
+    of ']':
+      inc lx.bufpos
+      lx.curTok = Token(kind: tkRBracket)
+    of ':':
+      inc lx.bufpos
+      lx.curTok = Token(kind: tkColon)
+    of '(':
+      inc lx.bufpos
+      lx.curTok = Token(kind: tkLpar)
+    of ')':
+      inc lx.bufpos
+      lx.curTok = Token(kind: tkRpar)
+    of '.':
+      inc lx.bufpos
+      lx.curTok = Token(kind: tkDot)
+    of '\'':
+      inc lx.bufpos
+      lx.curTok = Token(kind: tkQuote)
+    of '`':
+      inc lx.bufpos
+      lx.curTok = Token(kind: tkBquote)
+    of ',':
+      if (lx.bufpos + 1 < lx.buf.len) and (lx.buf[lx.bufpos + 1] == '@'):
+        lx.bufpos += 2
+        lx.curTok = Token(kind: tkSplice)
+      else:
+        inc lx.bufpos
+        lx.curTok = Token(kind: tkComma)
+    of ';':
+      inc lx.bufpos
+      lx.curTok = Token(kind: tkComment)
+    of '"':
+      lx.parseStr()
+    of '0'..'9':
+      lx.parseNumber(start) 
+    of '+', '-':
+      if (lx.bufpos + 1 < lx.buf.len) and lx.buf[lx.bufpos + 1].isDigit:
+        lx.parseNumber(start)
+      else:
+        lx.parseSym(start)
     else:
-      lx.parseSym(start)
-  else:
-    if lx.buf[lx.bufpos] in SymbolChars:
-      lx.parseSym(start)
-    else:
-      raise newException(ValueError, "Invalid character: " & $lx.buf[lx.bufpos] & " at " & $lx.bufpos)
+      if lx.buf[lx.bufpos] in SymbolChars:
+        lx.parseSym(start)
+      else:
+        raise newException(ValueError, "Invalid character: " & $lx.buf[lx.bufpos] & " at " & $lx.bufpos)
+    break 
