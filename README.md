@@ -11,6 +11,7 @@
 * Powerful Macros and Backquote
 * Direct metaprogramming (Lambdas are structures allowing for hot reloading / hot swapping); code is data in a much more literal sense than Scheme or CL
 * Table literals and dot notation for field access
+* String indexing
 * Batteries included Standard library (Still WIP)
 * Trivially extensible with native code and embedded within applications
 * Completely cross platform; can fit in flash memory
