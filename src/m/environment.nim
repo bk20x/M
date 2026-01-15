@@ -768,6 +768,14 @@ proc newEnv*(): owned Env =
         for i in countdown(forms.high, 0):
           result = lispobject.cons(newStr(forms[i]), result)
           
+    ftoi: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        if args.first.kind != Float or args.len != 1:
+          raise newException(ValueError, fmt"ftoi is of type Float -> Int but got {args}")
+        return newInt(args.first.floatVal.int)
+          
+        
+          
   result.loadedModules = Stdlib
   result.interned = toTable {
     "t"            : T(),
@@ -782,6 +790,7 @@ proc newEnv*(): owned Env =
     "<"            : newBuiltin(lispLessThan,        "<"),
     "<="           : newBuiltin(lispLessThanEq,      "<="),
     "!="           : newBuiltin(lispUneql,           "!="),
+    "ftoi"         : newBuiltin(ftoi,                "ftoi"),
     "append"       : newBuiltin(append,              "append"),
     "map"          : newBuiltin(map,                 "map"),
     "filter"       : newBuiltin(filter,              "filter"),
