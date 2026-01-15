@@ -39,6 +39,8 @@ proc parseStringIndex(p: var Reader; strObj: sink LispObject): owned LispObject 
 proc parseAtom(p: var Reader; parsingIndex = false): owned LispObject =
   case p.lexer.curTok.kind:
   of tkSym:
+    if p.lexer.curTok.sym.name == "nil":
+      return NIL()
     var res = newSym p.lexer.curTok.sym.name
     p.advance
     if p.lexer.curTok.kind == tkLBracket:
