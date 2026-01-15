@@ -471,10 +471,9 @@ lookupPlace = proc(env: var Env, form: LispObject): ptr LispObject =
     let op = form.car
     if op.kind == Symbol:
       let
-        listForm = form.cdr.car
-        listVal = env.eval: listForm
-      if listVal.kind == Cons:
-        return addr listVal.car
+        listForm = form.second
+        listVal  = env.eval: listForm
+      return addr listVal
     else:
       return addr form
   else:
@@ -484,14 +483,13 @@ lookupPlace = proc(env: var Env, form: LispObject): ptr LispObject =
 evalLambda =
     proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): Thunk =
       var
-        lambda = form
-        params = lambda.params
+        lambda = form.closure.newLambda(form.params, form.body)
         argIndex = 0
-      while not params.isNil:
+      while not lambda.params.isNil:
         if argIndex >= evaluated.len:
           raise newException(ValueError, "Wrong number of arguments for lambda")
-        lambda.closure.interned[params.car.sym.name] = evaluated[argIndex]
-        params = params.cdr
+        lambda.closure.interned[lambda.params.car.sym.name] = evaluated[argIndex]
+        lambda.params = lambda.params.cdr
         inc argIndex
       if argIndex != evaluated.len:
         raise newException(ValueError, "Wrong number of arguments for lambda")
