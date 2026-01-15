@@ -85,7 +85,7 @@ proc compileFile(filename: string): seq[LispObject] =
   for form in findForms(code):
     result.add parse form
     
-proc checkInt(obj: LispObject) {.inline.} = 
+proc checkIndexIsInt(obj: LispObject) {.inline.} = 
   if obj.kind != Int:
     raise newException(ValueError, fmt"Attempt to use non Integer object as index {obj}")    
 
@@ -122,8 +122,8 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
         endIdx   = if currentForm.endIdx.kind   == Int:    currentForm.endIdx   else: currentEnv.eval(currentForm.endIdx)
       if strObj.kind != String:
         raise newException(ValueError, fmt"Attempt to index non String object: {currentForm}")
-      checkInt(startIdx)
-      checkInt(endIdx)
+      checkIndexIsInt(startIdx)
+      checkIndexIsInt(endIdx)
       try:
         let str = strObj.str
         return newStr(str[startIdx.intVal..endIdx.intVal])
@@ -265,11 +265,11 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             return val
           elif placeForm.kind == StringIndex:
             let
-              strObj   = if currentForm.strObj.kind   == String: currentForm.strObj   else: currentEnv.eval(currentForm.strObj)
-              startIdx = if currentForm.startIdx.kind == Int:    currentForm.startIdx else: currentEnv.eval(currentForm.startIdx)
-              endIdx   = if currentForm.endIdx.kind   == Int:    currentForm.endIdx   else: currentEnv.eval(currentForm.endIdx)
-            checkInt(startIdx)
-            checkInt(endIdx)
+              strObj   = if placeForm.strObj.kind   == String: placeForm.strObj   else: currentEnv.eval(placeForm.strObj)
+              startIdx = if placeForm.startIdx.kind == Int:    placeForm.startIdx else: currentEnv.eval(placeForm.startIdx)
+              endIdx   = if placeForm.endIdx.kind   == Int:    placeForm.endIdx   else: currentEnv.eval(placeForm.endIdx)
+            checkIndexIsInt(startIdx)
+            checkIndexIsInt(endIdx)
             if strObj.kind != String:
               raise newException(ValueError, fmt"invalid String index {placeForm}")
             try:
@@ -312,11 +312,11 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             table.table[key] = valForm
           of StringIndex:
             let
-              strObj   = if currentForm.strObj.kind   == String: currentForm.strObj   else: currentEnv.eval(currentForm.strObj)
-              startIdx = if currentForm.startIdx.kind == Int:    currentForm.startIdx else: currentEnv.eval(currentForm.startIdx)
-              endIdx   = if currentForm.endIdx.kind   == Int:    currentForm.endIdx   else: currentEnv.eval(currentForm.endIdx)
-            checkInt(startIdx)
-            checkInt(endIdx)
+              strObj   = if placeForm.strObj.kind   == String: placeForm.strObj   else: currentEnv.eval(placeForm.strObj)
+              startIdx = if placeForm.startIdx.kind == Int:    placeForm.startIdx else: currentEnv.eval(placeForm.startIdx)
+              endIdx   = if placeForm.endIdx.kind   == Int:    placeForm.endIdx   else: currentEnv.eval(placeForm.endIdx)
+            checkIndexIsInt(startIdx)
+            checkIndexIsInt(endIdx)
             if strObj.kind != String:
               raise newException(ValueError, fmt"Invalid String index {placeForm}")
             try:
