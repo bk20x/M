@@ -1,3 +1,5 @@
+#!/usr/bin/env m
+
 (open Math Strings)
 
 (define Vector2 {

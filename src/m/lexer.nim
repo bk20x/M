@@ -124,7 +124,10 @@ func getTok*(lx: var MLexr) =
   if lx.bufpos == 0 and lx.buf[lx.bufpos] == '#' and lx.buf[lx.bufpos + 1] == '!':
     while lx.buf[lx.bufpos] notin {'\c', '\L', '\0'}:
       inc lx.bufpos
-
+    
+    if lx.buf[lx.bufpos] == '\0':
+      lx.curTok = Token(kind: tkEof)
+      return 
   lx.skip()
   let start = lx.bufpos 
   if lx.buf[lx.bufpos] == '\0':
