@@ -1,4 +1,4 @@
-import std/[sugar, strformat, streams]
+import std/[strformat, streams]
 import lispobject, lexer
 from std/tables import `[]`, `[]=`
 
@@ -6,7 +6,7 @@ type
   Reader* = object
     lexer: MLexr
 
-var parseSexp*: proc(p: var Reader, parsingIndex:bool=false): owned LispObject
+var parseSexp*: proc(p: var Reader, parsingIndex: bool=false): owned LispObject
 
 func advance*(p: var Reader) =
   p.lexer.getTok
@@ -138,7 +138,7 @@ proc parseTableLit(p: var Reader): owned LispObject =
   p.expect tkRBrace 
 
   
-parseSexp = proc(p: var Reader): owned LispObject =
+parseSexp = proc(p: var Reader; parsingIndex=false): owned LispObject =
   case p.lexer.curTok.kind:
   of tkLpar:
     return parseList(p)
@@ -148,7 +148,7 @@ parseSexp = proc(p: var Reader): owned LispObject =
   of tkLBrace:
     return parseTableLit(p)
   else:
-    return parseAtom(p)
+    return p.parseAtom(parsingIndex)
         
            
 proc parse*(input: string): owned LispObject =
