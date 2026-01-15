@@ -121,7 +121,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
         raise newException(ValueError, fmt"Attempt to index non String object: {currentForm}")
       template check(obj: LispObject) = # prob rename to something else later incase i create another 'check' somewhere else
         if obj.kind != Int:
-          raise newException(ValueError, "Attempt to use non Integer object as index")
+          raise newException(ValueError, fmt"Attempt to use non Integer object as index {obj}")
       check(startIdx)
       check(endIdx)
       try:
