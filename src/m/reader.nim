@@ -29,13 +29,13 @@ proc parseStringIndex(p: var Reader; strObj: sink LispObject): owned LispObject 
     endIdx: LispObject
   p.expect(tkLBracket, callsite="parseStringIndex")
   startIdx = p.parseIdx()
+  p.advance()
   if p.lexer.curTok.kind == tkDot:
     p.expect(tkDot, callsite="parseStringIndex")
     endIdx = p.parseIdx()
     p.advance()
   else:
     endIdx = startIdx
-  p.advance()
   return newStringIndex(strObj, startIdx, endIdx)
 
 
