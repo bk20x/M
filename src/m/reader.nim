@@ -6,7 +6,7 @@ type
   Reader* = object
     lexer: MLexr
 
-var parseSexp*: (var Reader) -> owned LispObject
+var parseSexp*: (var Reader, bool) -> owned LispObject
 
 func advance*(p: var Reader) =
   p.lexer.getTok
@@ -18,7 +18,7 @@ func expect*(p: var Reader; kind: TokenKind; callsite="") =
 
 proc parseStringIndex(p: var Reader; strObj: sink LispObject): owned LispObject =
   proc parseIdx(p: var Reader): owned LispObject = 
-    result = p.parseSexp()
+    result = p.parseSexp(true)
     case result.kind
     of Symbol, Int, Cons: # Allowed Kinds
       return result
@@ -40,7 +40,7 @@ proc parseStringIndex(p: var Reader; strObj: sink LispObject): owned LispObject 
 
 
     
-proc parseAtom(p: var Reader): owned LispObject =
+proc parseAtom(p: var Reader; parsingIndex=false): owned LispObject =
   case p.lexer.curTok.kind:
   of tkSym:
     var res = newSym p.lexer.curTok.sym.name
