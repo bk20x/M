@@ -40,6 +40,7 @@ proc parseAtom(p: var Reader; parsingIndex = false): owned LispObject =
   case p.lexer.curTok.kind:
   of tkSym:
     if p.lexer.curTok.sym.name == "nil":
+      p.advance
       return NIL()
     var res = newSym p.lexer.curTok.sym.name
     p.advance

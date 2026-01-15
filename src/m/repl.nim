@@ -2,7 +2,6 @@ import std/[strformat, rdstdin, terminal]
 import environment, reader, lispobject
 
 
-{.define: repl.}
 proc runRepl*(env: var Env) =
   var ln: string
   enableTrueColors()
