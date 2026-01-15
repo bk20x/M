@@ -20,7 +20,7 @@ proc parseStringIndex(p: var Reader; strObj: sink LispObject): owned LispObject 
   proc parseIdx(p: var Reader): owned LispObject = 
     result = p.parseSexp(true)
     case result.kind
-    of Symbol, Int, Cons: # Allowed Kinds
+    of Symbol, Int, Cons: 
       return result
     else:
       raise newException(ValueError, fmt"parseStringIndex: invalid type for String index {result.kind}")
@@ -29,36 +29,38 @@ proc parseStringIndex(p: var Reader; strObj: sink LispObject): owned LispObject 
     endIdx: LispObject
   p.expect(tkLBracket, callsite="parseStringIndex")
   startIdx = p.parseIdx()
-  p.advance()
   if p.lexer.curTok.kind == tkDot:
-    p.expect(tkDot, callsite="parseStringIndex")
-    endIdx = p.parseIdx()
-    p.advance()
+    p.advance() 
+    if p.lexer.curTok.kind == tkDot:
+        p.advance() 
+        endIdx = p.parseIdx()
+    else:
+        endIdx = p.parseIdx()
   else:
     endIdx = startIdx
+  p.expect(tkRBracket, callsite="parseStringIndex") 
   return newStringIndex(strObj, startIdx, endIdx)
 
-
-    
 proc parseAtom(p: var Reader; parsingIndex=false): owned LispObject =
   case p.lexer.curTok.kind:
   of tkSym:
     var res = newSym p.lexer.curTok.sym.name
     p.advance
-    # Check for field access w dot notation
     if p.lexer.curTok.kind == tkLBracket:
       return p.parseStringIndex(res)
     while p.lexer.curTok.kind == tkDot:
+      if parsingIndex: break 
       p.advance 
       if p.lexer.curTok.kind == tkSym:
         let field = newSym p.lexer.curTok.sym.name
         p.advance 
         res = newFieldAccess(tableSym=res, field=field)
       else:
-        raise newException(ValueError, fmt"Reader expected symbol after '.' for FieldAccess but got {p.lexer.curTok.kind}")
-    if res.kind == Symbol and res.isNil: 
-      return NIL()
+        raise newException(ValueError, fmt"Reader expected symbol after '.' but got {p.lexer.curTok.kind}")
+    
+    if res.kind == Symbol and res.isNil: return NIL()
     return res
+    
   of tkInt:
     let num = newInt(p.lexer.curTok.intv)
     p.advance
@@ -75,20 +77,16 @@ proc parseAtom(p: var Reader; parsingIndex=false): owned LispObject =
     return strObj
   of tkBquote:
     p.advance 
-    let quoted = parseSexp(p) 
-    return cons(newSym "backquote", cons(quoted, NIL()))
+    return cons(newSym "backquote", cons(parseSexp(p), NIL()))
   of tkComma: 
     p.advance 
-    let unquoted = parseSexp(p) 
-    return cons(newSym "unquote", cons(unquoted, NIL()))
+    return cons(newSym "unquote", cons(parseSexp(p), NIL()))
   of tkSplice:
     p.advance 
-    let spliced = parseSexp(p) 
-    return cons(newSym "unquote-splicing", cons(spliced, NIL()))
+    return cons(newSym "unquote-splicing", cons(parseSexp(p), NIL()))
   of tkQuote: 
     p.advance
-    let quoted = parseSexp(p)
-    return cons(newSym "quote", cons(quoted, NIL()))
+    return cons(newSym "quote", cons(parseSexp(p), NIL()))
   of tkComment:
     p.advance
     return NIL()
@@ -97,27 +95,23 @@ proc parseAtom(p: var Reader; parsingIndex=false): owned LispObject =
   else:
     raise newException(ValueError, fmt"Invalid token kind for atom: {$p.lexer.curTok.kind}")
 
-    
 proc parseList(p: var Reader): owned LispObject =
   p.expect tkLpar 
-  result = NIL() 
   var l: seq[LispObject]
   while p.lexer.curTok.kind != tkRpar:
     if p.lexer.curTok.kind == tkEof:
       raise newException(ValueError, "Unmatched close parenthesis")
     l.add: parseSexp(p)
   p.expect tkRpar
+  result = NIL()
   for i in countdown(l.len - 1, 0):
     result = cons(l[i], result)
   return result
-
 
 proc parseTableLit(p: var Reader): owned LispObject =
   result = newTable()
   result.literal = true
   p.expect tkLBrace 
-
-  # it's an empty table
   if p.lexer.curTok.kind == tkRBrace:
     p.advance
     return result
@@ -129,28 +123,21 @@ proc parseTableLit(p: var Reader): owned LispObject =
     result.table[key] = val
     if p.lexer.curTok.kind == tkComma:
       p.advance
-      if p.lexer.curTok.kind == tkRBrace:
-        break
-    elif p.lexer.curTok.kind == tkRBrace:
-      break 
+      if p.lexer.curTok.kind == tkRBrace: break
+    elif p.lexer.curTok.kind == tkRBrace: break 
     else:
-      raise newException(ValueError, fmt"Expected ',' or '}}`' after table entry, got  {p.lexer.curTok.kind}")
+      raise newException(ValueError, fmt"Expected ',' or '}}' after table entry, got {p.lexer.curTok.kind}")
   p.expect tkRBrace 
 
-  
 parseSexp = proc(p: var Reader; parsingIndex=false): owned LispObject =
   case p.lexer.curTok.kind:
-  of tkLpar:
-    return parseList(p)
+  of tkLpar: return parseList(p)
   of tkRpar: 
     p.expect tkRpar
     return NIL()
-  of tkLBrace:
-    return parseTableLit(p)
-  else:
-    return p.parseAtom(parsingIndex)
-        
-           
+  of tkLBrace: return parseTableLit(p)
+  else: return p.parseAtom(parsingIndex)
+
 proc parse*(input: string): owned LispObject =
   var
     parser: Reader
@@ -159,4 +146,4 @@ proc parse*(input: string): owned LispObject =
   initLexer(lexer, inputstrm)
   parser.lexer = lexer
   parser.advance
-  return parseSexp parser
+  return parseSexp(parser)
