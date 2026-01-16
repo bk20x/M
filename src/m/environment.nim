@@ -798,7 +798,7 @@ proc newEnv*(): owned Env =
         return newInt(args.first.floatVal.int)
           
         
-          
+  result.loadedModules = newTable()        
   for k, v in Stdlib:
     result.loadedModules[k] = v
   result.interned = toTable {
