@@ -1,6 +1,6 @@
 import std/[strformat, strutils, tables, sugar, sequtils]
 import ../lispobject
-import unicode
+from unicode import runeLen
 
 
 proc toString(obj: LispObject): string =

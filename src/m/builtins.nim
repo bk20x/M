@@ -22,8 +22,12 @@ proc lispAdd*(args: LispObject): LispObject =
       isFloat   = false
       isBigInt  = false
     for num in nums:
-      if num.kind == Float: isFloat = true; break
-      elif num.kind == LispObjectKind.BigInt: isBigInt = true
+      case num.kind
+      of Int: discard
+      of Float: isFloat = true; break
+      of LispObjectKind.BigInt: isBigInt = true; break
+      else:
+        raise newException(ValueError, fmt"invalid argument for `+`! {num}")
     if isFloat:
       var floatSum  = 0.0
       for num in nums:
@@ -53,7 +57,7 @@ proc lispAdd*(args: LispObject): LispObject =
         return LispObject(kind: BigInt, bigNum: bigIntSum)
 
 proc lispSub*(args: LispObject): LispObject =
-  if args.len != 2:
+  if args.len != 2 or not(args.first.kind in {Int, Float, BigInt} and args.second.kind in {Int, Float, BigInt}):
     raise newException(ValueError, fmt"`-` expects 2 args of Int | Float | BigInt but got {args}")
   let
     x = args.first
@@ -80,7 +84,7 @@ proc lispSub*(args: LispObject): LispObject =
 
       
 proc lispDiv*(args: LispObject): LispObject =
-  if args.len != 2:
+  if args.len != 2 or not(args.first.kind in {Int, Float, BigInt} and args.second.kind in {Int, Float, BigInt}):
     raise newException(ValueError, fmt"`/` expects 2 args of Int | Float | BigInt but got {args}")
   let
     x = args.first
@@ -106,7 +110,7 @@ proc lispDiv*(args: LispObject): LispObject =
       return LispObject(kind: BigInt, bigNum: res)
       
 proc lispMultiply*(args: LispObject): LispObject =
-    if args.len != 2:
+    if args.len != 2 or not(args.first.kind in {Int, Float, BigInt} and args.second.kind in {Int, Float, BigInt}):
       raise newException(ValueError, fmt"`*` expects 2 args of Int | Float | BigInt but got {args}")
     let
       x = args.first
@@ -134,7 +138,7 @@ proc lispMultiply*(args: LispObject): LispObject =
 
 
 proc lispGreaterThan*(args: LispObject): LispObject =
-    if args.len != 2:
+    if args.len != 2 or not(args.first.kind in {Int, Float, BigInt} and args.second.kind in {Int, Float, BigInt}):
       raise newException(ValueError, fmt"`>` expects 2 args of Int | Float | BigInt but got {args}")
     let
       x = args.first
@@ -226,6 +230,8 @@ proc lispUneql*(args: LispObject): LispObject =
   return if lispEquals(args).isNil: T() else: NIL()
 
 proc append*(args: LispObject): LispObject =
+  if not args.len == 2:
+    raise newException(ValueError, fmt"append expects 2 arguments but got {args}")
   result = NIL()
   var
     list = args.first.toSeq
