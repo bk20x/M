@@ -81,7 +81,7 @@ func newTable*(table: Table[LispObject, LispObject]): owned LispObject =
   return LispObject(kind: HashTable, table: table)
   
 func newScope*(parent: Env): owned Env =
-  return Env(interned: initTable[string, LispObject](), loadedModules: initTable[string, Table[string, BuiltinFn]](), parent: parent)
+  return Env(interned: initTable[string, LispObject](), loadedModules: newTable[string, Table[string, BuiltinFn]](), parent: parent)
   
 func newLambda*(env: Env; params, body: LispObject): owned LispObject =
   return LispObject(kind: Lambda, params: params, body: body, closure: env.newScope())
