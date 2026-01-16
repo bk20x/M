@@ -24,7 +24,7 @@ proc intern*(env: var Env, sym: string, val: LispObject) =
   env.interned[sym] = val
 
 
-func wrapModule*(module: Table[string, BuiltinFn]): Table[string, LispObject] =
+proc wrapModule*(module: Table[string, BuiltinFn]): Table[string, LispObject] =
   result = initTable[string, LispObject]()
   for k, v in module:
     echo k
