@@ -1,4 +1,4 @@
-import std/[strformat, streams]
+import std/[strformat, streams, strutils]
 import lispobject, lexer
 from std/tables import `[]`, `[]=`
 
@@ -139,3 +139,35 @@ proc parse*(input: string): owned LispObject =
   initLexer(parser.lexer, newStringStream(input))
   parser.advance
   return parseSexp(parser)
+
+
+
+
+
+proc readAllSexprs*(filename: string): seq[LispObject] =
+  result = @[]
+  var s = newFileStream(filename, fmRead)
+  if s == nil:
+    quit("Could not open file: " & filename)
+  var
+    buffer = ""
+    parenCount = 0
+  while not s.atEnd:
+    let c = s.readChar()
+    case c:
+    of '(':
+      parenCount += 1
+      buffer.add(c)
+    of ')':
+      parenCount -= 1
+      buffer.add(c)
+      if parenCount == 0:
+        result.add: parse buffer.strip()
+        buffer = ""
+    of ' ', '\n', '\t':
+      if parenCount > 0:
+        buffer.add(c)
+    else:
+      buffer.add(c)
+  s.close()
+  

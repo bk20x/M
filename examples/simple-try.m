@@ -5,14 +5,16 @@
 
 (open Strings)
 
+(try (* 5) 
+ (echo (fmt "success! value=$"         result.value))
+ (echo (fmt "failure! error message=$" result.value)))
+
+
 (try (* 5 5) 
  (echo (fmt "success! value=$"         result.value))
  (echo (fmt "failure! error message=$" result.value)))
 
 
-(try (* 5) 
- (echo (fmt "success! value=$"         result.value))
- (echo (fmt "failure! error message=$" result.value)))
 
 
 
