@@ -666,6 +666,8 @@ proc newEnv*(): owned Env =
 
     lecho: BuiltinFn =
       proc(args: LispObject): LispObject =
+        if args.len != 1:
+          raise newException(ValueError, fmt"`echo` expects one argument of any type but got {args}")
         case args.car.kind:
         of String:
           echo args.car.str # because the printer prints string quoted
