@@ -26,7 +26,7 @@ type
                
   Env* = ref object
     interned*     : Table[string, LispObject]
-    loadedModules*: Table[string, Table[string, BuiltinFn]]
+    loadedModules*: TableRef[string, Table[string, BuiltinFn]]
     parent*       : Env
     
   LispObject* = ref object
