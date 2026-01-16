@@ -227,9 +227,9 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
           for m in currentForm.cdr.toSeq:
             let module = m.sym.name
             if currentEnv.loadedModules.hasKey module:
-              let
-                opened = wrapModule(currentEnv.loadedModules[module])
+              let opened = wrapModule(currentEnv.loadedModules[module])
               for name, val in opened:
+                echo val
                 currentEnv.intern(name, val)
           return T()
         of "return":
