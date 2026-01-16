@@ -1,4 +1,4 @@
-(open Math)
+(open Math Strings)
 
 (define Vector2 (-> (x y)
   {
@@ -9,7 +9,7 @@
     distance: (-> (dest) 
       (let ((dx (- (dest.getX) x))
             (dy (- (dest.getY) y))) 
-	    (sqrt (+ (* dx dx) (* dy dy))))
-    )
+	    (sqrt (+ (* dx dx) (* dy dy))))),
+    image: (-> () (fmt "(x: $; y: $)" x y))
   }
 ))

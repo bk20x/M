@@ -149,6 +149,19 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             let key = newSym(k)
             result.table[key] = v
           return result
+        of "safe":
+          result = lispobject.newTable()
+          if not currentForm.len == 2:
+            raise newException(ValueError, fmt"`safe` expects 1 argument as the call but got {currentForm}")
+          try:
+            let callResult = currentEnv.eval(currentForm.second)
+            result.table[newSym("success")] = T()
+            result.table[newSym("value")]   = callResult
+            return result            
+          except CatchableError as e:
+            result.table[newSym("success")] = NIL()
+            result.table[newSym("value")]   = newStr(e.msg)
+            return result   
         of "who":
           let
             obj = currentForm.second
