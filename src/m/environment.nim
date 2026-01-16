@@ -800,7 +800,7 @@ proc newEnv*(): owned Env =
         
           
   for k, v in Stdlib:
-    result.loadedModules(k) = v
+    result.loadedModules[k] = v
   result.interned = toTable {
     "t"            : T(),
     "+"            : newBuiltin(lispadd,             "+"),
