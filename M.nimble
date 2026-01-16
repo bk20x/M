@@ -6,6 +6,7 @@ installExt    = @["nim"]
 srcDir        = "src"
 bin           = @["m"]
 installDirs   = @["src/m"]
+installFiles  = @["src/m.nim"]
 
 # Dependencies
 requires "bigints >= 1.0.0"
