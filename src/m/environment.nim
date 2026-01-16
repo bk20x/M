@@ -27,7 +27,6 @@ proc intern*(env: var Env, sym: string, val: LispObject) =
 proc wrapModule*(module: Table[string, BuiltinFn]): Table[string, LispObject] =
   result = initTable[string, LispObject]()
   for k, v in module:
-    echo k
     result[k] = newBuiltin(v, k)
 
 func lookupValue(env: var Env, symbolName: string): LispObject =
