@@ -590,8 +590,7 @@ load =
     return T()
 
 func registerModule*(env: var Env, name: string, module: Table[string, BuiltinFn]) =
-  for k, v in module:
-    env.loadedModules[name] = module
+  env.loadedModules[name] = module
       
 proc newEnv*(): owned Env =
   new result
