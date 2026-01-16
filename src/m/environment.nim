@@ -27,6 +27,7 @@ proc intern*(env: var Env, sym: string, val: LispObject) =
 func wrapModule*(module: Table[string, BuiltinFn]): Table[string, LispObject] =
   result = initTable[string, LispObject]()
   for k, v in module:
+    echo k
     result[k] = newBuiltin(v, k)
 
 func lookupValue(env: var Env, symbolName: string): LispObject =
@@ -229,7 +230,6 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
             if currentEnv.loadedModules.hasKey module:
               let opened = wrapModule(currentEnv.loadedModules[module])
               for name, val in opened:
-                echo val
                 currentEnv.intern(name, val)
           return T()
         of "return":
