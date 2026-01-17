@@ -224,13 +224,23 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
         of "open":
           if currentForm.cdr.isNil:
             raise newException(ValueError, fmt"open expects a Module or Modules but got {currentForm}")
+          
           for m in currentForm.cdr.toSeq:
             let module = m.sym.name
-            if currentEnv.loadedModules.hasKey module:
-              let opened = wrapModule(currentEnv.loadedModules[module])
-              for name, val in opened:
-                currentEnv.intern(name, val)
-          return T()
+            var e = currentEnv
+            var found = false 
+            
+            while e != nil:
+              if e.loadedModules.hasKey(module):
+                let opened = wrapModule(e.loadedModules[module])
+                for name, val in opened:
+                  currentEnv.intern(name, val)
+                found = true
+                break 
+              else:
+                e = e.parent
+            if not found:
+              raise newException(ValueError, fmt"Module not found: {module}")
         of "return":
             try:
               let
