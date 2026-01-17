@@ -564,11 +564,13 @@ whileImpl =
       var
         condForm = form.first
         cond     = env.eval condForm
-      let body = form.second
+      let body = form.second 
       while not (cond.isNil):
         cond = env.eval condForm
         if cond.isNil: break
-        env.eval body
+        for form in body.toSeq: # Implicit progn
+          result = env.eval(form) # Now it returns the result when it finishes
+          
             
 
 eachImpl = proc(env: var Env, form: LispObject): LispObject =
