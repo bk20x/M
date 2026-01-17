@@ -8,17 +8,15 @@
 (define Person (-> (name) {
   getName: (-> () name),
   setName: (-> (newName) (setf name newName)),
-  sayHi:   (-> (other) (echo (fmt "Hello $! mi llamo es $" other name)))
+  sayHi:   (-> (other) (echo (fmt "Hello $! my name is $" (other.getName) name)))
 }))
 
 
-(define bobby (Person "Boben"))
+(define terry (Person "Terry Davis"))
 
-(bobby.sayHi 'Yober)
+(define bobby (Person "Bobby Boben"))
 
-(bobby.setName "Bobenjames")
-
-(bobby.sayHi "Yobert Kringle")
-
+(terry.sayHi bobby)
+(bobby.sayHi terry)
 
 
