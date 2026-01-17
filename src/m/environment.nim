@@ -83,7 +83,7 @@ proc findForms(mass: string): seq[string] =
       buffer.add(c)
 
 
-template checkIndexIsInt(obj: LispObject) = 
+proc checkIndexIsInt(obj: LispObject) {.inline.} = 
   if obj.kind != Int:
     raise newException(ValueError, fmt"Attempt to use non Integer object as index {obj}")    
 
