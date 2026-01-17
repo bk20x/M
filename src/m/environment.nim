@@ -564,12 +564,13 @@ whileImpl =
       var
         condForm = form.first
         cond     = env.eval condForm
-      let body = form.second 
+        loopScope = env.newScope()
+      let body      = form.second
       while not (cond.isNil):
-        cond = env.eval condForm
+        cond = loopScope.eval condForm
         if cond.isNil: break
         for form in body.toSeq: # Implicit progn
-          result = env.eval(form) # Now it returns the result when it finishes
+          result = loopScope.eval(form) # Now it returns the result when it finishes
           
             
 
