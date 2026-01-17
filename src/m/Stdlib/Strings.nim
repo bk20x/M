@@ -130,7 +130,14 @@ proc parseI(args: LispObject): LispObject =
   let str = args.first
   return newInt(parseInt str.str)
   
-    
+proc split(args: LispObject): LispObject =
+  if args.len != 2 or not (args.first.kind == String and args.second.kind == String):
+    raise newException(ValueError, fmt"`split` is of type String -> String -> String but got {args}")
+  let
+    str = args.first.str
+    sep = args.second.str
+  return newStr(str.split(sep))
+
 const
   Module* = toTable {
     "strReplace" : BuiltinFn strReplace,
@@ -144,5 +151,6 @@ const
     "fmt"        : BuiltinFn stringFormat,
     "strip"      : BuiltinFn strip,
     "substring"  : BuiltinFn substring,
-    "parseInt"   : BuiltinFn parseI
+    "String->Int": BuiltinFn parseI,
+    "split"      : BuiltinFn split
   }
