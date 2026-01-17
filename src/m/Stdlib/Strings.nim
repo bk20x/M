@@ -136,7 +136,7 @@ proc split(args: LispObject): LispObject =
   let
     str = args.first.str
     sep = args.second.str
-  return newStr(str.split(sep))
+  return str.split(sep).map(ln => newStr(ln)).list
 
 const
   Module* = toTable {
