@@ -1,5 +1,10 @@
 (open Tables)
 
+(macro require (modname)
+ `(let () 
+   (open ,modname)
+  (interned-symbols)))
+
 (macro collect (binding body)
  (let ((var        (car binding))
        (collection (car (cdr binding))))
