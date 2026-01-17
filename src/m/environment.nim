@@ -239,6 +239,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
                 break 
               else:
                 e = e.parent
+            result = T()
             if not found:
               raise newException(ValueError, fmt"Module not found: {module}")
         of "return":
