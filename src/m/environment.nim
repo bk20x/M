@@ -82,13 +82,8 @@ proc findForms(mass: string): seq[string] =
     else:
       buffer.add(c)
 
-proc compileFile(filename: string): seq[LispObject] =
-  result = @[]
-  let code = readFile(filename)
-  for form in findForms(code):
-    result.add parse form
-    
-proc checkIndexIsInt(obj: LispObject) {.inline.} = 
+
+template checkIndexIsInt(obj: LispObject) = 
   if obj.kind != Int:
     raise newException(ValueError, fmt"Attempt to use non Integer object as index {obj}")    
 
@@ -100,11 +95,11 @@ template image(obj: LispObject): string =
     $(obj)
 
     
-proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
+proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
   var
     currentForm = initialForm
     currentEnv  = env
-    tailcall: Thunk
+    currentThunk: Thunk
   while true:
     # Self evaluating Objects
     if currentForm.kind in SelfEvaluatingTypes:
@@ -218,8 +213,7 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
         of "load":
           if currentForm.cdr.isNil:
             raise newException(ValueError, "load expects a String for filename")
-          let
-            file = currentForm.second
+          let file = currentForm.second
           return currentEnv.load file
         of "open":
           if currentForm.cdr.isNil:
@@ -389,9 +383,9 @@ proc eval*(env: var Env, initialForm: LispObject): LispObject {.discardable.} =
         while not args.isNil:
           evaluatedArgs.add: currentEnv.eval(args.car)
           args = args.cdr      
-        tailcall    = currentEnv.evalLambda(op, evaluatedArgs)
-        currentForm = tailcall.form
-        currentEnv  = tailcall.closure
+        currentThunk = currentEnv.evalLambda(op, evaluatedArgs)
+        currentForm  = currentThunk.form
+        currentEnv   = currentThunk.closure
         continue 
       elif op.kind == Macro:
         let
@@ -418,15 +412,22 @@ macroExpand = proc(env: var Env, macroObj: LispObject, rawArgsAst: LispObject): 
   
 
 
-proc apply*(env: var Env, fun: LispObject, args: seq[LispObject]): LispObject =
-  ## Eagerly evaluate a lambda object and get the return value instead of a Tc
+proc compileFile(filename: string): seq[LispObject] =
+  ## Helper for `load`
+  result = @[]
+  let code = readFile(filename)
+  for form in findForms(code):
+    result.add parse form
+    
+proc apply*(env: var Env; fun: LispObject; args: seq[LispObject]): LispObject =
+  ## Eagerly evaluate a lambda object and get the return value instead of a Thunk
   var 
     currentForm: LispObject
     currentEnv: Env
-    tailcall: Thunk
-  tailcall    = env.evalLambda(fun, args)
-  currentForm = tailcall.form
-  currentEnv  = tailcall.closure
+    th: Thunk
+  th          = env.evalLambda(fun, args)
+  currentForm = th.form
+  currentEnv  = th.closure
   
   while true:
     if currentForm.kind in SelfEvaluatingTypes:
