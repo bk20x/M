@@ -2,16 +2,16 @@
 (load "collect.m")
 
 (macro class (name params fields)
- (let () (define build-table (-> (fs)
+ (let () (define ~gen-table (-> (fs)
     (if (= fs ()) 
         ()
         (cons `(put ',(car fs) ,(car (cdr fs)) self) 
-              (build-table (cdr (cdr fs)))))))
+              (~gen-table (cdr (cdr fs)))))))
   
   `(define ,name (-> ,params
     (let ((self {}))
      (let ()
-        ,@(build-table fields))
+        ,@(~gen-table fields))
        self)))))
 
 
