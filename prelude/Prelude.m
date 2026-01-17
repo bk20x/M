@@ -10,7 +10,6 @@
        (collection (car (cdr binding))))
   `(map ,collection (-> (,var) ,body))))
 
-
 (macro collectIf (pred binding body)
  (let ((var        (car binding))
        (collection (car (cdr binding))))
@@ -21,10 +20,10 @@
     (if result.success ,body ,catcher)))
 
 (macro withKeys (binding body)
-     (let ((k     (car binding))
+  (let ((k     (car binding))
        (table (car (cdr binding))))
-      `(each (,k (tableKeys ,table))
-	,body)))
+     `(each (,k (tableKeys ,table))
+       ,body)))
 
 (macro destructuring-bind (vars collection body)
  (let () (define ~gen-bindings (-> (vs coll)

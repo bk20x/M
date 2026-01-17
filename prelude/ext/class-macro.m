@@ -13,4 +13,3 @@
         ,@(~gen-table fields))
        self)))))
 
-

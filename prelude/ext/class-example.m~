@@ -1,0 +1,15 @@
+(open Math)
+(load "class-macro.m")
+
+(class Vector2 (x y) (
+    getX     (-> () x)
+    setX     (-> (~x) (setf x ~x))
+    getY     (-> () y)
+    setY     (-> (~y) (setf y ~y))
+    distance (-> (dest)
+    		 (let ((dx (- (dest.getX) (self.getX)))
+		       (dy (- (dest.getY) (self.getY))))
+		   (sqrt (+ (* dx dx) (* dy dy)))))
+))
+
+

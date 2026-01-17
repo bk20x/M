@@ -26,10 +26,6 @@
 (define readDir (-> (dir) (map (filter (listDir dir) isFile?) readFile)))
 
 
-(factorial 10000 1)
-
-
-
 (macro collect (binding body)
  (let ((var        (car binding))
        (collection (car (cdr binding))))

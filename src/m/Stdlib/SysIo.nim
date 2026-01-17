@@ -60,7 +60,9 @@ proc getFileSize(args: LispObject): LispObject =
   let filename = args.first.str
   return if fileExists filename: newInt getFileSize(filename) else: NIL()
   
-  
+proc input(args: LispObject): LispObject =
+  return newStr(stdin.readLine())
+
 const
   Module* = toTable {
     "readFile"    : BuiltinFn SysIo.readFile,
@@ -70,5 +72,6 @@ const
     "cmd!"        : BuiltinFn SysIo.runCmdCode,
     "isFile?"     : BuiltinFn SysIo.isFile,
     "getEnv"      : BuiltinFn SysIo.getEnv,
-    "getFileSize" : BuiltinFn SysIo.getFileSize
+    "getFileSize" : BuiltinFn SysIo.getFileSize,
+    "input"       : BuiltinFn SysIo.input
   }
