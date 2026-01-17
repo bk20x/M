@@ -16,4 +16,14 @@
 
 
 
+(let ()
+  (class Vector2 (x y) (
+      getX (-> () x)
+      getY (-> () y)
+      setX (-> (~x) (setf x ~x))
+      setY (-> (~y) (setf y ~y))
+  ))
+  (define p1 (Vector2 9.7 6.8))
+  (echo (p1.getX))
+)
 

@@ -1,8 +1,0 @@
-(macro destructuring-bind (vars collection body)
- (let () (define ~gen-bindings (-> (vs coll)
-    (if (= vs ())
-        ()
-        (cons `(,(car vs) (car ,coll))
-              (~gen-bindings (cdr vs) `(cdr ,coll))))))
-  `(let (,@(~gen-bindings vars collection))
-    ,body)))
