@@ -503,14 +503,7 @@ lookupPlace = proc(env: var Env, form: LispObject): ptr LispObject =
       currentEnv = currentEnv.parent
     raise newException(ValueError, fmt"Unbound symbol {symbolName} in lookupPlace")
   elif form.kind == Cons:
-    let op = form.car
-    if op.kind == Symbol:
-      let
-        listForm = form.second
-        listVal  = env.eval: listForm
-      return addr listVal
-    else:
-      return addr form
+    return addr form
   else:
     raise newException(ValueError, "Invalid place: " & $form.kind)
 
@@ -755,8 +748,11 @@ proc newEnv*(): owned Env =
           return newSym(obj.sym.name)
         else:
           return obj
+          
     nd: BuiltinFn =
       proc(args: LispObject): LispObject =
+        if args.len != 2:
+          raise newException(ValueError, fmt"`and` takes 2 arguments of any type but got {args}")
         let
           a = args.first
           b = args.second
@@ -766,8 +762,7 @@ proc newEnv*(): owned Env =
       proc(args: LispObject): LispObject =
         if args.len != 1 or not (args.first.kind == Lambda):
           raise newException(ValueError, fmt"`lparams` is of type Lambda -> Cons but got {args}")
-        let
-          lambda = args.first
+        let lambda = args.first
         return lambda.params
         
 

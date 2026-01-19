@@ -6,6 +6,7 @@
     setX     (-> (~x) (setf x ~x))
     getY     (-> () y)
     setY     (-> (~y) (setf y ~y))
+    set      (-> (~x ~y) (let () (self.setX ~x) (self.setY ~y)))
     distance (-> (dest)
     		 (let ((dx (- (dest.getX) (self.getX)))
 		       (dy (- (dest.getY) (self.getY))))
