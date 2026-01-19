@@ -1,6 +1,6 @@
-import std/[cmdline, os]
+import std/[cmdline, os, tables]
 import m/[repl, environment, reader, lispobject]
-
+import Stdlib/Strings
 
 
 proc doFile*(env: var Env, file: string) =
@@ -21,6 +21,7 @@ template Mmain*(runtime: var Env) =
           runtime.doFile arg1
         else:
           echo "Cannot open file " & arg1
-
-var runtime = newEnv()
-runtime.Mmain()
+          
+when isMainModule:
+  var runtime = newEnv()
+  runtime.Mmain()

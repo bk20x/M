@@ -1,5 +1,5 @@
 import std/[strformat, strutils, tables, sugar, sequtils]
-import ../lispobject
+import m/lispobject
 from unicode import runeLen
 
 
