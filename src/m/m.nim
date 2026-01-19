@@ -22,5 +22,6 @@ template Mmain*(runtime: var Env) =
         else:
           echo "Cannot open file " & arg1
 
-var runtime = newEnv()
-runtime.Mmain()
+when isMainModule:
+  var runtime = newEnv()
+  runtime.Mmain()
