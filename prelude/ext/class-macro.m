@@ -1,6 +1,6 @@
 (open Tables)
 
-(macro class (name params fields)
+(macro class (name params iface)
  (let () (define ~gen-table (-> (fs)
     (if (= fs ()) 
         ()
@@ -10,6 +10,5 @@
   `(define ,name (-> ,params
     (let ((self {}))
      (let ()
-        ,@(~gen-table fields))
+        ,@(~gen-table iface))
        self)))))
-
