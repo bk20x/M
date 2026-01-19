@@ -5,7 +5,7 @@ import SysIo
 import Tables
 import Json
 
-var
+const
   Stdlib* = toTable {
     "Strings": Strings.Module,
     "Math"   : Math.Module,

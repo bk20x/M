@@ -1,5 +1,5 @@
 import std/[tables, strformat]
-import m/lispobject
+import ../lispobject
 
 
 
