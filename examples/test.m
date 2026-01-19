@@ -36,6 +36,3 @@
  (let ((var        (car binding))
        (collection (car (cdr binding))))
   `(map (filter ,collection ,pred) (-> (,var) ,body))))
-
-
-(define readDir (-> (dir (collectIf isFile? (path (listDir dir)) (readFile path)))))

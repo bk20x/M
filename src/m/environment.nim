@@ -325,6 +325,15 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
             currentEnv.interned[placeForm.sym.name] = valForm
             return valForm
           case placeForm.kind
+          of Cons:
+            let
+              formToAssign = placeForm.cdr.car
+              place        = currentEnv.eval(formToAssign)
+            if place.kind == Lambda:
+              place.body   = valForm   
+            else:
+              var place    = currentEnv.lookupPlace(placeForm)
+              place[]      = valForm
           of FieldAccess:
             var table = currentEnv.eval(placeForm.tableSym)
             let key   = placeForm.field
