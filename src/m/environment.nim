@@ -442,6 +442,8 @@ proc apply*(env: var Env; fun: LispObject; args: seq[LispObject]): LispObject =
       except ReturnException as ret:
         return ret.retVal
     else:
+        return currentEnv.eval(currentForm)
+    else:
       raise newException(ValueError, fmt"Can't eval object in `apply`;; scrutinee: {currentForm}")
 
 
