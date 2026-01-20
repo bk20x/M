@@ -307,12 +307,11 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
               raise newException(ValueError, fmt"Attempt to setf out of bounds index! {placeForm}")
           else:
             let
-              placeForm = if placeForm.kind == Cons: currentEnv.eval(placeForm) else: placeForm
               val       = currentEnv.eval(valForm)
               placeRef  = currentEnv.lookupPlace(placeForm)
             if placeRef.isNil:
               raise newException(ValueError, fmt"setf: place does not exist {placeForm}")
-            placeRef[] = val
+            placeRef[]  = val
             return val
         of "setq":
           if not (currentForm.len == 3):
@@ -328,9 +327,6 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
             place[] = valForm
             return valForm
           of Cons:
-            let
-              formToAssign = placeForm.cdr.car
-              placeForm    = currentEnv.eval(formToAssign)
             var place    = currentEnv.lookupPlace(placeForm)
             if place.isNil:
               raise newException(ValueError, fmt"setq: place does not exist {placeForm}")
