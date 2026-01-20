@@ -332,6 +332,8 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
               formToAssign = placeForm.cdr.car
               placeForm    = currentEnv.eval(formToAssign)
             var place    = currentEnv.lookupPlace(placeForm)
+            if place.isNil:
+              raise newException(ValueError, fmt"setq: place does not exist {placeForm}")
             place[]      = valForm
             return valForm
           of FieldAccess:
@@ -502,10 +504,9 @@ lookupPlace = proc(env: var Env, form: LispObject): ptr LispObject =
         return addr currentEnv.interned[symbolName]
       currentEnv = currentEnv.parent
     raise newException(ValueError, fmt"Unbound symbol {symbolName} in lookupPlace")
-  elif form.kind == Cons:
-    return addr form
   else:
-    raise newException(ValueError, "Invalid place: " & $form.kind)
+    return addr form
+
 
 
 evalLambda =
