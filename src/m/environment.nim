@@ -307,10 +307,11 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
               raise newException(ValueError, fmt"Attempt to setf out of bounds index! {placeForm}")
           else:
             let
-              val = currentEnv.eval(valForm)
-              placeRef = currentEnv.lookupPlace(placeForm)
+              placeForm = if placeForm.kind == Cons: currentEnv.eval(placeForm) else: placeForm
+              val       = currentEnv.eval(valForm)
+              placeRef  = currentEnv.lookupPlace(placeForm)
             if placeRef.isNil:
-              raise newException(ValueError, "setf: place does not exist")
+              raise newException(ValueError, fmt"setf: place does not exist {placeForm}")
             placeRef[] = val
             return val
         of "setq":
@@ -319,21 +320,20 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
           let
             placeForm = currentForm.cdr.car
             valForm   = currentForm.cdr.cdr.car        
-          if placeForm.kind == Symbol:
-            if not currentEnv.interned.hasKey(placeForm.sym.name):
-              raise newException(ValueError, fmt"setq: unbound symbol {placeForm.sym.name}")
-            currentEnv.interned[placeForm.sym.name] = valForm
-            return valForm
           case placeForm.kind
+          of Symbol:
+            let place = currentEnv.lookupPlace(placeForm)
+            if place.isNil:
+              raise newException(ValueError, fmt"setq: place does not exist {placeForm}")
+            place[] = valForm
+            return valForm
           of Cons:
             let
               formToAssign = placeForm.cdr.car
               place        = currentEnv.eval(formToAssign)
-            if place.kind == Lambda:
-              place.body   = valForm   
-            else:
-              var place    = currentEnv.lookupPlace(placeForm)
-              place[]      = valForm
+            var place    = currentEnv.lookupPlace(placeForm)
+            place[]      = valForm
+            return valForm
           of FieldAccess:
             var table = currentEnv.eval(placeForm.tableSym)
             let key   = placeForm.field
