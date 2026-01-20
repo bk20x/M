@@ -20,24 +20,49 @@ proc closeWindow(args: LispObject): LispObject =
 proc windowShouldClose(args: LispObject): LispObject =
   return if windowShouldClose(): T() else: NIL()
 
+proc setTargetFPS(args: LispObject): LispObject =
+  if args.len != 1 or not (args.first.kind == Int):
+    raise newException(ValueError, fmt"`setTargetFPS` is of type Int => Nil but got {args}")
+  result = NIL()
+  setTargetFPS(args.first.intVal.int32)
+  
 proc beginDrawing(args: LispObject): LispObject =
   result = NIL()
   beginDrawing()
-
 
 proc endDrawing(args: LispObject): LispObject =
   result = NIL()
   endDrawing()
 
+proc clearBackground(args: LispObject): LispObject =
+  if args.len != 1 or not (args.first.kind in {Cons, HashTable}):
+    raise newException(ValueError, fmt"`clearBackground` is of type (Cons | Table) => Nil but got {args}")
+  result = NIL()
+  let
+    rgb    = args.first
+    color  = if rgb.kind   == Cons:
+               Color(r: rgb.first.intVal.uint8,
+                     g: rgb.second.intVal.uint8,
+                     b: rgb.third.intVal.uint8,
+                     a: rgb.fourth.intVal.uint8
+               )
+             else:
+               Color(r: rgb.table[newSym("r")].intVal.uint8,
+                     g: rgb.table[newSym("g")].intVal.uint8,
+                     b: rgb.table[newSym("b")].intVal.uint8,
+                     a: rgb.table[newSym("a")].intVal.uint8
+               )
+  clearBackground(color)
+  
 proc drawRectangle(args: LispObject): LispObject =
-  if not args.len == 5 or not (
+  if args.len != 5 or not (
     args.first.kind  in {lispobject.Int,  Float} and
     args.second.kind in {lispobject.Int,  Float} and
     args.third.kind  in {lispobject.Int,  Float} and
     args.fourth.kind in {lispobject.Int,  Float} and
     args.fifth.kind  in {Cons, HashTable}
   ):
-    raise newException(ValueError, fmt"`drawRectangle` is of type Number -> Number -> Number -> Number -> Cons => Nil but got {args}")
+    raise newException(ValueError, fmt"`drawRectangle` is of type Number -> Number -> Number -> Number -> (Cons | Table) => Nil but got {args}")
   result = NIL()
   let
     x      = if args.first.kind   == Int: args.first.intVal.int32   else: args.first.floatVal.int32
@@ -59,13 +84,16 @@ proc drawRectangle(args: LispObject): LispObject =
                )
     
   drawRectangle(x, y, width, height, color)
-  
+
+
+
 const Module* = toTable {
+  "setTargetFPS"     : BuiltinFn Raylib.setTargetFPS,
+  "clearBackground"  : BuiltinFn Raylib.clearBackground,
   "initWindow"       : BuiltinFn Raylib.initWindow,
   "closeWindow"      : BuiltinFn Raylib.closeWindow,
   "windowShouldClose": BuiltinFn Raylib.windowShouldClose,
   "beginDrawing"     : BuiltinFn Raylib.beginDrawing,
   "endDrawing"       : BuiltinFn Raylib.endDrawing,
   "drawRectangle"    : BuiltinFn Raylib.drawRectangle
-
 }

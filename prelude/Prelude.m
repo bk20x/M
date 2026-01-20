@@ -5,6 +5,15 @@
    (open ,modname)
   (interned-symbols)))
 
+(macro try (call body catcher)
+  `(let ((result (safe ,call))) 
+    (if result.success ,body ,catcher)))
+
+(macro isDefined? (sym)
+ `(try ,sym
+    result.success
+    result.success))
+
 (macro collect (binding body)
  (let ((var        (car binding))
        (collection (car (cdr binding))))
@@ -15,16 +24,6 @@
        (collection (car (cdr binding))))
   `(map (filter ,collection ,pred) (-> (,var) ,body))))
 
-(macro try (call body catcher)
-  `(let ((result (safe ,call))) 
-    (if result.success ,body ,catcher)))
-
-(macro withKeys (binding body)
-  (let ((k     (car binding))
-       (table (car (cdr binding))))
-     `(each (,k (tableKeys ,table))
-       ,body)))
-
 (macro destructuring-bind (vars collection body)
  (let () (define ~gen-bindings (-> (vs coll)
     (if (= vs ())
@@ -33,3 +32,26 @@
               (~gen-bindings (cdr vs) `(cdr ,coll))))))
   `(let (,@(~gen-bindings vars collection))
     ,body)))
+
+
+(macro case (scrutinee clauses)
+ `(let ((val ,scrutinee))
+   ,(let () 
+      (define ~expand (-> (cs)
+        (if (= cs ())
+            nil
+            (let ((pair (car cs)))
+              `(if (= val ,(car pair))
+                   ,(car (cdr pair))
+                   ,(~expand (cdr cs)))))))
+      (~expand clauses))))
+
+
+
+
+
+
+
+
+
+

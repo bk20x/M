@@ -580,22 +580,17 @@ eachImpl = proc(env: var Env, form: LispObject): LispObject =
       varAndList = form.first # (var list)
       body       = form.second # (body)
       varSym     = varAndList.car
-      listForm   = varAndList.cdr.car
-
+      listForm   = varAndList.cdr.car    
     let evaluatedList = env.eval(listForm)
     if evaluatedList.kind != Cons and not evaluatedList.isNil:
-      raise newException(ValueError, fmt"expected list for `doList` but got {$evaluatedList.kind}")
-
-    var listToIter = evaluatedList
-
+      raise newException(ValueError, fmt"expected list for `each` but got {evaluatedList.kind}")
+    var
+      listToIter = evaluatedList
+      loopScope  = env.newScope()
     while not listToIter.isNil:
-      var newEnv = env.newScope()
-      newEnv.interned[varSym.sym.name] = listToIter.car
-      discard newEnv.eval(body)
+      loopScope.interned[varSym.sym.name] = listToIter.car
+      result     = loopScope.eval(body)
       listToIter = listToIter.cdr
-
-    return NIL()
-
 
 load =
   proc(env: var Env, form: LispObject): LispObject =
