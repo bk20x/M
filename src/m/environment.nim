@@ -494,6 +494,8 @@ qqExpand = proc(env: var Env, form: LispObject): LispObject =
 
 
 
+
+
 lookupPlace = proc(env: var Env, form: LispObject): ptr LispObject =
   if form.kind == Symbol:
     let symbolName = form.sym.name
@@ -504,9 +506,18 @@ lookupPlace = proc(env: var Env, form: LispObject): ptr LispObject =
         return addr currentEnv.interned[symbolName]
       currentEnv = currentEnv.parent
     raise newException(ValueError, fmt"Unbound symbol {symbolName} in lookupPlace")
+  elif form.kind == Cons:
+    let op = form.car
+    if op.kind == Symbol:
+      let
+        listForm = form.cdr.car
+        listVal = env.eval: listForm
+      if listVal.kind == Cons:
+        return addr listVal.car
+    else:
+      return addr form
   else:
-    return addr form
-
+    raise newException(ValueError, "Invalid place: " & $form.kind)
 
 
 evalLambda =
