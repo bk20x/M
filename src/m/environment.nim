@@ -330,7 +330,7 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
           of Cons:
             let
               formToAssign = placeForm.cdr.car
-              place        = currentEnv.eval(formToAssign)
+              placeForm    = currentEnv.eval(formToAssign)
             var place    = currentEnv.lookupPlace(placeForm)
             place[]      = valForm
             return valForm
