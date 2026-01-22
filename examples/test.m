@@ -25,8 +25,6 @@
 
 (define readDir (-> (dir) (map (filter (listDir dir) isFile?) readFile)))
 
-(define contents (readDir "."))
-(echo (length contents))
 
 (macro collect (binding body)
  (let ((var        (car binding))

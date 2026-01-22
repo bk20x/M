@@ -19,14 +19,10 @@
     (        (echo "Something else!"))))))
 
 
-(define i 50)
+(define int 50)
+(define str "Yoben")
+(define none nil)
 
-(define s "Yoben")
-
-(define n nil)
-
-(check i)
-
-(check s)
-
-(check n)
+(check int)
+(check str)
+(check none)

@@ -46,12 +46,3 @@
                    ,(~expand (cdr cs)))))))
       (~expand clauses))))
 
-
-
-
-
-
-
-
-
-
