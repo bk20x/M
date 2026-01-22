@@ -1,8 +1,6 @@
 import std/[cmdline, os]
 import repl, environment, reader, lispobject
 
-
-
 proc doFile*(env: var Env, file: string) =
   let sexprs = readAllSexprs file    
   for sexp in sexprs:

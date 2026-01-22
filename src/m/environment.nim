@@ -466,8 +466,7 @@ qqExpand = proc(env: var Env, form: LispObject): LispObject =
           resultHead = splicedList
           resultTail = splicedList
         else:
-          resultTail.cdr = splicedList
-          
+          resultTail.cdr = splicedList    
         while not resultTail.isNil and resultTail.kind == Cons and not resultTail.safeCdr.isNil:
           resultTail = resultTail.safeCdr
         current = current.safeCdr.safeCdr
@@ -475,19 +474,15 @@ qqExpand = proc(env: var Env, form: LispObject): LispObject =
         let
           expanded = env.expandRec(item)
           newForm  = cons(expanded, NIL()) 
-
         if resultHead.isNil:
           resultHead = newForm
           resultTail = newForm
         else:
           resultTail.cdr = newForm
           resultTail     = newForm
-        current = current.safeCdr
-        
+        current = current.safeCdr        
     return resultHead
   return env.expandRec(form)
-
-
 
 
 
@@ -508,7 +503,7 @@ lookupPlace = proc(env: var Env, form: LispObject): ptr LispObject =
         raise newException(ValueError, fmt"Malformed {opName} place")       
       let
         listForm = form.cdr.car
-        target = env.eval(listForm) 
+        target   = env.eval(listForm) 
       if target.isNil or target.kind != Cons:
         raise newException(ValueError, fmt"Cannot set {opName} of a non-cons object")
       if opName == "car":
