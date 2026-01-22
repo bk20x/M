@@ -491,30 +491,36 @@ qqExpand = proc(env: var Env, form: LispObject): LispObject =
 
 
 
-
 lookupPlace = proc(env: var Env, form: LispObject): ptr LispObject =
   if form.kind == Symbol:
     let symbolName = form.sym.name
     var currentEnv = env
-    
     while currentEnv != nil:
       if currentEnv.interned.hasKey(symbolName):
-        return addr currentEnv.interned[symbolName]
+          return addr currentEnv.interned[symbolName]
       currentEnv = currentEnv.parent
     raise newException(ValueError, fmt"Unbound symbol {symbolName} in lookupPlace")
   elif form.kind == Cons:
     let op = form.car
     if op.kind == Symbol:
+      let opName = op.sym.name
+      if form.cdr.isNil or form.cdr.kind != Cons:
+        raise newException(ValueError, fmt"Malformed {opName} place")       
       let
         listForm = form.cdr.car
-        listVal = env.eval: listForm
-      if listVal.kind == Cons:
-        return addr listVal.car
+        target = env.eval(listForm) 
+      if target.isNil or target.kind != Cons:
+        raise newException(ValueError, fmt"Cannot set {opName} of a non-cons object")
+      if opName == "car":
+        return addr target.car
+      elif opName == "cdr":
+        return addr target.cdr
+      else:
+        raise newException(ValueError, "Unsupported place accessor: " & opName)
     else:
       return addr form
   else:
-    raise newException(ValueError, "Invalid place: " & $form.kind)
-
+    raise newException(ValueError, "Invalid place: " & $form & " " & $form.kind)
 
 evalLambda =
     proc(env: var Env, form: LispObject, evaluated: seq[LispObject]): Thunk =
