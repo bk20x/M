@@ -4,7 +4,7 @@ description   = "Lightweight and easily extendable / embeddable Lisp dialect wit
 license       = "BSD-3-Clause"
 installExt    = @["nim"]
 srcDir        = "src"
-bin           = @["m"]
+bin           = @["m/m"]
 installDirs   = @["src/m"]
 installFiles  = @["src/m.nim"]
 
