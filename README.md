@@ -43,14 +43,13 @@
 
 ;; recursion examples, recursion is fast, completely separated from the hardware callstack
 
+(define last (-> (xs) (if (cdr xs) (last (cdr xs)) (car xs))))
+
 (define factorial (-> (n acc)
   (if (= n 0)
        acc
       (factorial (- n 1) (* acc n))))) 
 
-(define last (-> (xs)
-  (if (= nil (cdr xs)) (car xs)
-    (last (cdr xs)))))
   
 ;; retrieve a functions body as a mutable cons
 
@@ -69,7 +68,7 @@
 
 ;; IO and data transformation capabilities 
 
-(define readDir (-> (dir) (map (filter (listDir dir) isFile?) readFile))) ; clean one liner
+(define readDir (-> (dir) (map (filter (listDir dir) isFile?) readFile))) 
 
 ;; String indexing
 

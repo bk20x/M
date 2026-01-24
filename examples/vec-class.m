@@ -13,3 +13,11 @@
     image: (-> () (fmt "(x: $; y: $)" x y))
   }
 ))
+
+
+(define p1 (Vector2 57.7 98.243))
+(define p2 (Vector2 99.21 33.8))
+(echo (p1.distance p2))
+(let ()
+ (echo (p1.image))
+ (echo (p2.image)))

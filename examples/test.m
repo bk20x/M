@@ -6,6 +6,7 @@
  (if (> lo hi) ()
   (cons lo (range (+ lo 1) hi)))))
 
+(define last (-> (xs) (if (cdr xs) (last (cdr xs)) (car xs))))
 
 (define factorial (-> (n acc)
   (if (= n 0)
