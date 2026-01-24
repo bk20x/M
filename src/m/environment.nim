@@ -137,7 +137,7 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
         raise newException(ValueError, fmt"Out of bounds string index! {currentForm}")
     elif currentForm.kind == Cons:
       if currentForm.car.kind == Symbol:
-        case currentForm.car.sym.name:
+        case currentForm.car.sym.name: # Check if the op is a special form
         of "interned-symbols":
           result = lispobject.newTable()
           for k, v in currentEnv.interned:
