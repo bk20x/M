@@ -351,8 +351,17 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
             except IndexDefect:
               raise newException(ValueError, fmt"Attempt to set out of bounds index! {placeForm}")
           else:
-            raise newException(ValueError, fmt"setq: invalid place form {placeForm}")
+            raise newException(ValueError, fmt"setq: invalid form {placeForm}")
           return valForm
+        of "macroexpand":
+          if currentForm.len != 2 or not (currentForm.second.kind == Cons):
+            raise newException(ValueError, fmt"Invalid argument for macroexpand; macroexpand expects a call like so (someMacro someArgs)")
+          let
+            call       = currentForm.second
+            maybeMacro = currentEnv.eval(call.car)
+          if maybeMacro.kind != Macro:
+            raise newException(ValueError, fmt"macroexpand expects a call to a Macro but got {maybeMacro}!")
+          return currentEnv.macroExpand(maybeMacro, call.cdr)
         of "doTimes":
           return currentEnv.doTimes(currentForm.cdr)
         of "each":
