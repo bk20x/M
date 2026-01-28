@@ -31,51 +31,52 @@
   support for table literals inspired by Lua
   you can even use them as modules)
 
-  (define vec2 {x: 250.0, y: 250.0}) 
+(define vec2 {x: 250.0, y: 250.0}) 
 
-  (define Vectors {
-    Vector2: (-> (x y) {x: x, y: y})
-  })
+(define Vectors {
+  Vector2: (-> (x y) {x: x, y: y})
+})
 
-  (define pos (Vectors.Vector2 25.0 25.0)) 
-  (echo (fmt "x=$  y=$" pos.x pos.y))
+(define pos (Vectors.Vector2 25.0 25.0)) 
 
+(echo (fmt "x=$  y=$" pos.x pos.y))
 
-'(mutate/inspect a function directly)
-  (define f (-> (x) (* x x)))
-  (echo (f 10))
-  (setb f '(echo "I dont square numbers anymore!"))
-  (f 10)
-  (echo (body f))
-  (echo (lparams f))
+'(mutate a function directly)
 
+(define f (-> (x) (* x x)))
+(echo (f 10))
+(setb f '(echo "I dont square numbers anymore!"))
+(f 10)
 
+(echo (body f))
+(echo (lparams f))
 
 '(recursion examples, recursion is fast, completely separated from the hardware callstack)
-  (define last (-> (xs) (if (cdr xs) (last (cdr xs)) (car xs))))
 
-  (define factorial (-> (n acc)
-    (if (= n 0)
-         acc
-        (factorial (- n 1) (* acc n))))) 
+(define last (-> (xs) (if (cdr xs) (last (cdr xs)) (car xs))))
+
+(define factorial (-> (n acc)
+  (if (= n 0)
+       acc
+      (factorial (- n 1) (* acc n))))) 
 
 
 '(macro examples)
-  (macro collect (binding body)
-   (let ((var        (car binding))
-         (collection (car (cdr binding))))
-    `(map ,collection (-> (,var) ,body))))  ; macros and backquote inspired by CL
 
-  (define xs (collect (x (range 1 1000)) (* x x))) 
+(macro collect (binding body)
+ (let ((var        (car binding))
+       (collection (car (cdr binding))))
+  `(map ,collection (-> (,var) ,body))))  ; macros and backquote inspired by CL
 
+(define xs (collect (x (range 1 1000)) (* x x))) 
 
 
 '(IO and data transformation capabilities)
-  (define readDir (-> (dir) (map (filter (listDir dir) isFile?) readFile))) 
 
+(define readDir (-> (dir) (map (filter (listDir dir) isFile?) readFile))) 
 
 '(String indexing/slicing)
-  (define str "Yoben Boben")
-  (echo str[5..(- (strLen str) 1)])
 
+(define str "Yoben Boben")
+(echo str[5..(- (strLen str) 1)])
 ```
