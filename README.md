@@ -1,5 +1,5 @@
 # λ ((M))  
-#### A Lisp-1 like language that emphasizes transparency, flexibility, extensibility and most importantly masterability; The core of the language excluding Stdlib is only about 1300 lines of structured self documenting code; Using nothing but the Nim standard library Besides `bigints`
+#### A Lisp-1 like language that emphasizes transparency, flexibility, extensibility and most importantly masterability; The core of the language excluding Stdlib is only about 1400 lines of structured self documenting code; Using nothing but the Nim standard library Besides `bigints`
 #### Still a work in progress but it is already a capable tool for systems scripting or embedding in any Nim Application.  you can instantiate the interpreter in 1 line of code and its trivial to extend with builtins 
 ###### to install M from nimble run: `nimble install m`. to build from source , clone the repo and run: `nimble build`, to launch the interpreter in repl mode run `m -i` otherwise run `m filename.m`;  code examples are below the Features section and in the `examples` directory 
 
