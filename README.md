@@ -9,7 +9,7 @@
 * Safe and fast Infinite recursion
 * First class functions and symbols
 * Powerful Macros and Backquote
-* Direct metaprogramming (Lambdas are structures allowing for hot reloading / hot swapping); code is data in a much more literal sense than Scheme or CL
+* Direct metaprogramming (Lambdas are structures allowing for hot swapping of code); code is data in a much more literal sense than Scheme or CL
 * Table literals and dot notation for field access
 * String indexing / slicing
 * Batteries included Standard library (Still WIP)
@@ -27,9 +27,9 @@
 
 (echo "Hello World!")
 
-;; table examples
-;; support for table literals inspired by Lua
-;; you can even use them as modules
+'(table examples
+  support for table literals inspired by Lua
+  you can even use them as modules)
 
 (define vec2 {x: 250.0, y: 250.0}) 
 
@@ -41,7 +41,17 @@
 
 (echo (fmt "x=$  y=$" pos.x pos.y))
 
-;; recursion examples, recursion is fast, completely separated from the hardware callstack
+'(mutate a function directly)
+
+(define f (-> (x) (* x x)))
+(echo (f 10))
+(setb f '(echo "I dont square numbers anymore!"))
+(f 10)
+
+(echo (body f))
+(echo (lparams f))
+
+'(recursion examples, recursion is fast, completely separated from the hardware callstack)
 
 (define last (-> (xs) (if (cdr xs) (last (cdr xs)) (car xs))))
 
@@ -51,12 +61,8 @@
       (factorial (- n 1) (* acc n))))) 
 
   
-;; retrieve a functions body as a mutable cons
 
-(echo (body factorial)) 
-
-
-;; macro examples
+'(macro examples)
 
 (macro collect (binding body)
  (let ((var        (car binding))
@@ -66,11 +72,11 @@
 (define xs (collect (x (range 1 1000)) (* x x))) 
 
 
-;; IO and data transformation capabilities 
+'(IO and data transformation capabilities)
 
 (define readDir (-> (dir) (map (filter (listDir dir) isFile?) readFile))) 
 
-;; String indexing
+'(String indexing)
 
 (define str "Yoben Boben")
 (echo (str[5..(- (strLen str) 1)]))
