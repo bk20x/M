@@ -60,7 +60,6 @@
        acc
       (factorial (- n 1) (* acc n))))) 
 
-  
 
 '(macro examples)
 
@@ -76,8 +75,8 @@
 
 (define readDir (-> (dir) (map (filter (listDir dir) isFile?) readFile))) 
 
-'(String indexing)
+'(String indexing/slicing)
 
 (define str "Yoben Boben")
-(echo (str[5..(- (strLen str) 1)]))
+(echo str[5..(- (strLen str) 1)])
 ```
