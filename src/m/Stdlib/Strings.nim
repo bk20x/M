@@ -10,8 +10,6 @@ proc toString(obj: LispObject): string =
   else:
     return $obj
       
-
-
 proc strReplace(args: LispObject): LispObject =
   if args.len != 3 or not (args.first.kind == String and args.second.kind == String and args.third.kind == String):
     raise newException(ValueError, fmt"`strReplace` is of type String -> String -> String -> String but got {args}")
@@ -85,7 +83,6 @@ proc strip(args: LispObject): LispObject =
     return newStr(str.strip)
 
 
-
 proc stringFormat(args: LispObject): LispObject =
   if args.len < 1 or args.first.kind != String:
     raise newException(ValueError, "`fmt` is of type String -> Varargs[T] -> String but got {args}")
@@ -119,16 +116,22 @@ proc substring(args: LispObject): LispObject =
     raise newException(ValueError, fmt"`substring` is of type String -> Int -> Int -> String but got {args}")
   let
     str   = args.first
-    start = args.second
-    endp  = args.third
-  return newStr(str.str[start.intVal..endp.intVal])
-
+    start = args.second.intVal
+    endp  = args.third.intVal
+  return newStr(str.str[start..endp])
 
 proc parseI(args: LispObject): LispObject =
   if args.len != 1 or not (args.first.kind == String):
-    raise newException(ValueError, fmt"`parseInt` is of type String -> Int but got {args}")
-  let str = args.first
-  return newInt(parseInt str.str)
+    raise newException(ValueError, fmt"`String->Int` is of type String -> Int but got {args}")
+  let str = args.first.str
+  return newInt(parseInt str)
+
+proc parseHexI(args: LispObject): LispObject =
+  if args.len != 1 or not (args.first.kind == String):
+    raise newException(ValueError, fmt"`parseHexInt` is of type String -> Int but got {args}")
+  let str = args.first.str
+  return newInt(parseHexInt str)
+
   
 proc split(args: LispObject): LispObject =
   if args.len != 2 or not (args.first.kind == String and args.second.kind == String):
@@ -152,5 +155,6 @@ const
     "strip"      : BuiltinFn strip,
     "substring"  : BuiltinFn substring,
     "String->Int": BuiltinFn parseI,
+    "parseHexInt": BuiltinFn parseHexI,
     "split"      : BuiltinFn split
   }
