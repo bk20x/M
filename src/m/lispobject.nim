@@ -129,9 +129,11 @@ func isNil*(obj: LispObject)   : bool   =
 func len*(list: LispObject): int =
   if list.isNil:
     return 0
+  elif list.isAtom: 
+    return 1
   else:
     return 1 + len(list.cdr)
-    
+
 func first*(list: LispObject): owned LispObject =
   if list.len < 1: return NIL()
   return list.car

@@ -598,9 +598,14 @@ eachImpl = proc(env: var Env, form: LispObject): LispObject =
       listToIter = evaluatedList
       loopScope  = env.newScope()
     while not listToIter.isNil:
-      loopScope.interned[varSym.sym.name] = listToIter.car
-      result     = loopScope.eval(body)
-      listToIter = listToIter.cdr
+      if listToIter.kind == Cons:
+        loopScope.interned[varSym.sym.name] = listToIter.car
+        result = loopScope.eval(body)
+        listToIter = listToIter.cdr
+      else:  # for dotted pairs
+        loopScope.interned[varSym.sym.name] = listToIter
+        result = loopScope.eval(body)
+        break # ^^
 
 load =
   proc(env: var Env, form: LispObject): LispObject =
