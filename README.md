@@ -15,7 +15,6 @@
 * Batteries included Standard library (Still WIP)
 * Trivially extensible with native code and embedded within applications
 * Completely cross platform; can fit in flash memory
-* many more ...
 
 # Some Examples ^_^
 ![](doc/ex1.png)
