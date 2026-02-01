@@ -3,11 +3,11 @@
 
 
 (macro with-file-stream (binding body)
- (let ((var      (car binding))
+ (let ((stream   (car binding))
        (filename (car (cdr binding)))) 
- `(let ((,var (Streams.openFileStream ,filename)))
+ `(let ((,stream (Streams.openFileStream ,filename)))
     (try ,body
-	  t
-  (Streams.close ,var)))))
+  (Streams.close ,stream)
+  (Streams.close ,stream)))))
 
 
