@@ -41,8 +41,9 @@ proc parseAtom(p: var Reader; parsingIndex = false): owned LispObject =
       p.advance
       return NIL()
     var res = newSym p.lexer.curTok.sym.name
+    let start = p.lexer.bufpos 
     p.advance
-    if p.lexer.curTok.kind == tkLBracket:
+    if p.lexer.curTok.kind == tkLBracket and (p.lexer.bufpos - start == 1): # its only an index if the symbol is touching the bracket
       return p.parseIndex(res)
     while p.lexer.curTok.kind == tkDot:
       if p.lexer.buf[p.lexer.bufpos] == '.':
@@ -64,9 +65,11 @@ proc parseAtom(p: var Reader; parsingIndex = false): owned LispObject =
     p.advance
     return num
   of tkStr:
-    let strObj = newStr(p.lexer.curTok.str)
+    let
+      strObj = newStr(p.lexer.curTok.str)
+      start  = p.lexer.bufpos
     p.advance
-    if p.lexer.curTok.kind == tkLBracket:
+    if p.lexer.curTok.kind == tkLBracket and (p.lexer.bufpos - start == 1): # its only an index if the string is touching the bracket
       return p.parseIndex(strObj)
     return strObj
   of tkBquote:
