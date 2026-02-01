@@ -18,10 +18,12 @@
 * Completely cross platform; can fit in flash memory
 
 # Some Examples ^_^
-![](doc/ex1.png)
+![](doc/ex1.png) 
+- Parse JSON into a table object
+![](doc/jsonex.png)
 - Embed in any nim app in 2 lines
 ---
-![](doc/embedex1.png) ![](doc/jsonex.png)
+![](doc/embedex1.png)
 ```
 (open SysIo)
 
