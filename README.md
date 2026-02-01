@@ -23,13 +23,15 @@
 ---
 ![](doc/embedex1.png)
 ```
-(open SysIo Strings)
+(open SysIo)
 
 (echo "Hello World!")
 
 '(table examples
   support for table literals inspired by Lua
   you can even use them as modules)
+
+(define String (let () (open Strings) (interned-symbols)))
 
 (define vec2 {x: 250.0, y: 250.0}) 
 
@@ -38,7 +40,7 @@
 })
 
 (define pos (Vectors.Vector2 25.0 25.0)) 
-(echo (fmt "x=$  y=$" pos.x pos.y))
+(echo (String.fmt "x=$  y=$" pos.x pos.y))
 
 
 '(macro examples)
@@ -70,7 +72,7 @@
 '(indexing/slicing)
 
 (define str "Yoben Boben")
-(echo str[5..(- (strLen str) 1)])
+(echo str[5..(- (String.strLen str) 1)])
 
 (define nums [1,2,3,4,5])
 (echo nums[1..3])
