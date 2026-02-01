@@ -1,9 +1,9 @@
-(open Tables)
+(define Tables (let () (open Tables) (interned-symbols)))
 
 (macro withKeys (binding body)
      (let ((k     (car binding))
        (table (car (cdr binding))))
-      `(each (,k (tableKeys ,table))
+      `(each (,k (Tables.tableKeys ,table))
 	,body)))
 
 
@@ -11,22 +11,22 @@
  (let ((k     (car binding))
        (v     (car (cdr binding)))
        (table (car (cdr (cdr binding))))) 
-    `(each (,k (tableKeys ,table)) 
-      (let ((,v (get ,k ,table)))
+    `(each (,k (Tables.tableKeys ,table)) 
+      (let ((,v (Tables.get ,k ,table)))
         ,body))))
 
 
 (define mapvs (-> (table fn) 
   (let ((result {})) 
-    (pairs (k v table) (put k (fn v) result))
+    (pairs (k v table) (Tables.put k (fn v) result))
   result)))
 
 (define filtervs (-> (table pred)
  (let ((result {})) 
    (pairs (k v table) 
-     (if (pred v) (put k v result)))
+     (if (pred v) (Tables.put k v result)))
   result)))
 
 
 (define consume (-> (src dest)
- (let () (pairs (k v src) (put k v dest)) dest)))
+ (let () (pairs (k v src) (Tables.put k v dest)) dest)))
