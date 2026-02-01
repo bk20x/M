@@ -10,7 +10,6 @@
 * First class functions and symbols
 * Powerful Macros and Backquote
 * Direct metaprogramming (Lambdas are structures allowing for hot swapping of code); code is data in a much more literal sense than Scheme or CL
-* The Reader can natively parse JSON into Tables
 * Seq/Table literals and dot notation for field access
 * Slicing and indexing for Seqs and Strings as well as mutating these slices
 * Batteries included Standard library (Still WIP)
