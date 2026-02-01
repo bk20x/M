@@ -90,7 +90,7 @@ proc parseAtom(p: var Reader; parsingIndex = false): owned LispObject =
   of tkEof:
     raise newException(ValueError, "Unexpected end of token stream")
   else:
-    raise newException(ValueError, fmt"Invalid token: {$p.lexer.curTok}")
+    raise newException(ValueError, fmt"Invalid token: {p.lexer.curTok}")
 
 proc parseList(p: var Reader): owned LispObject =
   p.expect tkLpar 
@@ -122,7 +122,7 @@ proc parseTableLit(p: var Reader): owned LispObject =
       if p.lexer.curTok.kind == tkRBrace: break
     elif p.lexer.curTok.kind == tkRBrace: break 
     else:
-      raise newException(ValueError, fmt"Expected ',' or '}' in Table literal but got {p.lexer.curTok}")
+      raise newException(ValueError, fmt"Expected ',' or '}}' in Table literal but got {p.lexer.curTok}")
   p.expect tkRBrace 
 
 
