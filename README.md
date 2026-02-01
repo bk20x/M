@@ -10,8 +10,8 @@
 * First class functions and symbols
 * Powerful Macros and Backquote
 * Direct metaprogramming (Lambdas are structures allowing for hot swapping of code); code is data in a much more literal sense than Scheme or CL
-* Table literals and dot notation for field access
-* String indexing / slicing
+* Seq/Table literals and dot notation for field access
+* Slicing and indexing for Seqs and Strings as well as mutating these slices
 * Batteries included Standard library (Still WIP)
 * Trivially extensible with native code and embedded within applications
 * Completely cross platform; can fit in flash memory
@@ -66,11 +66,15 @@
 (define readDir (-> (dir) (map (filter (listDir dir) isFile?) readFile))) 
 
 
-'(String indexing/slicing)
+'(indexing/slicing)
 
 (define str "Yoben Boben")
 (echo str[5..(- (strLen str) 1)])
 
+(define nums @[1,2,3,4,5])
+(echo nums[1..3])
+(setf nums[1..3] @[9, +, 10, =, 21])
+(echo nums)
 
 '(mutate/inspect a function directly)
 
