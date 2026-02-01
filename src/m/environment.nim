@@ -622,26 +622,39 @@ whileImpl =
             
 
 eachImpl = proc(env: var Env, form: LispObject): LispObject =
+    if form.len != 2 or not (form.first.kind == Cons and form.second.kind == Cons):
+      raise newException(ValueError, fmt"malformed each: {form}")
     let
       varAndList = form.first # (var list)
       body       = form.second # (body)
+    if varAndList.len != 2 or varAndList.first.kind != Symbol:
+      raise newException(ValueError, fmt"malformed binding for each: {varAndList}")
+    let
       varSym     = varAndList.car
       listForm   = varAndList.cdr.car    
     let evaluatedList = env.eval(listForm)
-    if evaluatedList.kind != Cons and not evaluatedList.isNil:
-      raise newException(ValueError, fmt"expected list for `each` but got {evaluatedList.kind}")
+    if evaluatedList.kind notin {Cons, Seq} and not evaluatedList.isNil:
+      raise newException(ValueError, fmt"expected Cons or Seq for `each` but got {evaluatedList}")
     var
       listToIter = evaluatedList
       loopScope  = env.newScope()
-    while not listToIter.isNil:
-      if listToIter.kind == Cons:
-        loopScope.interned[varSym.sym.name] = listToIter.car
+    case listToIter.kind
+    of Cons:
+      while not listToIter.isNil:
+        if listToIter.kind == Cons:
+          loopScope.interned[varSym.sym.name] = listToIter.car
+          result = loopScope.eval(body)
+          listToIter = listToIter.cdr
+        else:  # for dotted pairs
+          loopScope.interned[varSym.sym.name] = listToIter
+          result = loopScope.eval(body)
+          break # ^^
+    of Seq:
+      for x in listToIter.sequence:
+        loopScope.interned[varSym.sym.name] = x
         result = loopScope.eval(body)
-        listToIter = listToIter.cdr
-      else:  # for dotted pairs
-        loopScope.interned[varSym.sym.name] = listToIter
-        result = loopScope.eval(body)
-        break # ^^
+    else: # unreachable
+      discard
 
 load =
   proc(env: var Env, form: LispObject): LispObject =
@@ -659,45 +672,92 @@ proc newEnv*(): owned Env =
   let
     map: BuiltinFn =
       proc(args: LispObject): LispObject =
-        if args.len != 2 or not (args.first.kind == Cons and args.second.kind in {Lambda, Builtin}):
-          raise newException(ValueError, fmt"`map` is of type Cons -> Lambda | Builtin -> Cons but got {args}")
-        let
-          list = args.first.toSeq
-          fun  = args.second
-        result = NIL()
-        if fun.kind == Builtin:
-          for i in countdown(list.high, 0):
-            let
-              new = fun.fun(cons(list[i], NIL()))
-            result = cons(new, result)
-          return result
-        for i in countdown(list.high, 0):
+        if args.len != 2 or not (args.first.kind in {Cons, Seq} and args.second.kind in {Lambda, Builtin}):
+          raise newException(ValueError, fmt"`map` is of type Cons | Seq -> Lambda | Builtin -> Cons | Seq but got {args}")
+        if args.first.kind == Cons:
           let
-            new = env.apply(fun, @[list[i]])
-          result = cons(new, result)
-        return result
+            list = args.first.toSeq
+            fun  = args.second
+          result = NIL()
+          if fun.kind == Builtin:
+            for i in countdown(list.high, 0):
+              let
+                new = fun.fun(cons(list[i], NIL()))
+              result = cons(new, result)
+              return result
+          else:
+            for i in countdown(list.high, 0):
+              let
+                new = env.apply(fun, @[list[i]])
+              result = cons(new, result)
+              return result
+        else:
+          let
+            list = args.first.sequence
+            fun = args.second
+          result = lispobject.newSeq()
+          if fun.kind == Builtin:
+            for x in list:
+              result.sequence.add(fun.fun(x))
+            return result
+          else:
+            for x in list:
+              let new = env.apply(fun, @[x])
+              result.sequence.add(new)
+            return result
+            
+          
           
     filter: BuiltinFn =
       proc(args: LispObject): LispObject =
-        if args.len != 2 or not (args.first.kind == Cons and args.second.kind in {Lambda, Builtin}):
-          raise newException(ValueError, fmt"`filter` is of type Cons -> Lambda | Builtin -> Cons but got {args}")
-        let
-          list = args.first.toSeq
-          fun  = args.second
-        result = NIL()
-        if fun.kind == Builtin:
-          for i in countdown(list.high, 0):
-            let
-              new = fun.fun(cons(list[i], NIL()))
-            if new.isT:
-              result = cons(list[i], result)
-          return result
-        for i in countdown(list.high, 0):
+        if args.len != 2 or not (args.first.kind in {Cons, Seq} and args.second.kind in {Lambda, Builtin}):
+          raise newException(ValueError, fmt"`filter` is of type Cons | Seq -> Lambda | Builtin -> Cons | Seq but got {args}")
+        if args.first.kind == Cons:
           let
-            new = env.apply(fun, @[list[i]])
-          if new.isT:
-            result = cons(list[i], result)
-        return result
+            list = args.first.toSeq
+            fun  = args.second
+          result = NIL()
+          case fun.kind
+          of Builtin:
+            for i in countdown(list.high, 0):
+              let
+                new = fun.fun(cons(list[i], NIL()))
+              if new.isT:
+                result = cons(list[i], result)
+              return result
+          of Lambda:
+            for i in countdown(list.high, 0):
+              let
+                new = env.apply(fun, @[list[i]])
+              if new.isT:
+                result = cons(list[i], result)
+              return result
+          else:
+            discard
+        else:
+          let
+            list = args.first.sequence
+            fun  = args.second
+          result = lispobject.newSeq()
+          case fun.kind
+          of Builtin:
+            for x in list:
+              let new = fun.fun(x)
+              if new.isT:
+                result.sequence.add(x)
+            return result
+          of Lambda:
+            for x in list:
+              let new = env.apply(fun, @[x])
+              if new.isT:
+                result.sequence.add(x)
+            return result
+          else: # unreachable
+            discard
+                
+                
+          
+          
         
     cons: BuiltinFn =
       proc(args: LispObject): LispObject =
@@ -747,27 +807,33 @@ proc newEnv*(): owned Env =
           
     body: BuiltinFn =
       proc(args: LispObject): LispObject =
+        if args.len != 1 or not (args.first.kind in {Lambda, Macro}):
+          raise newException(ValueError, fmt"`body` is of type Lambda | Macro -> Cons but got {args}")
         result = NIL()
         let
-          lambda = args.first
-          body   = lambda.body
+          program = args.first
+          body    = program.body
         return body
 
     setb: BuiltinFn =
       proc(args: LispObject): LispObject =
-        result = NIL()
+        if args.len != 2 or not (args.first.kind in {Lambda, Macro}):
+          raise newException(ValueError, fmt"`setb` is of type Lambda | Macro -> T -> T but got {args}")
         let
-          lambda = args.first
-          new    = args.second
-        lambda.body = new
+          program = args.first
+          new     = args.second
+        result = new
+        program.body = new
         
     setp: BuiltinFn =
       proc(args: LispObject): LispObject =
-        result = NIL()
+        if args.len != 2 or not (args.first.kind in {Lambda, Macro}):
+          raise newException(ValueError, fmt"`setp` is of type Lambda | Macro -> T -> T but got {args}")
         let
-          lambda = args.first
-          new    = args.second
-        lambda.params = new
+          program = args.first
+          new     = args.second
+        result = new
+        program.params = new
       
     clone: BuiltinFn =
       proc(args: LispObject): LispObject =
@@ -803,6 +869,8 @@ proc newEnv*(): owned Env =
         of Seq:
           result = lispobject.newSeq()
           result.sequence = obj.sequence
+        of Cons:
+          return lispobject.cons(obj.car, obj.cdr)
         else:
           return obj
           
@@ -832,10 +900,10 @@ proc newEnv*(): owned Env =
           
     unintern: BuiltinFn =
       proc(args: LispObject): LispObject =
+        if args.len != 1 or not (args.first.kind == Symbol):
+          raise newException(ValueError, fmt"`unintern` is of type Symbol -> T | Nil but got {args}")
         result = NIL()
         let sym  = args.first
-        if not (sym.kind == Symbol):
-          raise newException(ValueError, fmt"`unintern` is of type Symbol -> T | () but got {args}")
         let name = sym.sym.name
         if env.interned.hasKey(name):
           env.interned.del(name)
@@ -859,7 +927,7 @@ proc newEnv*(): owned Env =
           
     ftoi: BuiltinFn =
       proc(args: LispObject): LispObject =
-        if args.first.kind != Float or args.len != 1:
+        if args.len != 1 or args.first.kind != Float:
           raise newException(ValueError, fmt"ftoi is of type Float -> Int but got {args}")
         return newInt(args.first.floatVal.int)
           

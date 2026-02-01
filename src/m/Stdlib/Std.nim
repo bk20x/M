@@ -3,15 +3,15 @@ import Strings
 import Math
 import SysIo
 import Tables
-import Json
+import Seq
 
 const
   Stdlib* = toTable {
     "Strings": Strings.Module,
-    "Math"   : Math.Module,
+    "Seq"    : Seq.Module,
     "SysIo"  : SysIo.Module,
     "Tables" : Tables.Module,
-    "Json"   : Json.Module
+    "Math"   : Math.Module
   }
 
     
