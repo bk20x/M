@@ -1,12 +1,10 @@
 import std/[tables, sequtils, sugar, osproc, os, strformat]
 import ../lispobject
 
-
-
-
+    
 proc readFile(args: LispObject): LispObject =
   if args.len != 1 or not (args.first.kind == String):
-    raise newException(ValueError, fmt"`readFile` is of type String -> String but got {args}")
+    raise newException(ValueError, fmt"`slurp` is of type String -> String but got {args}")
   return newStr(readFile args.first.str)
 
 proc readLines(args: LispObject): LispObject =

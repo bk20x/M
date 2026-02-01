@@ -123,8 +123,13 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
       if targetTable.kind != HashTable:
         raise newException(ValueError, fmt"Property access on non-table object: {targetTable.kind}")
       if not targetTable.table.hasKey(currentForm.field):
-        return NIL()
-      return targetTable.table[currentForm.field]
+        let fieldAsString: LispObject = newStr(currentForm.field.sym.name)
+        if not targetTable.table.hasKey(fieldAsString):
+          return NIL()
+        else:
+          return targetTable.table[fieldAsString]
+      else:
+        return targetTable.table[currentForm.field]
     elif currentForm.kind == Index:
       try:
         let
