@@ -17,7 +17,7 @@ type
     HashTable,
     AlienObj,
     FieldAccess,
-    StringIndex,
+    Index,
     Seq
     
   SymbolRef* = ref object
@@ -57,8 +57,8 @@ type
         alien*: Alien
       of FieldAccess:
         tableSym*, field*: LispObject
-      of StringIndex:
-        strObj*: LispObject
+      of Index:
+        obj*: LispObject
         startIdx*, endIdx*: LispObject
       of Seq:
         literalSeq*: bool
@@ -72,8 +72,8 @@ func NIL*(): owned LispObject {.inline.} = LispObject(kind: Nil)
 func newSeq*(): owned LispObject =
   return LispObject(kind: Seq, sequence: @[])
   
-func newStringIndex*(str: sink LispObject; startIdx, endIdx: sink LispObject): owned LispObject =
-  return LispObject(kind: StringIndex, strObj: str, startIdx: startIdx, endIdx: endIdx)
+func newIndex*(obj: sink LispObject; startIdx, endIdx: sink LispObject): owned LispObject =
+  return LispObject(kind: Index, obj: obj, startIdx: startIdx, endIdx: endIdx)
 
 func newFieldAccess*(tableSym: sink LispObject; field: sink LispObject): owned LispObject =
   return LispObject(kind: FieldAccess, tableSym: tableSym, field: field)
@@ -193,10 +193,10 @@ proc `$`*(s: LispObject;): owned string =
     return $s.bigNum
   of String:
     return s.str.escape
-  of StringIndex:
+  of Index:
     if s.startIdx == s.endIdx:
-      return fmt"{s.strObj}[{s.startIdx}]"
-    return fmt"{s.strObj}[{s.startIdx}..{s.endIdx}]"
+      return fmt"{s.obj}[{s.startIdx}]"
+    return fmt"{s.obj}[{s.startIdx}..{s.endIdx}]"
   of Cons:
     result = "("
     var
@@ -257,7 +257,7 @@ proc hash*(obj: LispObject): owned Hash =
     return hash(cast[pointer](addr obj))
   of FieldAccess:
     return hash($obj)
-  of StringIndex:
+  of Index:
     return hash($obj)
   of Seq:
     return hash(obj.sequence)

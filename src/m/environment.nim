@@ -122,20 +122,25 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
       if not targetTable.table.hasKey(currentForm.field):
         return NIL()
       return targetTable.table[currentForm.field]
-    elif currentForm.kind == StringIndex:
-      let
-        strObj   = if currentForm.strObj.kind   == String: currentForm.strObj   else: currentEnv.eval(currentForm.strObj)
-        startIdx = if currentForm.startIdx.kind == Int:    currentForm.startIdx else: currentEnv.eval(currentForm.startIdx)
-        endIdx   = if currentForm.endIdx.kind   == Int:    currentForm.endIdx   else: currentEnv.eval(currentForm.endIdx)
-      if strObj.kind != String:
-        raise newException(ValueError, fmt"Attempt to index non String object: {currentForm}")
-      checkIndexIsInt(startIdx)
-      checkIndexIsInt(endIdx)
+    elif currentForm.kind == Index:
       try:
-        let str = strObj.str
-        return newStr(str[startIdx.intVal..endIdx.intVal])
+        let
+          obj      = currentEnv.eval(currentForm.obj)
+          startIdx = if currentForm.startIdx.kind == Int:    currentForm.startIdx else: currentEnv.eval(currentForm.startIdx)
+          endIdx   = if currentForm.endIdx.kind   == Int:    currentForm.endIdx   else: currentEnv.eval(currentForm.endIdx)
+        checkIndexIsInt(startIdx)
+        checkIndexIsInt(endIdx)
+        case obj.kind
+        of String:
+         return newStr(obj.str[startIdx.intVal..endIdx.intVal])
+        of Seq:
+          result = lispobject.newSeq()
+          result.sequence = obj.sequence[startIdx.intVal..endIdx.intVal]
+          return result
+        else:
+          raise newException(ValueError, fmt"Invalid object for index! {currentForm} of type {currentForm.kind}")
       except IndexDefect:
-        raise newException(ValueError, fmt"Out of bounds string index! {currentForm}")
+        raise newException(ValueError, fmt"Out of bounds index! {currentForm}")
     elif currentForm.kind == Cons:
       if currentForm.car.kind == Symbol:
         case currentForm.car.sym.name: # Check if the op is a special form
@@ -292,18 +297,30 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
               val   = currentEnv.eval(valForm)
             table.table[key] = val
             return val
-          elif placeForm.kind == StringIndex:
+          elif placeForm.kind == Index:
             let
-              strObj   = currentEnv.eval(placeForm.strObj)
+              obj      = currentEnv.eval(placeForm.obj)
               startIdx = currentEnv.eval(placeForm.startIdx)
               endIdx   = currentEnv.eval(placeForm.endIdx)
             checkIndexIsInt(startIdx)
             checkIndexIsInt(endIdx)
-            if strObj.kind != String:
-              raise newException(ValueError, fmt"invalid String index {placeForm}")
             try:
-              strObj.str[startIdx.intVal..endIdx.intVal] = valForm.image
-              return strObj
+              case obj.kind
+              of String:
+                if valForm.kind != String:
+                  raise newException(ValueError, fmt"Attempt to setf String index {placeForm} to non String object {valForm}")
+                obj.str[startIdx.intVal..endIdx.intVal] = valForm.str
+              of Seq:
+                if startIdx.intVal == endIdx.intVal:
+                  obj.sequence[startIdx.intVal] = valForm
+                else:
+                  if valForm.kind == Seq:
+                    obj.sequence[startIdx.intVal..endIdx.intVal] = valForm.sequence
+                  else:
+                    raise newException(ValueError, fmt"Attempt to setf Seq range {placeForm} to non Seq object {valForm}")
+              else:
+                raise newException(ValueError, fmt"Invalid type for index {placeForm.kind} as {placeForm}")
+              return valForm
             except IndexDefect:
               raise newException(ValueError, fmt"Attempt to setf out of bounds index! {placeForm}")
           else:
@@ -316,7 +333,7 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
             return val
         of "setq":
           if not (currentForm.len == 3):
-            raise newException(ValueError, fmt"Malformed setf: {currentForm}")
+            raise newException(ValueError, fmt"Malformed setq: {currentForm}")
           let
             placeForm = currentForm.cdr.car
             valForm   = currentForm.cdr.cdr.car        
@@ -337,22 +354,34 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
             var table = currentEnv.eval(placeForm.tableSym)
             let key   = placeForm.field
             table.table[key] = valForm
-          of StringIndex:
+          of Index:
             let
-              strObj   = currentEnv.eval(placeForm.strObj)
+              obj      = currentEnv.eval(placeForm.obj)
               startIdx = currentEnv.eval(placeForm.startIdx)
               endIdx   = currentEnv.eval(placeForm.endIdx)
             checkIndexIsInt(startIdx)
             checkIndexIsInt(endIdx)
-            if strObj.kind != String:
-              raise newException(ValueError, fmt"Invalid String index {placeForm}")
             try:
-              strObj.str[startIdx.intVal..endIdx.intVal] = valForm.image
-              return strObj
+              case obj.kind
+              of String:
+                if valForm.kind != String:
+                  raise newException(ValueError, fmt"Attempt to setq String index {placeForm} to non String object {valForm}")
+                obj.str[startIdx.intVal..endIdx.intVal] = valForm.str          
+              of Seq:
+                if startIdx.intVal == endIdx.intVal:
+                  obj.sequence[startIdx.intVal] = valForm
+                else:
+                  if valForm.kind == Seq:
+                    obj.sequence[startIdx.intVal..endIdx.intVal] = valForm.sequence
+                  else:
+                    raise newException(ValueError, fmt"Attempt to setq Seq range {placeForm} to non Seq object {valForm}")
+              else:
+                raise newException(ValueError, fmt"Invalid type for index {placeForm.kind} as {placeForm}")
+              return valForm
             except IndexDefect:
-              raise newException(ValueError, fmt"Attempt to set out of bounds index! {placeForm}")
+              raise newException(ValueError, fmt"Attempt to setq out of bounds index! {placeForm}")
           else:
-            raise newException(ValueError, fmt"setq: invalid form {placeForm}")
+            raise newException(ValueError, fmt"setq: invalid place {placeForm}")
           return valForm
         of "macroexpand":
           if currentForm.len != 2 or not (currentForm.second.kind == Cons):

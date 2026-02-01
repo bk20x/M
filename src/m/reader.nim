@@ -16,24 +16,23 @@ func expect*(p: var Reader; kind: TokenKind; callsite = "";) =
       raise newException(ValueError, fmt"at {callsite} Reader expected TokenKind: {kind} but got {p.lexer.curTok}")
   p.advance
 
-proc parseStringIndex(p: var Reader; strObj: sink LispObject): owned LispObject =
+proc parseIndex(p: var Reader; obj: sink LispObject): owned LispObject =
   proc parseIdx(p: var Reader): owned LispObject = 
     result = p.parseSexp(true)
     case result.kind
     of Symbol, Int, Cons, FieldAccess: return result
     else: raise newException(ValueError, fmt"Invalid index type: {result.kind}")
-
   var startIdx, endIdx: LispObject
-  p.expect(tkLBracket, "parseStringIndex")
+  p.expect(tkLBracket, "parseIndex")
   startIdx = p.parseIdx()
   if p.lexer.curTok.kind == tkDot and p.lexer.buf[p.lexer.bufpos] == '.':
-    p.expect(tkDot, "parseStringIndex")
-    p.expect(tkDot, "parseStringIndex")
+    p.expect(tkDot, "parseIndex")
+    p.expect(tkDot, "parseIndex")
     endIdx = p.parseIdx()
   else:
     endIdx = startIdx    
-  p.expect(tkRBracket, "parseStringIndex")
-  return newStringIndex(strObj, startIdx, endIdx)
+  p.expect(tkRBracket, "parseIndex")
+  return newIndex(obj, startIdx, endIdx)
 
 proc parseAtom(p: var Reader; parsingIndex = false): owned LispObject =
   case p.lexer.curTok.kind:
@@ -44,8 +43,7 @@ proc parseAtom(p: var Reader; parsingIndex = false): owned LispObject =
     var res = newSym p.lexer.curTok.sym.name
     p.advance
     if p.lexer.curTok.kind == tkLBracket:
-      return p.parseStringIndex(res)
-    
+      return p.parseIndex(res)
     while p.lexer.curTok.kind == tkDot:
       if p.lexer.buf[p.lexer.bufpos] == '.':
         break
@@ -55,7 +53,7 @@ proc parseAtom(p: var Reader; parsingIndex = false): owned LispObject =
         p.advance 
         res = newFieldAccess(tableSym=res, field=field)
       else:
-        raise newException(ValueError, "Reader expected symbol after '.' for FieldAccess")
+        raise newException(ValueError, "Reader expected symbol after '.' for FieldAccess but got {p.lexer.curTok}")
     return res
   of tkInt:
     let num = newInt(p.lexer.curTok.intv)
@@ -69,7 +67,7 @@ proc parseAtom(p: var Reader; parsingIndex = false): owned LispObject =
     let strObj = newStr(p.lexer.curTok.str)
     p.advance
     if p.lexer.curTok.kind == tkLBracket:
-      return p.parseStringIndex(strObj)
+      return p.parseIndex(strObj)
     return strObj
   of tkBquote:
     p.advance 
