@@ -137,8 +137,11 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
         of String:
          return newStr(obj.str[startIdx.intVal..endIdx.intVal])
         of Seq:
-          result = lispobject.newSeq()
-          result.sequence = obj.sequence[startIdx.intVal..endIdx.intVal]
+          if startIdx != endIdx:
+            result = lispobject.newSeq()
+            result.sequence = obj.sequence[startIdx.intVal..endIdx.intVal]
+          else:
+            result = obj.sequence[startIdx.intVal]
           return result
         else:
           raise newException(ValueError, fmt"Invalid object for index! {currentForm} of type {currentForm.kind}")
