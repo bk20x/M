@@ -6,6 +6,7 @@ type
   LispObjectKind* = enum
     Nil,
     Int,
+    Char,
     Float,
     BigInt,
     Symbol,
@@ -36,6 +37,8 @@ type
         sym*: SymbolRef
       of Int:
         intVal*: int
+      of Char:
+        charVal*: char
       of Float:
         floatVal*: float
       of BigInt:
@@ -69,8 +72,11 @@ type
 func T*(): owned LispObject   {.inline.} = LispObject(kind: Symbol, sym: SymbolRef(name: "t"))
 func NIL*(): owned LispObject {.inline.} = LispObject(kind: Nil)
 
-func newSeq*(): owned LispObject =
-  return LispObject(kind: Seq, sequence: @[])
+func newChar*(c: sink char): owned LispObject =
+  return LispObject(kind: Char, charVal: c)
+  
+func newSeq*(sequence: seq[LispObject] = @[]): owned LispObject =
+  return LispObject(kind: Seq, sequence: sequence)
   
 func newIndex*(obj: sink LispObject; startIdx, endIdx: sink LispObject): owned LispObject =
   return LispObject(kind: Index, obj: obj, startIdx: startIdx, endIdx: endIdx)
@@ -189,6 +195,8 @@ proc `$`*(s: LispObject;): owned string =
     return result
   of Int:
     return $s.intVal
+  of Char:
+    return $s.charVal
   of BigInt:
     return $s.bigNum
   of String:
@@ -236,6 +244,8 @@ proc hash*(obj: LispObject): owned Hash =
     result = hash(obj.floatVal)
   of String:
     result = hash(obj.str)
+  of Char:
+    return hash(obj.charVal)
   of Symbol:
     if obj.sym.name == "t":
       result = hash(true)
@@ -273,6 +283,8 @@ proc `==`*(x, y: LispObject): bool =
     return x.floatVal == y.floatVal
   of String:
     return x.str == y.str
+  of Char:
+    return x.charVal == y.charVal
   of Symbol:
     return x.sym.name == y.sym.name
   of BigInt:

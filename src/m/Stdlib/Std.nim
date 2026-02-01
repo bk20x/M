@@ -4,6 +4,7 @@ import Math
 import SysIo
 import Tables
 import Seq
+import Streams
 
 const
   Stdlib* = toTable {
@@ -11,7 +12,8 @@ const
     "Seq"    : Seq.Module,
     "SysIo"  : SysIo.Module,
     "Tables" : Tables.Module,
-    "Math"   : Math.Module
+    "Math"   : Math.Module,
+    "Streams": Streams.Module
   }
 
     

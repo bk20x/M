@@ -21,14 +21,15 @@ type
     tkRBrace   # }
     tkLBracket # [
     tkRBracket # ]
-  
+    tkChar  # #
 
   Token* = object
     case kind*: TokenKind:
-      of tkSym:   sym*:   SymbolRef
-      of tkStr:   str*:   string
-      of tkFloat: flt*: float
-      of tkInt:   intv*: int
+      of tkSym:     sym*:     SymbolRef
+      of tkStr:     str*:     string
+      of tkFloat:   flt*:     float
+      of tkInt:     intv*:    int
+      of tkChar: charVal*: char
       else: discard
 
   MLexr* = object of BaseLexer
@@ -121,6 +122,9 @@ func parseStr*(lx: var MLexr) =
     raise newException(ValueError, fmt"Unterminated string at {lx.bufpos}")
   lx.curTok = Token(kind: tkStr, str: str)
 
+
+
+  
 func getTok*(lx: var MLexr) =
   while true:
     lx.skip()
@@ -131,6 +135,10 @@ func getTok*(lx: var MLexr) =
       return    
 
     case lx.buf[lx.bufpos]:
+    of '#':
+      inc lx.bufpos # move past `#`      
+      lx.curTok = Token(kind: tkChar, charVal: lx.buf[lx.bufpos]) # this is very lax... just remember this is here
+      inc lx.bufpos # move past the character
     of '{':
       inc lx.bufpos
       lx.curTok = Token(kind: tkLBrace)

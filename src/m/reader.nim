@@ -64,6 +64,10 @@ proc parseAtom(p: var Reader; parsingIndex = false): owned LispObject =
     let num = newFloat(p.lexer.curTok.flt)
     p.advance
     return num
+  of tkChar:
+    let charObj = newChar(p.lexer.curTok.charVal)
+    p.advance
+    return charObj
   of tkStr:
     let
       strObj = newStr(p.lexer.curTok.str)

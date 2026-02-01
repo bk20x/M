@@ -15,7 +15,7 @@ type
     closure: Env
 
 
-const SelfEvaluatingTypes = {Int, Float, String, BigInt, AlienObj, Nil} # HashTable is technichally self evaluating too, see in eval under check for SelfEvaluatingTypes
+const SelfEvaluatingTypes = {Int, Float, String, Char, BigInt, AlienObj, Nil} # HashTable is technichally self evaluating too, see in eval under check for SelfEvaluatingTypes
                             
 
 proc intern*(env: var Env, sym: string, val: LispObject) =
@@ -869,6 +869,8 @@ proc newEnv*(): owned Env =
           return newMacro(scope, obj.params, obj.body)
         of String:
           return newStr(obj.str)
+        of Char:
+          return newChar(obj.charVal)
         of Symbol:
           return newSym(obj.sym.name)
         of Seq:
