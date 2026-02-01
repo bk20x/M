@@ -21,7 +21,6 @@ type
     tkRBrace   # }
     tkLBracket # [
     tkRBracket # ]
-    tkAt       # @
   
 
   Token* = object
@@ -132,9 +131,6 @@ func getTok*(lx: var MLexr) =
       return    
 
     case lx.buf[lx.bufpos]:
-    of '@':
-      inc lx.bufpos
-      lx.curTok = Token(kind: tkAt)
     of '{':
       inc lx.bufpos
       lx.curTok = Token(kind: tkLBrace)

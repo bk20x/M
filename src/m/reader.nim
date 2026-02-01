@@ -126,7 +126,6 @@ proc parseTableLit(p: var Reader): owned LispObject =
 proc parseSeqLit(p: var Reader): owned LispObject =
   result = lispobject.newSeq()
   result.literalSeq = true
-  p.expect(tkAt, callsite="parseSeqLit")
   p.expect(tkLBracket, callsite="parseSeqLit")
   if p.lexer.curTok.kind == tkRBracket:
     p.advance
@@ -156,7 +155,7 @@ parseSexp = proc(p: var Reader; parsingIndex = false): owned LispObject =
     return NIL()
   of tkLBrace:
     return parseTableLit(p)
-  of tkAt:
+  of tkLBracket:
     return parseSeqLit(p)
   else:
     return p.parseAtom(parsingIndex)

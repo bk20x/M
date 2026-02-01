@@ -71,9 +71,9 @@
 (define str "Yoben Boben")
 (echo str[5..(- (strLen str) 1)])
 
-(define nums @[1,2,3,4,5])
+(define nums [1,2,3,4,5])
 (echo nums[1..3])
-(setf nums[1..3] @[9, +, 10, =, 21])
+(setf nums[1..3] [9, +, 10, =, 21])
 (echo nums)
 
 '(mutate/inspect a function directly)
