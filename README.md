@@ -21,7 +21,7 @@
 ![](doc/ex1.png)
 - Embed in any nim app in 2 lines
 ---
-![](doc/embedex1.png)
+![](doc/embedex1.png) ![](doc/jsonex.png)
 ```
 (open SysIo)
 
