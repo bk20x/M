@@ -54,7 +54,7 @@ proc parseAtom(p: var Reader; parsingIndex = false): owned LispObject =
         p.advance 
         res = newFieldAccess(tableSym=res, field=field)
       else:
-        raise newException(ValueError, "Reader expected symbol after '.' for FieldAccess but got {p.lexer.curTok}")
+        raise newException(ValueError, fmt"Reader expected symbol after '.' for FieldAccess but got {p.lexer.curTok}")
     return res
   of tkInt:
     let num = newInt(p.lexer.curTok.intv)
@@ -90,7 +90,7 @@ proc parseAtom(p: var Reader; parsingIndex = false): owned LispObject =
   of tkEof:
     raise newException(ValueError, "Unexpected end of token stream")
   else:
-    raise newException(ValueError, fmt"Invalid token: {$p.lexer.curTok.kind}")
+    raise newException(ValueError, fmt"Invalid token: {$p.lexer.curTok}")
 
 proc parseList(p: var Reader): owned LispObject =
   p.expect tkLpar 
@@ -122,7 +122,7 @@ proc parseTableLit(p: var Reader): owned LispObject =
       if p.lexer.curTok.kind == tkRBrace: break
     elif p.lexer.curTok.kind == tkRBrace: break 
     else:
-      raise newException(ValueError, "Expected ',' or '}' in Table literal but got {p.lexer.curTok.kind}")
+      raise newException(ValueError, fmt"Expected ',' or '}' in Table literal but got {p.lexer.curTok}")
   p.expect tkRBrace 
 
 
@@ -142,7 +142,7 @@ proc parseSeqLit(p: var Reader): owned LispObject =
     elif p.lexer.curTok.kind == tkRBracket:
       break 
     else:
-      raise newException(ValueError, "Expected ',' or ']' in Seq literal but got {p.lexer.curTok.kind}")
+      raise newException(ValueError, fmt"Expected ',' or ']' in Seq literal but got {p.lexer.curTok}")
   p.expect tkRBracket
 
     
