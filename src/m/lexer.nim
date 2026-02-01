@@ -4,23 +4,25 @@ import lispobject
 type
   TokenKind* = enum
     tkSym
-    tkFloat,
-    tkInt,
-    tkStr,
-    tkEof,
-    tkLpar,    # (
-    tkRpar,    # )
-    tkDot,     # .
-    tkQuote,   # '
-    tkBquote,  # `
-    tkComma,   # ,
-    tkSplice,  # ,@
-    tkComment, # ;
-    tkColon,   # :
-    tkLBrace,  # {
+    tkFloat
+    tkInt
+    tkStr
+    tkEof
+    tkLpar     # (
+    tkRpar     # )
+    tkDot      # .
+    tkQuote    # '
+    tkBquote   # `
+    tkComma    # ,
+    tkSplice   # ,@
+    tkComment  # ;
+    tkColon    # :
+    tkLBrace   # {
     tkRBrace   # }
     tkLBracket # [
     tkRBracket # ]
+    tkAt       # @
+  
 
   Token* = object
     case kind*: TokenKind:
@@ -130,6 +132,9 @@ func getTok*(lx: var MLexr) =
       return    
 
     case lx.buf[lx.bufpos]:
+    of '@':
+      inc lx.bufpos
+      lx.curTok = Token(kind: tkAt)
     of '{':
       inc lx.bufpos
       lx.curTok = Token(kind: tkLBrace)

@@ -17,7 +17,8 @@ type
     HashTable,
     AlienObj,
     FieldAccess,
-    StringIndex
+    StringIndex,
+    Seq
     
   SymbolRef* = ref object
     name*: string
@@ -58,13 +59,19 @@ type
         tableSym*, field*: LispObject
       of StringIndex:
         strObj*: LispObject
-        startIdx*, endIdx*: LispObject          
+        startIdx*, endIdx*: LispObject
+      of Seq:
+        literalSeq*: bool
+        sequence*: seq[LispObject]
       of Nil:
        discard
 
 func T*(): owned LispObject   {.inline.} = LispObject(kind: Symbol, sym: SymbolRef(name: "t"))
 func NIL*(): owned LispObject {.inline.} = LispObject(kind: Nil)
 
+func newSeq*(): owned LispObject =
+  return LispObject(kind: Seq, sequence: @[])
+  
 func newStringIndex*(str: sink LispObject; startIdx, endIdx: sink LispObject): owned LispObject =
   return LispObject(kind: StringIndex, strObj: str, startIdx: startIdx, endIdx: endIdx)
 
@@ -205,6 +212,8 @@ proc `$`*(s: LispObject;): owned string =
       result.add " . " & $current
     result.add ")"    
     return result
+  of Seq:
+    return $s.sequence
   
 func toSeq*(list: LispObject): owned seq[LispObject] =
   var current: LispObject = list
@@ -250,6 +259,8 @@ proc hash*(obj: LispObject): owned Hash =
     return hash($obj)
   of StringIndex:
     return hash($obj)
+  of Seq:
+    return hash(obj.sequence)
   
 
 proc `==`*(x, y: LispObject): bool =
@@ -273,7 +284,8 @@ proc `==`*(x, y: LispObject): bool =
       currX = x
       currY = y
     while not currX.isNil and not currY.isNil:
-      if not (currX.car == currY.car): 
+      if not (currX.car == currY.car):
+    # maybe change THIS ^ later
         return false
       currX = currX.cdr
       currY = currY.cdr
@@ -284,8 +296,18 @@ proc `==`*(x, y: LispObject): bool =
     return x.params == y.params and x.body == y.body and x.closure == y.closure
   of Macro:
     return x.params == y.params and x.body == y.body and x.closure == y.closure
-  of Builtin, AlienObj:
+  of Builtin:
+    return x.fun == y.fun
+  of AlienObj:
     return (cast[pointer](addr x) == cast[pointer](addr y))
+  of Seq:
+    if x.sequence.len != y.sequence.len:
+      return false
+    for idx, obj in x.sequence:
+      if y.sequence[idx] != obj:
+              # and this ^
+        return false
+    return true    
   else:
     discard
 

@@ -11,9 +11,9 @@ var parseSexp*: proc(p: var Reader, parsingIndex: bool = false): owned LispObjec
 func advance*(p: var Reader) =
   p.lexer.getTok
 
-func expect*(p: var Reader; kind: TokenKind; callsite = "") =
+func expect*(p: var Reader; kind: TokenKind; callsite = "";) =
   if p.lexer.curTok.kind != kind:
-    raise newException(ValueError, fmt"at {callsite} Reader expected TokenKind: {$kind} but got {p.lexer.curTok.kind}")
+      raise newException(ValueError, fmt"at {callsite} Reader expected TokenKind: {kind} but got {p.lexer.curTok}")
   p.advance
 
 proc parseStringIndex(p: var Reader; strObj: sink LispObject): owned LispObject =
@@ -31,8 +31,7 @@ proc parseStringIndex(p: var Reader; strObj: sink LispObject): owned LispObject 
     p.expect(tkDot, "parseStringIndex")
     endIdx = p.parseIdx()
   else:
-    endIdx = startIdx
-    
+    endIdx = startIdx    
   p.expect(tkRBracket, "parseStringIndex")
   return newStringIndex(strObj, startIdx, endIdx)
 
@@ -122,24 +121,54 @@ proc parseTableLit(p: var Reader): owned LispObject =
       if p.lexer.curTok.kind == tkRBrace: break
     elif p.lexer.curTok.kind == tkRBrace: break 
     else:
-      raise newException(ValueError, "Expected ',' or '}' in table")
+      raise newException(ValueError, "Expected ',' or '}' in Table literal but got {p.lexer.curTok.kind}")
   p.expect tkRBrace 
+
+
+proc parseSeqLit(p: var Reader): owned LispObject =
+  result = lispobject.newSeq()
+  result.literalSeq = true
+  p.expect(tkAt, callsite="parseSeqLit")
+  p.expect(tkLBracket, callsite="parseSeqLit")
+  if p.lexer.curTok.kind == tkRBracket:
+    p.advance
+    return result
+  while true:
+    let obj = parseSexp(p)
+    result.sequence.add(obj) 
+    if p.lexer.curTok.kind == tkComma:
+      p.advance
+      if p.lexer.curTok.kind == tkRBracket: break
+    elif p.lexer.curTok.kind == tkRBracket:
+      break 
+    else:
+      raise newException(ValueError, "Expected ',' or ']' in Seq literal but got {p.lexer.curTok.kind}")
+  p.expect tkRBracket
+
+    
+  
+  
 
 parseSexp = proc(p: var Reader; parsingIndex = false): owned LispObject =
   case p.lexer.curTok.kind:
-  of tkLpar: return parseList(p)
+  of tkLpar:
+    return parseList(p)
   of tkRpar: 
     p.expect tkRpar
     return NIL()
-  of tkLBrace: return parseTableLit(p)
-  else: return p.parseAtom(parsingIndex)
+  of tkLBrace:
+    return parseTableLit(p)
+  of tkAt:
+    return parseSeqLit(p)
+  else:
+    return p.parseAtom(parsingIndex)
+
 
 proc parse*(input: string): owned LispObject =
   var parser: Reader
   initLexer(parser.lexer, newStringStream(input))
   parser.advance
   return parseSexp(parser)
-
 
 
 
