@@ -684,13 +684,13 @@ proc newEnv*(): owned Env =
               let
                 new = fun.fun(cons(list[i], NIL()))
               result = cons(new, result)
-              return result
+            return result
           else:
             for i in countdown(list.high, 0):
               let
                 new = env.apply(fun, @[list[i]])
               result = cons(new, result)
-              return result
+            return result
         else:
           let
             list = args.first.sequence
@@ -724,14 +724,14 @@ proc newEnv*(): owned Env =
                 new = fun.fun(cons(list[i], NIL()))
               if new.isT:
                 result = cons(list[i], result)
-              return result
+            return result
           of Lambda:
             for i in countdown(list.high, 0):
               let
                 new = env.apply(fun, @[list[i]])
               if new.isT:
                 result = cons(list[i], result)
-              return result
+            return result
           else:
             discard
         else:
