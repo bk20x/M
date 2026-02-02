@@ -69,6 +69,56 @@ proc peekChar(args: LispObject): LispObject =
       return newChar(stream.stream.peekChar())
 
 
+proc readString(args: LispObject): LispObject =
+  if args.len != 2 or not (args.first.kind == AlienObj and (args.first.alien.tname != "FileStream" or args.first.alien.tname != "StringStream") and args.second.kind == Int):
+    raise newException(ValueError, fmt"`readString` is of type Stream -> Int -> String | Nil but got {args}")
+  result = NIL()
+  let
+    strmObj = args.first.alien
+    length  = args.second.intVal
+  try:
+    if strmObj.tname == "FileStream":
+      let stream = FileStreamObj(strmObj)
+      if not stream.isOpen:
+        raise newException(ValueError, fmt"attempt to use closed Stream at `readString`") 
+      if not stream.stream.atEnd():
+        return newStr(stream.stream.readStr(length))
+      else:
+        let stream = StringStreamObj(strmObj)
+        if not stream.isOpen:
+          raise newException(ValueError, fmt"attempt to use closed Stream at `readString`")
+        if not stream.stream.atEnd():
+          return newStr(stream.stream.readStr(length))
+  except IOError as e:
+    raise newException(ValueError, fmt"exception at call to `readString` with {args} :: {e.msg}")
+
+
+
+proc peekString(args: LispObject): LispObject =
+  if args.len != 2 or not (args.first.kind == AlienObj and (args.first.alien.tname != "FileStream" or args.first.alien.tname != "StringStream") and args.second.kind == Int):
+    raise newException(ValueError, fmt"`peekString` is of type Stream -> Int -> String | Nil but got {args}")
+  result = NIL()
+  let
+    strmObj = args.first.alien
+    length  = args.second.intVal
+  try:
+    if strmObj.tname == "FileStream":
+      let stream = FileStreamObj(strmObj)
+      if not stream.isOpen:
+        raise newException(ValueError, fmt"attempt to use closed Stream at `peekString`")
+      if not stream.stream.atEnd():
+        return newStr(stream.stream.peekStr(length))
+      else:
+        let stream = StringStreamObj(strmObj)
+        if not stream.isOpen:
+          raise newException(ValueError, fmt"attempt to use closed Stream at `peekString`")
+        if not stream.stream.atEnd():
+          return newStr(stream.stream.peekStr(length))
+  except IOError as e:
+    raise newException(ValueError, fmt"exception at call to `peekString` with {args} :: {e.msg}")
+
+
+
 proc atEnd(args: LispObject): LispObject =
   if args.len != 1 or not (args.first.kind == AlienObj and (args.first.alien.tname != "FileStream" or args.first.alien.tname != "StringStream")):
     raise newException(ValueError, fmt"`atEnd` is of type Stream -> T | Nil but got {args}")
@@ -140,6 +190,8 @@ const Module* = toTable {
   "close"           : BuiltinFn Streams.close,
   "readChar"        : BuiltinFn Streams.readChar,
   "peekChar"        : BuiltinFn Streams.peekChar,
+  "readString"      : BuiltinFn Streams.readString,
+  "peekString"      : BuiltinFn Streams.peekString,
   "getPosition"     : BuiltinFn Streams.getPosition,
   "setPosition"     : BuiltinFn Streams.setPosition,
   "atEnd"           : BuiltinFn Streams.atEnd

@@ -1,5 +1,7 @@
 (open Tables)
 
+(define not (-> (x) (= x nil)))
+
 (macro require (modname)
  `(let () 
    (open ,modname)
