@@ -19,7 +19,7 @@
        `(let ((,stream (Streams.openStringStream ,buffer)))
          (try ,body
           (Streams.close ,stream)
-	  (Streans.close ,stream)))))
+	  (Streams.close ,stream)))))
 
 
 (define tokenize (-> (string)
