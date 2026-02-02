@@ -115,9 +115,10 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
         result.table = table
         return result
     elif currentForm.kind == Seq:
+      result = lispobject.newSeq()
       for idx, x in currentForm.sequence:
-        currentForm.sequence[idx] = currentEnv.eval(x)
-      return currentForm
+        result.sequence.add(currentEnv.eval(x))
+      return result
     elif currentForm.kind == FieldAccess:
       let targetTable = currentEnv.eval(currentForm.tableSym)
       if targetTable.kind != HashTable:
