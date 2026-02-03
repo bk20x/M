@@ -1,7 +1,7 @@
 from std/tables import toTable
 from std/strformat import fmt
 import ../lispobject
-
+import std/sequtils
 
 
 
@@ -25,8 +25,19 @@ proc add(args: LispObject): LispObject =
   return newInt(sequence.sequence.high)
     
 
+
+proc newSeqWith(args: LispObject): LispObject =
+  if args.len != 2 or not (args.first.kind == Int):
+    raise newException(ValueError, fmt"`newSeqWith` is of type Int -> T | Nil -> Seq but got {args}")
+  let
+    length = args.first.intVal
+    init   = args.second
+  return lispobject.newSeq(newSeqWith(length, init))
+    
 const Module* = toTable {
-  "length": BuiltinFn length,
-  "high"  : BuiltinFn high,
-  "add"   : BuiltinFn add
+  "length"     : BuiltinFn length,
+  "high"       : BuiltinFn high,
+  "add"        : BuiltinFn add,
+  "newSeqWith" : BuiltinFn Seq.newSeqWith
+
 }
