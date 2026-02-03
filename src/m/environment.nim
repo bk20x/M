@@ -135,22 +135,24 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
       try:
         let
           obj      = currentEnv.eval(currentForm.obj)
-          startIdx = if currentForm.startIdx.kind == Int:    currentForm.startIdx else: currentEnv.eval(currentForm.startIdx)
-          endIdx   = if currentForm.endIdx.kind   == Int:    currentForm.endIdx   else: currentEnv.eval(currentForm.endIdx)
+          startIdx = if currentForm.startIdx.kind == Int: currentForm.startIdx 
+                       else: currentEnv.eval(currentForm.startIdx)
+          endIdx   = if currentForm.endIdx.kind == Int: currentForm.endIdx 
+                       else: currentEnv.eval(currentForm.endIdx)        
         checkIndexIsInt(startIdx)
         checkIndexIsInt(endIdx)
         case obj.kind
         of String:
-         return newStr(obj.str[startIdx.intVal..endIdx.intVal])
+          return newStr(obj.str[startIdx.intVal..endIdx.intVal])
         of Seq:
-          if startIdx != endIdx:
+          if startIdx.intVal != endIdx.intVal:
             result = lispobject.newSeq()
             result.sequence = obj.sequence[startIdx.intVal..endIdx.intVal]
           else:
             result = obj.sequence[startIdx.intVal]
           return result
         else:
-          raise newException(ValueError, fmt"Invalid object for index! {currentForm} of type {currentForm.kind}")
+          raise newException(ValueError, fmt"Invalid object for index! {obj} of type {obj.kind}")
       except IndexDefect:
         raise newException(ValueError, fmt"Out of bounds index! {currentForm}")
     elif currentForm.kind == Cons:
