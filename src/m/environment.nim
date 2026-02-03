@@ -316,6 +316,7 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
               obj      = currentEnv.eval(placeForm.obj)
               startIdx = currentEnv.eval(placeForm.startIdx)
               endIdx   = currentEnv.eval(placeForm.endIdx)
+              valForm  = currentEnv.eval(valForm)
             checkIndexIsInt(startIdx)
             checkIndexIsInt(endIdx)
             try:

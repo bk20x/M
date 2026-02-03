@@ -22,13 +22,12 @@ proc parseIndex(p: var Reader; obj: sink LispObject): owned LispObject =
     let idx = p.parseSexp(true)
     case idx.kind
     of Symbol, Int, Cons, FieldAccess: return idx
-    else: raise newException(ValueError, fmt"Invalid index type: {idx.kind}")
+    else: raise newException(ValueError, fmt"Invalid object for index {idx}")
 
   while p.lexer.curTok.kind == tkLBracket:
     p.expect(tkLBracket, "parseIndex")
     let startIdx = p.parseIdx()
     var endIdx: LispObject
-    
     if p.lexer.curTok.kind == tkDot and p.lexer.buf[p.lexer.bufpos] == '.':
       p.expect(tkDot, "parseIndex")
       p.expect(tkDot, "parseIndex")
@@ -37,6 +36,11 @@ proc parseIndex(p: var Reader; obj: sink LispObject): owned LispObject =
       endIdx = startIdx    
     p.expect(tkRBracket, "parseIndex")
     result = newIndex(result, startIdx, endIdx)
+    if p.lexer.curTok.kind == tkLBracket and p.lexer.bufpos != p.lexer.bufpos: 
+      break
+    if p.lexer.buf[p.lexer.bufpos] != '[':
+      break
+
 
 proc parseTableLit(p: var Reader): owned LispObject =
   result = newTable()
