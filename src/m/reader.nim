@@ -18,27 +18,32 @@ func expect*(p: var Reader; kind: TokenKind; callsite = "";) =
 
 proc parseIndex(p: var Reader; obj: sink LispObject): owned LispObject =
   result = obj
+  
   proc parseIdx(p: var Reader): owned LispObject = 
     let idx = p.parseSexp(true)
     case idx.kind
     of Symbol, Int, Cons, FieldAccess: return idx
     else: raise newException(ValueError, fmt"Invalid object for index {idx}")
 
-  while p.lexer.curTok.kind == tkLBracket:
+  while true:
     p.expect(tkLBracket, "parseIndex")
     let startIdx = p.parseIdx()
     var endIdx: LispObject
+    
     if p.lexer.curTok.kind == tkDot and p.lexer.buf[p.lexer.bufpos] == '.':
       p.expect(tkDot, "parseIndex")
       p.expect(tkDot, "parseIndex")
       endIdx = p.parseIdx()
     else:
       endIdx = startIdx    
+    
+
+    let touchingNext = p.lexer.buf[p.lexer.bufpos] == '['    
     p.expect(tkRBracket, "parseIndex")
     result = newIndex(result, startIdx, endIdx)
-    if p.lexer.curTok.kind == tkLBracket and p.lexer.bufpos != p.lexer.bufpos: 
-      break
-    if p.lexer.buf[p.lexer.bufpos] != '[':
+    if touchingNext:
+      continue
+    else:
       break
 
 
