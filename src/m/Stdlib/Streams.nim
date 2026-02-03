@@ -83,12 +83,12 @@ proc readString(args: LispObject): LispObject =
         raise newException(ValueError, fmt"attempt to use closed Stream at `readString`") 
       if not stream.stream.atEnd():
         return newStr(stream.stream.readStr(length))
-      else:
-        let stream = StringStreamObj(strmObj)
-        if not stream.isOpen:
-          raise newException(ValueError, fmt"attempt to use closed Stream at `readString`")
-        if not stream.stream.atEnd():
-          return newStr(stream.stream.readStr(length))
+    else:
+      let stream = StringStreamObj(strmObj)
+      if not stream.isOpen:
+        raise newException(ValueError, fmt"attempt to use closed Stream at `readString`")
+      if not stream.stream.atEnd():
+        return newStr(stream.stream.readStr(length))
   except IOError as e:
     raise newException(ValueError, fmt"exception at call to `readString` with {args} :: {e.msg}")
 
@@ -108,12 +108,12 @@ proc peekString(args: LispObject): LispObject =
         raise newException(ValueError, fmt"attempt to use closed Stream at `peekString`")
       if not stream.stream.atEnd():
         return newStr(stream.stream.peekStr(length))
-      else:
-        let stream = StringStreamObj(strmObj)
-        if not stream.isOpen:
-          raise newException(ValueError, fmt"attempt to use closed Stream at `peekString`")
-        if not stream.stream.atEnd():
-          return newStr(stream.stream.peekStr(length))
+    else:
+      let stream = StringStreamObj(strmObj)
+      if not stream.isOpen:
+        raise newException(ValueError, fmt"attempt to use closed Stream at `peekString`")
+      if not stream.stream.atEnd():
+        return newStr(stream.stream.peekStr(length))
   except IOError as e:
     raise newException(ValueError, fmt"exception at call to `peekString` with {args} :: {e.msg}")
 
