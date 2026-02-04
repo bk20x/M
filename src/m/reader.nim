@@ -70,7 +70,7 @@ proc parseTableLit(p: var Reader): owned LispObject =
 proc parseAtom(p: var Reader; parsingIndex = false): owned LispObject =
   case p.lexer.curTok.kind:
   of tkSym:
-    if p.lexer.curTok.sym.name == "nil":
+    if p.lexer.curTok.sym.name.cmpIgnoreCase("nil") == 0:
       p.advance
       return NIL()
     var res = newSym p.lexer.curTok.sym.name

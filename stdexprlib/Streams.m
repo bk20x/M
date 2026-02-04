@@ -9,17 +9,17 @@
         (filename (car (cdr binding)))) 
   `(let ((,stream (Streams.openFileStream ,filename)))
      (try ,body
-   (Streams.close ,stream)
-   (Streams.close ,stream)))))
+       (Streams.close ,stream)
+       (Streams.close ,stream)))))
 
 
 (macro with-string-stream (binding body)
- (let ((stream (car binding))
-       (buffer (car (cdr binding)))) 
-       `(let ((,stream (Streams.openStringStream ,buffer)))
-         (try ,body
-          (Streams.close ,stream)
-	  (Streams.close ,stream)))))
+  (let ((stream (car binding))
+        (buffer (car (cdr binding)))) 
+  `(let ((,stream (Streams.openStringStream ,buffer)))
+     (try ,body
+       (Streams.close ,stream)
+       (Streams.close ,stream)))))
 
 
 (define tokenize (-> (string)

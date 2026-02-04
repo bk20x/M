@@ -221,7 +221,7 @@ proc `$`*(s: LispObject;): owned string =
     result.add ")"    
     return result
   of Seq:
-    return $s.sequence
+    return ($s.sequence).replace("@", "")
   
 func toSeq*(list: LispObject): owned seq[LispObject] =
   var current: LispObject = list
