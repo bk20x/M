@@ -120,17 +120,16 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
         result.sequence.add(currentEnv.eval(x))
       return result
     elif currentForm.kind == FieldAccess:
-      let targetTable = currentEnv.eval(currentForm.tableSym)
+      let targetTable = currentEnv.eval(currentForm.tableSym) 
       if targetTable.kind != HashTable:
         raise newException(ValueError, fmt"Property access on non-table object: {targetTable.kind}")
-      if not targetTable.table.hasKey(currentForm.field):
-        let fieldAsString: LispObject = newStr(currentForm.field.sym.name)
-        if not targetTable.table.hasKey(fieldAsString):
-          return NIL()
-        else:
-          return targetTable.table[fieldAsString]
-      else:
-        return targetTable.table[currentForm.field]
+      let fieldSym = currentForm.field 
+      if targetTable.table.hasKey(fieldSym):
+        return targetTable.table[fieldSym]
+      let fieldAsString = newStr(fieldSym.sym.name)
+      if targetTable.table.hasKey(fieldAsString):
+        return targetTable.table[fieldAsString]
+      return NIL()
     elif currentForm.kind == Index:
       try:
         let
@@ -417,8 +416,6 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
           discard
       # Non Special forms :: Lambdas | Builtins | Macros
       var op = currentEnv.eval(currentForm.car)
-      if currentForm.car.kind == FieldAccess:
-        op = currentEnv.eval(currentForm.car)
       if op.kind == Builtin:  
         var
           evaluatedArgs: seq[LispObject]
