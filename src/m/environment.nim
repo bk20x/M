@@ -1,4 +1,4 @@
-import std/[strformat, tables, streams, strutils, sugar]
+import std/[strformat, tables, strutils, sugar]
 import lispobject, reader
 
 import builtins

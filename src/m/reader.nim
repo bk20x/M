@@ -1,4 +1,4 @@
-import std/[strformat, streams, strutils]
+import std/[strformat, streams]
 import lispobject, lexer
 from std/tables import `[]`, `[]=`
 
