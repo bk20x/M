@@ -632,34 +632,52 @@ eachImpl = proc(env: var Env, form: LispObject): LispObject =
     if form.len != 2 or not (form.first.kind == Cons and form.second.kind == Cons):
       raise newException(ValueError, fmt"malformed each: {form}")
     let
-      varAndList = form.first # (var list)
+      binding    = form.first # (var list)
       body       = form.second # (body)
-    if varAndList.len != 2 or varAndList.first.kind != Symbol:
-      raise newException(ValueError, fmt"malformed binding for each: {varAndList}")
-    let
-      varSym     = varAndList.car
-      listForm   = varAndList.cdr.car    
+      bindingLen = binding.len
+    if bindingLen notin {2, 3} or binding.first.kind != Symbol:
+      raise newException(ValueError, fmt"malformed binding for each: {binding}")
+    let useIdx = bindingLen == 3
+    var
+      varSym:   owned LispObject
+      listForm: owned LispObject
+      idxSym:   owned LispObject
+    if useIdx:
+      idxSym   = binding.first
+      varSym   = binding.second
+      listForm = binding.third
+    else:
+      varSym   = binding.first
+      listForm = binding.second
+      idxSym   = nil
     let evaluatedList = env.eval(listForm)
     if evaluatedList.kind notin {Cons, Seq} and not evaluatedList.isNil:
       raise newException(ValueError, fmt"expected Cons or Seq for `each` but got {evaluatedList}")
     var
       listToIter = evaluatedList
       loopScope  = env.newScope()
+      idx        = newInt(0)
     case listToIter.kind
     of Cons:
       while not listToIter.isNil:
         if listToIter.kind == Cons:
           loopScope.interned[varSym.sym.name] = listToIter.car
+          if useIdx:
+            loopScope.interned[idxSym.sym.name] = idx
           result = loopScope.eval(body)
           listToIter = listToIter.cdr
-        else:  # for dotted pairs
+        else:  # for dotted pairs, this is when you hit the cdr of a dotted pair that is a non nil atom
           loopScope.interned[varSym.sym.name] = listToIter
           result = loopScope.eval(body)
           break # ^^
+        inc idx.intVal
     of Seq:
       for x in listToIter.sequence:
         loopScope.interned[varSym.sym.name] = x
+        if useIdx:
+          loopScope.interned[idxSym.sym.name] = idx
         result = loopScope.eval(body)
+        inc idx.intVal # to avoid allocating newInt every iteration
     else: # unreachable
       discard
 
