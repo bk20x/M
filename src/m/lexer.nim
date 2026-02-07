@@ -97,15 +97,14 @@ func parseNumber*(lx: var MLexr, start: int) =
 
 func parseStr*(lx: var MLexr) =
   var str = ""
-  inc lx.bufpos
+  inc lx.bufpos 
   while lx.buf[lx.bufpos] != '\0':
     let c = lx.buf[lx.bufpos]
     if c == '"':
-      inc lx.bufpos
+      inc lx.bufpos 
       break
     elif c == '\\':
-      # Found an escape seq
-      inc lx.bufpos # Move past the backslash
+      inc lx.bufpos
       let escapedChar = lx.buf[lx.bufpos]
       case escapedChar
       of '"': str.add('"')
@@ -113,13 +112,11 @@ func parseStr*(lx: var MLexr) =
       of 'n': str.add('\n')
       of 'r': str.add('\r')
       of 't': str.add('\t')
-      else:
-        str.add(escapedChar)
+      else: str.add(escapedChar)
+      inc lx.bufpos 
     else:
       str.add(c)
-    inc lx.bufpos 
-  if lx.buf[lx.bufpos] == '\0' and lx.buf[lx.bufpos - 1] != '"':
-    raise newException(ValueError, fmt"Unterminated string at {lx.bufpos}")
+      inc lx.bufpos 
   lx.curTok = Token(kind: tkStr, str: str)
 
 

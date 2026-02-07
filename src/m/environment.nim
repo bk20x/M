@@ -958,7 +958,7 @@ proc newEnv*(): owned Env =
           raise newException(ValueError, fmt"ftoi is of type Float -> Int but got {args}")
         return newInt(args.first.floatVal.int)
           
-        
+
   result.loadedModules = tables.newTable[string, Table[string, BuiltinFn]]()        
   for k, v in Stdlib:
     result.loadedModules[k] = v

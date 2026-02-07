@@ -162,29 +162,33 @@ proc parseList(p: var Reader): owned LispObject =
   while p.lexer.curTok.kind != tkRpar:
     if p.lexer.curTok.kind == tkEof:
       raise newException(ValueError, "Unmatched opening parenthesis")
+    
     if p.lexer.curTok.kind == tkDot:
       p.expect tkDot
       cdr = parseSexp(p)
       p.expect tkRpar
-      break
+      result = cdr
+      for i in countdown(l.len - 1, 0):
+        result = cons(l[i], result)
+      if p.lexer.curTok.kind == tkDot and (p.lexer.bufpos - 1 == p.lastEndPos):
+        return p.parseFieldAccess(result)
+      return result
     l.add: parseSexp(p)
-  if p.lexer.curTok.kind == tkRpar:
-    p.expect tkRpar 
+  p.expect tkRpar 
   result = cdr
   for i in countdown(l.len - 1, 0):
     result = cons(l[i], result)
   if p.lexer.curTok.kind == tkDot and (p.lexer.bufpos - 1 == p.lastEndPos):
     return p.parseFieldAccess(result)
 
-  return result
+
 
 parseSexp = proc(p: var Reader): owned LispObject =
   case p.lexer.curTok.kind:
   of tkLpar:
     return parseList(p)
   of tkRpar: 
-    p.expect tkRpar
-    return NIL()
+    raise newException(ValueError, "stray closing parens")
   of tkLBrace:
     return parseTableLit(p)
   of tkLBracket:
@@ -202,28 +206,13 @@ proc parse*(input: string): owned LispObject =
 
 proc readAllSexprs*(filename: string): seq[LispObject] =
   result = @[]
-  var s = newFileStream(filename, fmRead)
-  if s == nil:
+  var stream = newFileStream(filename, fmRead)
+  defer: close stream
+  if stream == nil:
     quit("Could not open file: " & filename)
-  var
-    buffer = ""
-    parenCount = 0
-  while not s.atEnd:
-    let c = s.readChar()
-    case c:
-    of '(':
-      parenCount += 1
-      buffer.add(c)
-    of ')':
-      parenCount -= 1
-      buffer.add(c)
-      if parenCount == 0:
-        result.add: parse buffer.strip()
-        buffer = ""
-    of ' ', '\n', '\t':
-      if parenCount > 0:
-        buffer.add(c)
-    else:
-      buffer.add(c)
-  s.close()
-  
+  var parser: Reader
+  initLexer(parser.lexer, stream)
+  parser.advance
+  while parser.lexer.curTok.kind != tkEof:
+    result.add parser.parseSexp()  
+
