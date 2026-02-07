@@ -14,7 +14,8 @@ type
     form: LispObject
     closure: Env
 
-
+  
+    
 const SelfEvaluatingTypes = {Int, Float, String, Char, BigInt, AlienObj, Nil} # HashTable is technichally self evaluating too, see in eval under check for SelfEvaluatingTypes
                             
 
