@@ -58,30 +58,6 @@ var ## All used in `eval`, these are forward declared because they call `eval`;;
   macroExpand: (var Env, LispObject,  LispObject) -> LispObject
   evalLambda:  (var Env, LispObject, seq[LispObject]) -> Thunk 
 
-proc findForms(mass: string): seq[string] =
-  result = @[]
-  var s = newStringStream(mass)
-  defer: close s
-  var
-    buffer = ""
-    parenCount = 0
-  while not s.atEnd:
-    let c = s.readChar()
-    case c:
-    of '(':
-      parenCount += 1
-      buffer.add(c)
-    of ')':
-      parenCount -= 1
-      buffer.add(c)
-      if parenCount == 0:
-        result.add: buffer.strip()
-        buffer = ""
-    of ' ', '\n', '\t':
-      if parenCount > 0:
-        buffer.add(c)
-    else:
-      buffer.add(c)
 
 
 proc checkIndexIsInt(obj: LispObject) {.inline.} = 
@@ -465,8 +441,7 @@ macroExpand = proc(env: var Env, macroObj: LispObject, rawArgsAst: LispObject): 
 proc compileFile(filename: string): seq[LispObject] =
   ## Helper for `load`
   result = @[]
-  let code = readFile(filename)
-  for form in findForms(code):
+  for form in readAllSexprs(filename):
     result.add parse form
     
 proc apply*(env: var Env; fun: LispObject; args: seq[LispObject]): LispObject =
