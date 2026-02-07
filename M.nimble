@@ -5,7 +5,7 @@ license       = "BSD-3-Clause"
 installExt    = @["nim"]
 srcDir        = "src"
 bin           = @["m/m"]
-installDirs   = @["src/m"]
+installDirs   = @["src/m", "examples"]
 installFiles  = @["src/m.nim"]
 
 # Dependencies

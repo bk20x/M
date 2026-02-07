@@ -498,42 +498,42 @@ qqExpand = proc(env: var Env, form: LispObject): LispObject =
   proc expandRec(env: var Env, currentForm: LispObject): LispObject =
     if currentForm.isAtom:
       return currentForm
-    var
-      resultHead = NIL()
-      resultTail = NIL()
-      current    = currentForm
     let head = currentForm.first
     if head.isSymbol and head.sym.name == "unquote":
-      return env.eval(current.second) 
-
+      return env.eval(currentForm.second) 
+    var
+      resultHead = NIL() 
+      resultTail = NIL() 
+      current    = currentForm
     while not current.isNil:
       let item = current.first
-      
       if not item.isAtom and item.first.isSymbol and item.first.sym.name == "unquote-splicing":
         let splicedList = env.eval(item.second)  
         if splicedList.isAtom and not splicedList.isNil:
-           raise newException(ValueError, "Unquote-splicing result must be a list.")
-        if resultHead.isNil:
-          resultHead = splicedList
-          resultTail = splicedList
-        else:
-          resultTail.cdr = splicedList    
-        while not resultTail.isNil and resultTail.kind == Cons and not resultTail.safeCdr.isNil:
-          resultTail = resultTail.safeCdr
-        current = current.safeCdr.safeCdr
+          raise newException(ValueError, "Unquote-splicing result must be a list.")
+        if not splicedList.isNil:
+          if resultHead.isNil:
+            resultHead = splicedList
+            resultTail = splicedList
+          else:
+            resultTail.cdr = splicedList
+          while not resultTail.safeCdr.isNil:
+            resultTail = resultTail.safeCdr
+        current = current.safeCdr
       else:
         let
           expanded = env.expandRec(item)
-          newForm  = cons(expanded, NIL()) 
+          newNode  = cons(expanded, NIL()) 
         if resultHead.isNil:
-          resultHead = newForm
-          resultTail = newForm
+          resultHead = newNode
+          resultTail = newNode
         else:
-          resultTail.cdr = newForm
-          resultTail     = newForm
-        current = current.safeCdr        
+          resultTail.cdr = newNode
+          resultTail     = newNode
+        current = current.safeCdr
     return resultHead
   return env.expandRec(form)
+
 
 
 

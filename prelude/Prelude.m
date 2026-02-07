@@ -5,6 +5,12 @@
    (open ,modname)
   (interned-symbols)))
 
+(macro module (name body)
+ `(define ,name
+   (let ()
+    ,@body
+    (interned-symbols))))
+
 (macro try (call body catcher)
   `(let ((result (safe ,call))) 
     (if result.success ,body ,catcher)))
