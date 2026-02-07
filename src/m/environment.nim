@@ -917,15 +917,6 @@ proc newEnv*(): owned Env =
           raise newException(ValueError, fmt"~read is of type String -> ? but got {args}")
         let form = args.first.str
         return parse form
-
-    findFormz: BuiltinFn =
-      proc(args: LispObject): LispObject =
-        result = NIL()
-        if args.len != 1 or not (args.first.kind == String):
-          raise newException(ValueError, fmt"~findForms is of type String -> String list but got {args}")
-        let forms = findForms(args.first.str)
-        for i in countdown(forms.high, 0):
-          result = lispobject.cons(newStr(forms[i]), result)
           
     ftoi: BuiltinFn =
       proc(args: LispObject): LispObject =
@@ -970,9 +961,7 @@ proc newEnv*(): owned Env =
     "setb"         : newBuiltin(setb,                "setb"),
     "setp"         : newBuiltin(setp,                "setp"),
     "image"        : newBuiltin(toString,            "image"),
-    "~read"        : newBuiltin(read,                "~read"),
-    "~findForms"   : newBuiltin(findFormz,           "~findForms")
-
+    "~read"        : newBuiltin(read,                "~read")
    }
   return result
 
