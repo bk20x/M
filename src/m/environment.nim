@@ -442,7 +442,7 @@ proc compileFile(filename: string): seq[LispObject] =
   ## Helper for `load`
   result = @[]
   for form in readAllSexprs(filename):
-    result.add parse form
+    result.add form
     
 proc apply*(env: var Env; fun: LispObject; args: seq[LispObject]): LispObject =
   ## Eagerly evaluate a lambda object and get the return value instead of a Thunk
