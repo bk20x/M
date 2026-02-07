@@ -5,17 +5,18 @@ from std/tables import `[]`, `[]=`
 type
   Reader* = object
     lexer: MLexr
+    lastEndPos: int # position of the end of the last token
 
 var parseSexp*: proc(p: var Reader): owned LispObject
 
 func advance*(p: var Reader) =
+  p.lastEndPos = p.lexer.bufpos
   p.lexer.getTok
 
 func expect*(p: var Reader; kind: TokenKind; callsite = "";) =
   if p.lexer.curTok.kind != kind:
       raise newException(ValueError, fmt"at {callsite} Reader expected TokenKind: {kind} but got {p.lexer.curTok}")
   p.advance
-
 
 proc parseFieldAccess(p: var Reader; rootSymbol: LispObject): LispObject =
   result = rootSymbol
@@ -50,16 +51,17 @@ proc parseIndex(p: var Reader; obj: sink LispObject): owned LispObject =
       endIdx = p.parseIdx()
     else:
       endIdx = startIdx    
+    
     let touchingNext = p.lexer.buf[p.lexer.bufpos] == '['    
     p.expect(tkRBracket, "parseIndex")
     result = newIndex(result, startIdx, endIdx)
+    
     if touchingNext:
       continue
     else:
-      if p.lexer.buf[p.lexer.bufpos - 1] == '.':
+      if p.lexer.curTok.kind == tkDot and (p.lexer.bufpos - 1 == p.lastEndPos):
         return p.parseFieldAccess(result)
       break
-
 
 proc parseTableLit(p: var Reader): owned LispObject =
   result = newTable()
@@ -81,7 +83,6 @@ proc parseTableLit(p: var Reader): owned LispObject =
       raise newException(ValueError, fmt"Expected ',' or '}}' in Table literal but got {p.lexer.curTok}")
   p.expect(tkRBrace, "parseTableLit")
 
-
 proc parseSeqLit(p: var Reader): owned LispObject =
   result = lispobject.newSeq()
   result.literalSeq = true
@@ -100,7 +101,6 @@ proc parseSeqLit(p: var Reader): owned LispObject =
     else:
       raise newException(ValueError, fmt"Expected ',' or ']' in Seq literal but got {p.lexer.curTok}")
   p.expect tkRBracket
-
   
 proc parseAtom(p: var Reader): owned LispObject =
   case p.lexer.curTok.kind:
@@ -109,12 +109,12 @@ proc parseAtom(p: var Reader): owned LispObject =
       p.advance
       return NIL()
     result = newSym p.lexer.curTok.sym.name
-    let start = p.lexer.bufpos 
     p.advance
-    if p.lexer.curTok.kind == tkLBracket and (p.lexer.bufpos - start == 1): # its only an index if the symbol is touching the bracket
+    if p.lexer.curTok.kind == tkLBracket and (p.lexer.bufpos - 1 == p.lastEndPos): # only an index if its physically touching the symbol
       return p.parseIndex(result)
-    if p.lexer.curTok.kind == tkDot:
+    if p.lexer.curTok.kind == tkDot and (p.lexer.bufpos - 1 == p.lastEndPos): # same with field access
       return p.parseFieldAccess(result)
+    return result
   of tkInt:
     let num = newInt(p.lexer.curTok.intv)
     p.advance
@@ -128,11 +128,9 @@ proc parseAtom(p: var Reader): owned LispObject =
     p.advance
     return charObj
   of tkStr:
-    let
-      strObj = newStr(p.lexer.curTok.str)
-      start  = p.lexer.bufpos
+    let strObj = newStr(p.lexer.curTok.str)
     p.advance
-    if p.lexer.curTok.kind == tkLBracket and (p.lexer.bufpos - start == 1): # its only an index if the string is touching the bracket
+    if p.lexer.curTok.kind == tkLBracket and (p.lexer.bufpos - 1 == p.lastEndPos):
       return p.parseIndex(strObj)
     return strObj
   of tkBquote:
@@ -157,19 +155,29 @@ proc parseAtom(p: var Reader): owned LispObject =
 
 proc parseList(p: var Reader): owned LispObject =
   p.expect tkLpar 
-  var l: seq[LispObject]
+  var
+    l: seq[LispObject]
+    cdr: owned LispObject = NIL()
+  
   while p.lexer.curTok.kind != tkRpar:
     if p.lexer.curTok.kind == tkEof:
-      raise newException(ValueError, "Unmatched parenthesis")
+      raise newException(ValueError, "Unmatched opening parenthesis")
+    if p.lexer.curTok.kind == tkDot:
+      p.expect tkDot
+      cdr = parseSexp(p)
+      p.expect tkRpar
+      break
     l.add: parseSexp(p)
-  p.expect tkRpar
-  result = NIL()
+  if p.lexer.curTok.kind == tkRpar:
+    p.expect tkRpar 
+  result = cdr
   for i in countdown(l.len - 1, 0):
     result = cons(l[i], result)
+  if p.lexer.curTok.kind == tkDot and (p.lexer.bufpos - 1 == p.lastEndPos):
+    return p.parseFieldAccess(result)
+
   return result
 
-
-    
 parseSexp = proc(p: var Reader): owned LispObject =
   case p.lexer.curTok.kind:
   of tkLpar:
@@ -184,13 +192,11 @@ parseSexp = proc(p: var Reader): owned LispObject =
   else:
     return p.parseAtom()
 
-
 proc parse*(input: string): owned LispObject =
   var parser: Reader
   initLexer(parser.lexer, newStringStream(input))
   parser.advance
   return parseSexp(parser)
-
 
 
 
