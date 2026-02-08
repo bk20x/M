@@ -69,8 +69,17 @@ type
       of Nil:
        discard
 
-func T*(): owned LispObject   {.inline.} = LispObject(kind: Symbol, sym: SymbolRef(name: "t"))
-func NIL*(): owned LispObject {.inline.} = LispObject(kind: Nil)
+let
+  nilObj = LispObject(kind: Nil)
+  tObj   = LispObject(kind: Symbol, sym: SymbolRef(name: "t"))
+  
+func T*(): LispObject {.inline.} =
+  {.cast(noSideEffect).}:
+    return tObj
+    
+func NIL*(): LispObject {.inline.} =
+  {.cast(noSideEffect).}:
+    return nilObj
 
 func newChar*(c: sink char): owned LispObject =
   return LispObject(kind: Char, charVal: c)

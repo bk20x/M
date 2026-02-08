@@ -93,10 +93,12 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
         return result
       return currentForm
     elif currentForm.kind == Seq:
-      result = lispobject.newSeq()
-      for idx, x in currentForm.sequence:
-        result.sequence.add(currentEnv.eval(x))
-      return result
+      if currentForm.literalSeq:
+        result = lispobject.newSeq()
+        for idx, x in currentForm.sequence:
+          result.sequence.add(currentEnv.eval(x))
+        return result
+      return currentForm
     elif currentForm.kind == FieldAccess:
       let targetTable = currentEnv.eval(currentForm.tableSym) 
       if targetTable.kind != HashTable:
@@ -615,6 +617,7 @@ whileImpl =
 eachImpl = proc(env: var Env, form: LispObject): LispObject =
     if form.len != 2 or not (form.first.kind == Cons and form.second.kind == Cons):
       raise newException(ValueError, fmt"malformed each: {form}")
+    result = NIL()
     let
       binding    = form.first # (var list)
       body       = form.second # (body)
