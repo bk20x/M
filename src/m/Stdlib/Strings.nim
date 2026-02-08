@@ -141,6 +141,14 @@ proc split(args: LispObject): LispObject =
     sep = args.second.str
   return str.split(sep).map(ln => newStr(ln)).list
 
+proc isWhitespace(args: LispObject): LispObject =
+  if args.len != 1 or not (args.first.kind in {String, Char}):
+    raise newException(ValueError, fmt"`split` is of type String | Char -> T | Nil but got {args}")
+  let obj = args.first
+  if obj.kind == String:
+    return if obj.str.isEmptyOrWhitespace: T() else: NIL()
+  return if obj.charVal in Whitespace: T() else: NIL()
+  
 const
   Module* = toTable {
     "strReplace" : BuiltinFn strReplace,
@@ -156,5 +164,6 @@ const
     "substring"  : BuiltinFn substring,
     "String->Int": BuiltinFn parseI,
     "parseHexInt": BuiltinFn parseHexI,
-    "split"      : BuiltinFn split
+    "split"      : BuiltinFn split,
+    "isWhitespace": BuiltinFn isWhitespace 
   }
