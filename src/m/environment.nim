@@ -640,28 +640,28 @@ eachImpl = proc(env: var Env, form: LispObject): LispObject =
     var
       listToIter = evaluatedList
       loopScope  = env.newScope()
-      idx        = newInt(0)
+      idx: int
     case listToIter.kind
     of Cons:
       while not listToIter.isNil:
         if listToIter.kind == Cons:
           loopScope.interned[varSym.sym.name] = listToIter.car
           if useIdx:
-            loopScope.interned[idxSym.sym.name] = idx
+            loopScope.interned[idxSym.sym.name] = newInt(idx)
           result = loopScope.eval(body)
           listToIter = listToIter.cdr
         else:  # for dotted pairs, this is when you hit the cdr of a dotted pair that is a non nil atom
           loopScope.interned[varSym.sym.name] = listToIter
           result = loopScope.eval(body)
           break # ^^
-        inc idx.intVal
+        inc idx
     of Seq:
       for x in listToIter.sequence:
         loopScope.interned[varSym.sym.name] = x
         if useIdx:
-          loopScope.interned[idxSym.sym.name] = idx
+          loopScope.interned[idxSym.sym.name] = newInt(idx)
         result = loopScope.eval(body)
-        inc idx.intVal # to avoid allocating newInt every iteration
+        inc idx
     else: # unreachable
       discard
 
