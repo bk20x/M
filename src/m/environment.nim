@@ -18,9 +18,9 @@ type
     
 const SelfEvaluatingTypes = {Int, Float, String, Char, BigInt, AlienObj, Nil} # HashTable is technichally self evaluating too, see in eval under check for SelfEvaluatingTypes
                             
-
+var interactive*: bool = false # if in the REPL
 proc intern*(env: var Env, sym: string, val: LispObject) =
-  if sym in env.interned:
+  if interactive and sym in env.interned:
     echo fmt"WARNING: Redefining {sym} in the current scope"
   env.interned[sym] = val
 

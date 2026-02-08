@@ -13,6 +13,7 @@ template Mmain*(runtime: var Env) =
     let arg1 = paramStr 1
     case arg1:
       of "-i":
+        interactive = true
         runtime.runRepl()
       else:
         if fileExists arg1:
