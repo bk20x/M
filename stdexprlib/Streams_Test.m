@@ -18,4 +18,4 @@
 	result)))
 
 
-
+(echo (countCharacters "Yoben Boben Goben"))

@@ -6,6 +6,7 @@ suite "run tests":
     var interp = newEnv()
     try:
       for f in walkFiles("../examples/*.m"):
+        checkpoint("Testing " & f)
         interp.doFile(f)
     except:
       fail()

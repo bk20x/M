@@ -31,7 +31,8 @@ proc parseFieldAccess(p: var Reader; rootSymbol: LispObject): LispObject =
     else:
       raise newException(ValueError, fmt"Reader expected symbol after '.' for FieldAccess but got {p.lexer.curTok}")
       
-proc parseIndex(p: var Reader; obj: sink LispObject): owned LispObject =
+
+proc parseIndex*(p: var Reader; obj: sink LispObject): owned LispObject =
   result = obj
   
   proc parseIdx(p: var Reader): owned LispObject = 
@@ -44,23 +45,23 @@ proc parseIndex(p: var Reader; obj: sink LispObject): owned LispObject =
     p.expect(tkLBracket, "parseIndex")
     let startIdx = p.parseIdx()
     var endIdx: LispObject
-    
     if p.lexer.curTok.kind == tkDot and p.lexer.buf[p.lexer.bufpos] == '.':
       p.expect(tkDot, "parseIndex")
       p.expect(tkDot, "parseIndex")
       endIdx = p.parseIdx()
     else:
       endIdx = startIdx    
-    
-    let touchingNext = p.lexer.buf[p.lexer.bufpos] == '['    
     p.expect(tkRBracket, "parseIndex")
     result = newIndex(result, startIdx, endIdx)
-    
-    if touchingNext:
+    let touchingNext = (p.lexer.bufpos - 1 == p.lastEndPos)
+    if p.lexer.curTok.kind == tkLBracket and touchingNext:
       continue
+    elif p.lexer.curTok.kind == tkDot and touchingNext: # For deeper indexing/access like xs[0].ys[0].z
+      result = p.parseFieldAccess(result)
+      if p.lexer.curTok.kind == tkLBracket and (p.lexer.bufpos - 1 == p.lastEndPos):
+        continue
+      break
     else:
-      if p.lexer.curTok.kind == tkDot and (p.lexer.bufpos - 1 == p.lastEndPos):
-        return p.parseFieldAccess(result)
       break
 
 proc parseTableLit(p: var Reader): owned LispObject =
