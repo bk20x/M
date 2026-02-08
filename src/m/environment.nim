@@ -85,11 +85,11 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
       return currentEnv.lookupValue(currentForm.sym.name)
     elif currentForm.kind == HashTable:
       if currentForm.literal:
-        currentForm.literal = false
+        var table = currentForm.table
+        for k, v in table:
+          table[k] = currentEnv.eval(v)
         result = lispobject.newTable()
-        for k, v in currentForm.table:
-          result.table[k] = currentEnv.eval(v)
-        result.literal = false
+        result.table = table
         return result
       return currentForm
     elif currentForm.kind == Seq:
