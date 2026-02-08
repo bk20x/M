@@ -85,12 +85,13 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
       return currentEnv.lookupValue(currentForm.sym.name)
     elif currentForm.kind == HashTable:
       if currentForm.literal:
-        var table = currentForm.table
-        for k, v in table:
-          table[k] = currentEnv.eval(v)
+        currentForm.literal = false
         result = lispobject.newTable()
-        result.table = table
+        for k, v in currentForm.table:
+          result.table[k] = currentEnv.eval(v)
+        result.literal = false
         return result
+      return currentForm
     elif currentForm.kind == Seq:
       result = lispobject.newSeq()
       for idx, x in currentForm.sequence:
@@ -472,43 +473,51 @@ proc apply*(env: var Env; fun: LispObject; args: seq[LispObject]): LispObject =
 
 qqExpand = proc(env: var Env, form: LispObject): LispObject =
   proc expandRec(env: var Env, currentForm: LispObject): LispObject =
-    if currentForm.isAtom:
+    if currentForm.isNil or currentForm.kind != Cons:
       return currentForm
-    let head = currentForm.first
-    if head.isSymbol and head.sym.name == "unquote":
-      return env.eval(currentForm.second) 
+    
+   
+    if currentForm.car.kind == Symbol and currentForm.car.sym.name == "unquote":
+      return env.eval(currentForm.second)
+    
     var
-      resultHead = NIL() 
-      resultTail = NIL() 
+      resultHead: LispObject = NIL()
+      resultTail: LispObject = NIL()
       current    = currentForm
-    while not current.isNil:
-      let item = current.first
-      if not item.isAtom and item.first.isSymbol and item.first.sym.name == "unquote-splicing":
-        let splicedList = env.eval(item.second)  
-        if splicedList.isAtom and not splicedList.isNil:
-          raise newException(ValueError, "Unquote-splicing result must be a list.")
-        if not splicedList.isNil:
-          if resultHead.isNil:
-            resultHead = splicedList
-            resultTail = splicedList
-          else:
-            resultTail.cdr = splicedList
-          while not resultTail.safeCdr.isNil:
-            resultTail = resultTail.safeCdr
-        current = current.safeCdr
+
+    while not current.isNil and current.kind == Cons:
+      let item = current.car
+      if item.kind == Cons and item.car.kind == Symbol and item.car.sym.name == "unquote-splicing":
+        let splicedVal = env.eval(item.second)
+        if not splicedVal.isNil:
+          if splicedVal.kind != Cons:
+            raise newException(ValueError, "unquote-splicing result must be a list.")
+          var it = splicedVal
+          while not it.isNil and it.kind == Cons:
+            let newNode = cons(it.car, NIL())
+            if resultHead.isNil: resultHead = newNode; resultTail = newNode
+            else: resultTail.cdr = newNode; resultTail = newNode
+            it = it.cdr            
       else:
-        let
-          expanded = env.expandRec(item)
-          newNode  = cons(expanded, NIL()) 
+        let expanded = expandRec(env, item)
+        let newNode = cons(expanded, NIL())
         if resultHead.isNil:
           resultHead = newNode
           resultTail = newNode
         else:
           resultTail.cdr = newNode
-          resultTail     = newNode
-        current = current.safeCdr
+          resultTail = newNode
+      let next = current.cdr      
+      if next.isNil:
+        break 
+      if next.kind != Cons:
+        resultTail.cdr = next 
+        break
+      current = next 
     return resultHead
-  return env.expandRec(form)
+  return expandRec(env, form)
+
+
 
 
 
