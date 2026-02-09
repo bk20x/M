@@ -22,8 +22,7 @@
 - Flexible macros and syntax
 <img src="doc/classex.png" width="800">
 - Embed in any nim app in 2 lines
----
-<img src="doc/embedex1.png" width="800">
+<img src="doc/embedex1.png" width="400">
 - JSON is a subset of M, so you can parse it directly into a table just by invoking the reader
 <img src="doc/jsonex.png" width="800">
 
