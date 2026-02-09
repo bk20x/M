@@ -1,4 +1,4 @@
 (open SysIo)
 
-(each (f (listDir "."))
+(each (f (listDir "../examples"))
  (load f))
