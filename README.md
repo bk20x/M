@@ -35,6 +35,7 @@
   support for table literals inspired by Lua
   you can even use them as modules)
 
+'(interned-symbols returns the innermost scope from the caller's symbol table)
 (define String (let () (open Strings) (interned-symbols)))
 
 (define vec2 {x: 250.0, y: 250.0}) 
