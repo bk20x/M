@@ -13,7 +13,6 @@
 * The Reader can natively parse JSON into Tables
 * Seq/Table literals and dot notation for field access
 * Slicing and indexing for Seqs and Strings as well as mutating these slices
-* Batteries included Standard library (Still WIP)
 * Trivially extensible with native code and embedded within applications
 * Completely cross platform; can fit in flash memory
 
