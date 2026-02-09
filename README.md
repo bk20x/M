@@ -18,14 +18,14 @@
 * Completely cross platform; can fit in flash memory
 
 # Some Examples ^_^
-<img src="doc/ex1.png" width="450">
+<img src="doc/ex1.png" width="800">
 - Flexible macros and syntax
-<img src="doc/classex.png" width="450">
+<img src="doc/classex.png" width="800">
 - Embed in any nim app in 2 lines
 ---
-<img src="doc/embedex1.png" width="450">
+<img src="doc/embedex1.png" width="800">
 - JSON is a subset of M, so you can parse it directly into a table just by invoking the reader
-<img src="doc/jsonex.png" width="450">
+<img src="doc/jsonex.png" width="800">
 
 ```
 (open SysIo)
