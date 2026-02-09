@@ -23,7 +23,7 @@
 ![](doc/classex.png)
 - Embed in any nim app in 2 lines
 ![](doc/embedex1.png)
-- Parse JSON into a table object
+- JSON is a subset of M, so you can parse it directly into a table just by invoking the reader
 ![](doc/jsonex.png)
 
 ```
