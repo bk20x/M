@@ -1,21 +1,26 @@
 (load "class-macro.m")
 (open Tables Strings)
 
-(class Bag () (
-  items {}
-  add (-> (x) 
-       (let ((count (get x self.items)))
-        (if count
-	  (put x (+ count 1) self.items)
-	  (put x 1 self.items))))
-  
-))
+(define getOrDefault (-> (key default table)
+ (let ((v (get key table)))
+  (if v v default))))
 
-(define examples {
-    countWords: (-> (text) 
-                 (let ((result (Bag))) 
-		   (each (word (split text " "))
-		    (result.add word))
-		       result.items))
+(class Bag () 
+ (
+   items {}
 
-})
+   add (-> (x) 
+        (let ((count (+ 1 (getOrDefault x 0 self.items))))
+         (put x count self.items)))
+
+   occurencesOf (-> (x) (getOrDefault x 0 self.items))
+ )
+)
+
+(define countWords (-> (text)
+ (let ((result (Bag)))
+  (each (word (split text " "))
+   (result.add word))
+   result)))
+
+(echo ((countWords "Boben Goben Boben Boben Zambas Gambas Yobert Boben").occurencesOf "Boben"))
