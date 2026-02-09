@@ -18,14 +18,14 @@
 * Completely cross platform; can fit in flash memory
 
 # Some Examples ^_^
-![](doc/ex1.png) 
+<img src="doc/ex1.png" width="450">
 - Flexible macros and syntax
-![](doc/classex.png)
+<img src="doc/classex.png" width="450">
 - Embed in any nim app in 2 lines
 ---
-![](doc/embedex1.png)
+<img src="doc/embedex1.png" width="450">
 - JSON is a subset of M, so you can parse it directly into a table just by invoking the reader
-![](doc/jsonex.png)
+<img src="doc/jsonex.png" width="450">
 
 ```
 (open SysIo)
