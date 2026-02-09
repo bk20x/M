@@ -19,11 +19,13 @@
 
 # Some Examples ^_^
 ![](doc/ex1.png) 
+- Flexible macros and syntax
+![](doc/classex.png)
+- Embed in any nim app in 2 lines
+![](doc/embedex1.png)
 - Parse JSON into a table object
 ![](doc/jsonex.png)
-- Embed in any nim app in 2 lines
----
-![](doc/embedex1.png)
+
 ```
 (open SysIo)
 
