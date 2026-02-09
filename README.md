@@ -68,8 +68,6 @@
       (factorial (- n 1) (* acc n))))) 
 
 
-
-
 '(IO and data transformation capabilities)
 (define readDir (-> (dir) (map (filter (listDir dir) isFile?) readFile))) 
 
@@ -78,6 +76,9 @@
 
 (define str "Yoben Boben")
 (echo str[5..(- (String.strLen str) 1)])
+
+'(there are sequences along with the cons lists for when you need random access or slicing.
+  builtins like map and filter or special forms like each work with both of these the same)
 
 (define nums [1,2,3,4,5])
 (echo nums[1..3])
