@@ -212,7 +212,9 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
         of "load":
           if currentForm.cdr.isNil:
             raise newException(ValueError, "load expects a String for filename")
-          let file = currentForm.second
+          var file = currentForm.second
+          if file.kind == Symbol:
+            file = currentEnv.eval(file)
           return currentEnv.load file
         of "open":
           if currentForm.cdr.isNil:
