@@ -8,7 +8,7 @@
 * Extremely lightweight; uses about 1.6 to 2.2 mb of memory on startup and will only use memory that is actually in use
 * Supports recursing infinitely
 * First class functions and closures
-* Powerful Macros and Backquote
+* CL inspired Macros and backquote
 * Direct metaprogramming (Lambdas are structures allowing for hot swapping of code); code is data in a much more literal sense than Scheme or CL
 * The Reader can natively parse JSON into Tables
 * Seq/Table literals and dot notation for field access
