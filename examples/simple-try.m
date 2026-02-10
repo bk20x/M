@@ -5,7 +5,7 @@
 
 (open Strings)
 
-(try (* 5) 
+(try (* "boben" 'gambas) 
  (echo (fmt "success! value=$"         result.value))
  (echo (fmt "failure! error message=$" result.value)))
 
