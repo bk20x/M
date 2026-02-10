@@ -24,6 +24,8 @@
 <img src="doc/embedex1.png" width="400">
 - JSON is a subset of M, so you can parse it directly into a table just by invoking the reader
 <img src="doc/jsonex.png" width="800">
+- No startup time
+<img src="doc/bench.png" width="800">
 
 ```
 (open SysIo)
