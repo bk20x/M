@@ -16,7 +16,7 @@
 (echo (f 10))
 
 (setp f nil)
-(setb f '(echo "Fuck you!, I dont do any kind of math anymore!"))
+(setb f '(echo "I dont do any kind of math anymore!"))
 (echo (fmt "someone hacked the system and mutated our function again $" f))
 (f)
 
