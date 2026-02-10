@@ -19,8 +19,3 @@
 (setb f '(echo "I dont do any kind of math anymore!"))
 (echo (fmt "someone hacked the system and mutated our function again $" f))
 (f)
-
-
-
-
-

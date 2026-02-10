@@ -4,5 +4,4 @@
     get: (-> () x)
 }))
 
-(define makeCounter (-> () (let ((x 0)) (Counter x))))
 
