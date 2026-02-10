@@ -4,17 +4,17 @@
 ###### to install M from nimble run: `nimble install m`. to build from source , clone the repo and run: `nimble build`, to launch the interpreter in repl mode run `m -i` otherwise run `m filename.m`;  code examples are below the Features section and in the `examples` directory 
 
 # Features
-* Comparable in speed to compiled languages or interpreters like lua; recursive factorial of 10000 computes at `|real 0m0.034s| | sys 0m0.003s |` on my machine (Ryzen 7 7900x)
-* Extremely lightweight; uses about 1.6 to 2.2 mb of memory on startup and will only use memory that is actually in use
-* Supports recursing infinitely
-* First class functions and closures
-* CL inspired Macros and backquote
-* Direct metaprogramming (Lambdas are structures allowing for hot swapping of code); code is data in a much more literal sense than Scheme or CL
-* The Reader can natively parse JSON into Tables
-* Seq/Table literals and dot notation for field access
-* Slicing and indexing for Seqs and Strings as well as mutating these slices
-* Trivially extensible with native code and embedded within applications. Every interpreter instance is isolated and there is no global state unless the host application chooses to facilitate the sharing of data between them which is as seamless as moving something from one table to another
-* Completely cross platform; can fit in flash memory
+* Comparable in speed to compiled languages or interpreters like lua; recursive factorial of 10000 computes at `|real 0m0.034s| | sys 0m0.003s |` on my machine (Ryzen 7 7900x).
+* Extremely lightweight; uses about 1.6 to 2.2 mb of memory on startup and will only use memory that is actually in use.
+* Supports recursing infinitely.
+* First class functions and closures.
+* CL inspired Macros and backquote.
+* Direct metaprogramming (Lambdas are structures allowing for hot swapping of code); code is data in a much more literal sense than Scheme or CL.
+* The Reader can natively parse JSON into Tables.
+* Seq/Table literals and dot notation for field access.
+* Slicing and indexing for Seqs and Strings as well as mutating these slices.
+* Trivially extensible with native code and embedded within applications. Every interpreter instance is isolated and there is no global state unless the host application chooses to facilitate the sharing of data between them which is as seamless as moving something from one table to another.
+* Completely cross platform; can fit in flash memory.
 
 # Some Examples ^_^
 <img src="doc/ex1.png" width="800">
