@@ -16,7 +16,7 @@
   (case (typeOf x)
    (('Int    (echo "Its an int!"))
     ('String (echo "Its a String!"))
-    (        (echo "Its nil!"))))))
+    (        (echo "Its something else!"))))))
 
 
 (define int 50)
