@@ -8,3 +8,14 @@
 (echo (String.fmt "Strings module=$" String))
 
 
+(macro module (name body)
+ `(define ,name 
+   (let ()
+     ,@body
+     (interned-symbols))))
+
+(module MyModule (
+  (define hello (-> (name) (echo (String.fmt "Hello $!" name))))
+))
+
+(MyModule.hello "Boben")
