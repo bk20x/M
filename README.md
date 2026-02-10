@@ -13,7 +13,7 @@
 * The Reader can natively parse JSON into Tables.
 * Seq/Table literals and dot notation for field access.
 * Slicing and indexing for Seqs and Strings as well as mutating these slices.
-* Trivially extensible with native code and embedded within applications. Every interpreter instance is isolated and there is no global state unless the host application chooses to facilitate the sharing of data between them which is as seamless as moving something from one table to another.
+* Easily extensible with native code and embedded within applications; Every interpreter instance is isolated and there is no global state unless the host application chooses to facilitate the sharing of data between them which is as seamless as moving something from one table to another.
 * Completely cross platform; can fit in flash memory.
 
 # Some Examples ^_^
