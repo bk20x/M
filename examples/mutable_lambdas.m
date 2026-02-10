@@ -1,5 +1,5 @@
 '(in M lambdas are mutable and inspectable basically to the extent of any other data
-  M provides primitives "body" and "lparams" which return a reference to the lambdas body and parameters respectively.
+  M provides builtins "body" and "lparams" which return a reference to the lambdas body and parameters respectively.
   as well as "setb" and "setp" for setting the parameters and body directly)
 
 
