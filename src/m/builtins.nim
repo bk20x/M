@@ -214,21 +214,3 @@ proc append*(args: LispObject): LispObject =
   list.add elem
   return list.list
 
-
-  
-let first*: BuiltinFn =
-  proc(args: LispObject): LispObject =
-    if args.len != 1 or not (args.first.kind == Cons):
-      raise newException(ValueError, fmt"`second` is of type Cons -> T but got {args}")
-    return args.car.first
-
-let second*: BuiltinFn =
-  proc(args: LispObject): LispObject =
-    if args.len != 1 or not (args.first.kind == Cons):
-      raise newException(ValueError, fmt"`second` is of type Cons -> T but got {args}")
-    let
-      form = args.car
-    if form.cdr.isAtom:
-      return form.cdr    
-    return form.second
-

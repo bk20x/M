@@ -574,6 +574,9 @@ evalLambda =
       
 ifImpl =
     proc(env: var Env, form: LispObject): LispObject =
+      let length = form.len
+      if length notin {2,3}:
+        raise newException(ValueError, fmt"Malformed arguments for if expression {form}")
       let
         cond   = env.eval(form.first)
         ifCond = form.second
@@ -581,7 +584,7 @@ ifImpl =
       if not cond.isNil:
          return env.eval(ifCond)
       else:
-         if form.len == 3:
+         if length == 3:
            new elt
            elt = form.third
            if not elt.isNil:
@@ -591,18 +594,25 @@ ifImpl =
 
 doTimes =
     proc(env: var Env, form: LispObject): LispObject =
+      if form.len != 2:
+        raise newException(ValueError, fmt"`doTimes` expects 2 arguments, an Int and an expression but got {form}")
       let
         times = env.eval form.first
         body  = form.second
+      if times.kind != Int:
+        raise newException(ValueError, fmt"`doTimes` expected an Int for repetitions but got {times}")
+      if times.intVal <= 0:
+        return NIL()
       var i = 0
       while not (i == times.intVal - 1): # bc we return the last eval
-        env.eval: body
+        result = env.eval: body
         i += 1
-      return env.eval: body
         
 whileImpl =
     proc(env: var Env, form: LispObject): LispObject =
       result = NIL()
+      if form.len != 2:
+        raise newException(ValueError, fmt"`while` expects 2 arguments for its condition and a list of forms as its body but got {form}")
       var
         condForm = form.first
         cond     = env.eval condForm
@@ -956,15 +966,13 @@ proc newEnv*(): owned Env =
     "<="           : newBuiltin(lispLessThanEq,      "<="),
     "!="           : newBuiltin(lispUneql,           "!="),
     "Float->Int"   : newBuiltin(ftoi,                "Float->Int"),
-    "append"       : newBuiltin(append,              "append"),
     "map"          : newBuiltin(map,                 "map"),
     "filter"       : newBuiltin(filter,              "filter"),
-    "list"         : newBuiltin(listt,                "list"),
+    "list"         : newBuiltin(listt,               "list"),
+    "append"       : newBuiltin(append,              "append"),
     "cons"         : newBuiltin(cons,                "cons"),
     "car"          : newBuiltin(car,                 "car"),
     "cdr"          : newBuiltin(cdr,                 "cdr"),
-    "first"        : newBuiltin(first,               "first"),
-    "second"       : newBuiltin(second,              "second"),
     "unintern"     : newBuiltin(unintern,            "unintern"),
     "and"          : newBuiltin(nd,                  "and"),
     "echo"         : newBuiltin(lecho,               "echo"),
