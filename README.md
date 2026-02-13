@@ -96,3 +96,4 @@
 (echo (body f))
 (echo (lparams f))
 ```
+Syntax highlighting for emacs: [m-mode](https://github.com/bk20x/m-mode)
