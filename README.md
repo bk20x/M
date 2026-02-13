@@ -13,7 +13,7 @@
 * The Reader can natively parse JSON into Tables.
 * Seq/Table literals and dot notation for field access.
 * Slicing and indexing for Seqs and Strings as well as mutating these slices.
-* Easily embedded within applications and extensible with native code with a universal calling convention `proc(args: LispObject): LispObject`  where builtins receive their arguments as a list that the implementation destructures.
+* Easily embedded within applications and extensible with native code with a universal calling convention `proc(args: LispObject): LispObject`  where builtins receive their arguments as a list that you destructure in their implementation.
 * Completely cross platform
 
 # Some Examples ^_^
