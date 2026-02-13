@@ -33,7 +33,7 @@ proc newSeqWith(args: LispObject): LispObject =
   return lispobject.newSeq(newSeqWith(length, init))
 
 proc contains(args: LispObject): LispObject =
-  if args.len != 2 or not (args.first.kind == Seq):
+  if args.len != 2 or not (args.first.kind == LispObjectKind.Seq):
     raise newException(ValueError, fmt"`contains` is of type Seq -> T | Nil -> T | Nil but got {args}")
   result = NIL()
   let
