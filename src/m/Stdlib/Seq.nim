@@ -24,8 +24,6 @@ proc add(args: LispObject): LispObject =
   sequence.sequence.add(val)
   return newInt(sequence.sequence.high)
     
-
-
 proc newSeqWith(args: LispObject): LispObject =
   if args.len != 2 or not (args.first.kind == Int):
     raise newException(ValueError, fmt"`newSeqWith` is of type Int -> T | Nil -> Seq but got {args}")
@@ -33,11 +31,24 @@ proc newSeqWith(args: LispObject): LispObject =
     length = args.first.intVal
     init   = args.second
   return lispobject.newSeq(newSeqWith(length, init))
+
+proc contains(args: LispObject): LispObject =
+  if args.len != 2 or not (args.first.kind == Seq):
+    raise newException(ValueError, fmt"`contains` is of type Seq -> T | Nil -> T | Nil but got {args}")
+  result = NIL()
+  let
+    sequence  = args.first.sequence
+    obj       = args.second
+  for x in sequence:
+    if x == obj:
+      return T()
+    
     
 const Module* = toTable {
   "length"     : BuiltinFn length,
   "high"       : BuiltinFn high,
   "add"        : BuiltinFn add,
-  "newSeqWith" : BuiltinFn Seq.newSeqWith
+  "newSeqWith" : BuiltinFn Seq.newSeqWith,
+  "contains"   : BuiltinFn contains
 
 }
