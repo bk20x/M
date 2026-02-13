@@ -604,7 +604,7 @@ doTimes =
       if times.intVal <= 0:
         return NIL()
       var i = 0
-      while not (i == times.intVal - 1): # bc we return the last eval
+      while not (i == times.intVal): 
         result = env.eval: body
         i += 1
         
