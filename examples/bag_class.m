@@ -17,6 +17,7 @@
  )
 )
 
+
 (define countWords (-> (text)
  (let ((result (Bag)))
   (each (word (split text " "))
@@ -24,3 +25,4 @@
    result)))
 
 (echo ((countWords "Boben Goben Boben Zambas Gambas Yobert Boben").occurencesOf "Boben"))
+

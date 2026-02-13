@@ -28,3 +28,4 @@
    (while (not (Streams.atEnd stream)) 
     ((Seq.add result (Streams.readChar stream)))))
     result)))
+

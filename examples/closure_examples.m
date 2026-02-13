@@ -18,6 +18,9 @@
 
 (terry.sayHi bobby)
 (bobby.sayHi terry)
+(terry.sayHi {
+  getName: (-> () "Gambas")
+})
 
 
 (define Vector2 (-> (x y)

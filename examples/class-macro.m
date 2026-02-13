@@ -1,5 +1,4 @@
 (open Tables)
-(load "collect.m")
 
 (macro class (name params fields)
  (let () (define ~gen-table (-> (fs)
