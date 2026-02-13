@@ -14,6 +14,7 @@
 * Seq/Table literals and dot notation for field access.
 * Slicing and indexing for Seqs and Strings as well as mutating these slices.
 * Easily embedded within applications and extensible with native code with a universal calling convention `proc(args: LispObject): LispObject`  where builtins receive their arguments as a list that you destructure in their implementation.
+* Non optimizing but fast; M will never rewrite or elide your code. the closest thing to this is the reader parsing dot access into a specialzed object for lookups.
 * Completely cross platform
 
 # Some Examples ^_^
