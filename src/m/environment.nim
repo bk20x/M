@@ -137,6 +137,11 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
     elif currentForm.kind == Cons:
       if currentForm.car.kind == Symbol:
         case currentForm.car.sym.name: # Check if the op is a special form
+        of "die":
+          if currentForm.len >= 2:
+            quit(currentForm.second.image)
+          else:
+            quit()
         of "interned-symbols":
           result = lispobject.newTable()
           for k, v in currentEnv.interned:
