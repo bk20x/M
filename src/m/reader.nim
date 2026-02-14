@@ -210,7 +210,7 @@ proc readAllSexprs*(filename: string): seq[LispObject] =
   var stream = newFileStream(filename, fmRead)
   defer: close stream
   if stream == nil:
-    quit("Could not open file: " & filename)
+    raise newException(ValueError, fmt"Could not open file {filename}")
   var parser: Reader
   initLexer(parser.lexer, stream)
   parser.advance

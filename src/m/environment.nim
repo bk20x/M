@@ -447,12 +447,6 @@ macroExpand = proc(env: var Env, macroObj: LispObject, rawArgsAst: LispObject): 
   result = scope.eval(macroObj.body)
   
 
-
-proc compileFile(filename: string): seq[LispObject] =
-  ## Helper for `load`
-  result = @[]
-  for form in readAllSexprs(filename):
-    result.add form
     
 proc apply*(env: var Env; fun: LispObject; args: seq[LispObject]): LispObject =
   ## Eagerly evaluate a lambda object and get the return value instead of a Thunk
@@ -687,10 +681,10 @@ eachImpl = proc(env: var Env, form: LispObject): LispObject =
 
 load =
   proc(env: var Env, form: LispObject): LispObject =
-    let forms = compileFile(form.str)
-    for form in forms:
+    for form in readAllSexprs(form.str):
       env.eval form
     return T()
+  
 
 func registerModule*(env: var Env, name: string, module: Table[string, BuiltinFn]) =
   env.loadedModules[name] = module
