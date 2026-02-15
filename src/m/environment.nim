@@ -948,41 +948,43 @@ proc newEnv*(): owned Env =
         return newInt(args.first.floatVal.int)
           
 
-  result.loadedModules = tables.newTable[string, Table[string, BuiltinFn]]()        
+  result.loadedModules = tables.newTable[string, Table[string, BuiltinFn]]()
+  result.intern("t", T())
   for k, v in Stdlib:
     result.loadedModules[k] = v
-  result.interned = toTable {
-    "t"            : T(),
-    "+"            : newBuiltin(lispadd,             "+"),
-    "-"            : newBuiltin(lispSub,             "-"),
-    "*"            : newBuiltin(lispMultiply,        "*"),
-    "/"            : newBuiltin(lispDiv,             "/"),
-    "mod"          : newBuiltin(lispMod,             "mod"),
-    ">"            : newBuiltin(lispGreaterThan,     ">"),
-    ">="           : newBuiltin(lispGreaterThanEq,   ">="),
-    "="            : newBuiltin(lispEquals,          "="),
-    "<"            : newBuiltin(lispLessThan,        "<"),
-    "<="           : newBuiltin(lispLessThanEq,      "<="),
-    "!="           : newBuiltin(lispUneql,           "!="),
-    "Float->Int"   : newBuiltin(ftoi,                "Float->Int"),
-    "map"          : newBuiltin(map,                 "map"),
-    "filter"       : newBuiltin(filter,              "filter"),
-    "list"         : newBuiltin(listt,               "list"),
-    "append"       : newBuiltin(append,              "append"),
-    "cons"         : newBuiltin(cons,                "cons"),
-    "car"          : newBuiltin(car,                 "car"),
-    "cdr"          : newBuiltin(cdr,                 "cdr"),
-    "unintern"     : newBuiltin(unintern,            "unintern"),
-    "and"          : newBuiltin(nd,                  "and"),
-    "echo"         : newBuiltin(lecho,               "echo"),
-    "body"         : newBuiltin(body,                "body"),
-    "lparams"      : newBuiltin(lparams,             "lparams"),
-    "typeOf"       : newBuiltin(typeOf,              "typeOf"),
-    "clone"        : newBuiltin(clone,               "clone"),
-    "setb"         : newBuiltin(setb,                "setb"),
-    "setp"         : newBuiltin(setp,                "setp"),
-    "image"        : newBuiltin(toString,            "image"),
-    "~read"        : newBuiltin(read,                "~read")
+  let Core = toTable {
+    "+"            : BuiltinFn lispadd,
+    "-"            : BuiltinFn lispSub,
+    "*"            : BuiltinFn lispMultiply,
+    "/"            : BuiltinFn lispDiv,
+    "mod"          : BuiltinFn lispMod,
+    ">"            : BuiltinFn lispGreaterThan,
+    ">="           : BuiltinFn lispGreaterThanEq,
+    "="            : BuiltinFn lispEquals,
+    "<"            : BuiltinFn lispLessThan,
+    "<="           : BuiltinFn lispLessThanEq,
+    "!="           : BuiltinFn lispUneql,
+    "Float->Int"   : ftoi,
+    "map"          : map,
+    "filter"       : filter,
+    "list"         : listt,
+    "append"       : BuiltinFn append,
+    "cons"         : cons,
+    "car"          : car,
+    "cdr"          : cdr,
+    "unintern"     : unintern,
+    "and"          : nd,
+    "echo"         : lecho,
+    "body"         : body,
+    "lparams"      : lparams,
+    "typeOf"       : typeOf,
+    "clone"        : clone,
+    "setb"         : setb,
+    "setp"         : setp,
+    "image"        : toString,
+    "~read"        : read
    }
+  result.loadedModules["Core"] = Core
+  result.interned = wrapModule(Core)
   return result
 
