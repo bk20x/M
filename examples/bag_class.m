@@ -33,5 +33,5 @@
    (result.add word))
    result)))
 
-(echo ((countWords "Boben Goben Boben Zambas Gambas Yobert Boben").occurencesOf "Boben"))
+(echo ((countWords "Yoben Boben Goben Zambas Yoben Boben Boben Gambas").mostFrequent))
 

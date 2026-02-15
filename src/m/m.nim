@@ -16,6 +16,11 @@ template Mmain*(runtime: var Env) =
         interactive = true
         runtime.runRepl()
       else:
+        if pc > 1:
+          let lispArgs = lispobject.newSeq()
+          for arg in commandLineParams():
+            lispArgs.sequence.add newStr(arg)
+          runtime.intern("~args", lispArgs)
         if fileExists arg1:
           runtime.doFile arg1
         else:
