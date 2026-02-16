@@ -183,6 +183,7 @@ proc lispLessThan*(args: LispObject): LispObject =
     if isLess:
       return T()
     else:
+      return NIL()
 
 proc lispMod*(args: LispObject): LispObject =
     if args.len != 2:
