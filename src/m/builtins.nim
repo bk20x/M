@@ -138,28 +138,28 @@ proc lispMultiply*(args: LispObject): LispObject =
 
 
 proc lispGreaterThan*(args: LispObject): LispObject =
-    if args.len != 2 or not(args.first.kind in {Int, Float, BigInt} and args.second.kind in {Int, Float, BigInt}):
-      raise newException(ValueError, fmt"`>` expects 2 args of Int | Float | BigInt but got {args}")
+  if args.len != 2 or not(args.first.kind in {Int, Float, BigInt} and args.second.kind in {Int, Float, BigInt}):
+    raise newException(ValueError, fmt"`>` expects 2 args of Int | Float | BigInt but got {args}")
+  let
+     x = args.first
+     y = args.second
+  var isGreater: bool
+  if x.kind == Float or y.kind == Float:
     let
-      x = args.first
-      y = args.second
-    var isGreater: bool
-    if x.kind == Float or y.kind == Float:
-      let
-        xVal    = if x.kind == Float: x.floatVal elif x.kind == Int: x.intVal.float else: x.bigNum.toFloat
-        yVal    = if y.kind == Float: y.floatVal elif y.kind == Int: y.intVal.float else: y.bigNum.toFloat
-      isGreater = xVal > yVal
-    elif x.kind == LispObjectKind.BigInt or y.kind == LispObjectKind.BigInt:
-      let
-        xVal    = x.toBigInt()
-        yVal    = y.toBigInt()
-      isGreater = xVal > yVal
-    else:
-      isGreater = x.intVal > y.intVal      
-    if isGreater:
-      return T()
-    else:
-      return NIL()
+      xVal    = if x.kind == Float: x.floatVal elif x.kind == Int: x.intVal.float else: x.bigNum.toFloat
+      yVal    = if y.kind == Float: y.floatVal elif y.kind == Int: y.intVal.float else: y.bigNum.toFloat
+    isGreater = xVal > yVal
+  elif x.kind == LispObjectKind.BigInt or y.kind == LispObjectKind.BigInt:
+    let
+      xVal    = x.toBigInt()
+      yVal    = y.toBigInt()
+    isGreater = xVal > yVal
+  else:
+    isGreater = x.intVal > y.intVal      
+  if isGreater:
+    return T()
+  else:
+    return NIL()
 
 proc lispLessThan*(args: LispObject): LispObject =
     if args.len != 2 or not(args.first.kind in {Int, Float, BigInt} and args.second.kind in {Int, Float, BigInt}):
