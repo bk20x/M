@@ -162,7 +162,27 @@ proc lispGreaterThan*(args: LispObject): LispObject =
       return NIL()
 
 proc lispLessThan*(args: LispObject): LispObject =
-  return if lispGreaterThan(args).isT: NIL() else: T()
+    if args.len != 2 or not(args.first.kind in {Int, Float, BigInt} and args.second.kind in {Int, Float, BigInt}):
+      raise newException(ValueError, fmt"`<` expects 2 args of Int | Float | BigInt but got {args}")
+    let
+      x = args.first
+      y = args.second
+    var isLess: bool
+    if x.kind == Float or y.kind == Float:
+      let
+        xVal    = if x.kind == Float: x.floatVal elif x.kind == Int: x.intVal.float else: x.bigNum.toFloat
+        yVal    = if y.kind == Float: y.floatVal elif y.kind == Int: y.intVal.float else: y.bigNum.toFloat
+      isLess = xVal < yVal
+    elif x.kind == LispObjectKind.BigInt or y.kind == LispObjectKind.BigInt:
+      let
+        xVal    = x.toBigInt()
+        yVal    = y.toBigInt()
+      isLess = xVal < yVal
+    else:
+      isLess = x.intVal < y.intVal      
+    if isLess:
+      return T()
+    else:
 
 proc lispMod*(args: LispObject): LispObject =
     if args.len != 2:
