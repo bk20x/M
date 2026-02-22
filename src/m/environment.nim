@@ -440,8 +440,19 @@ macroExpand = proc(env: var Env, macroObj: LispObject, rawArgsAst: LispObject): 
     params = macroObj.params
     args   = rawArgsAst    
   while not params.isNil and not args.isNil:
-    let name = params.first.sym.name
-    scope.intern(name, args.first) 
+    let param = params.car
+    case param.kind
+    of Symbol:
+      scope.intern(param.sym.name, args.first)
+    of Cons:
+      if param.len != 1 or not (param.car.kind == Symbol):
+        raise newException(ValueError, fmt"As of now, there is only one binding for varargs... (macro (x (xs)) ...), got this: {param}")
+      if not params.safeCdr.isNil:
+        raise newException(ValueError, fmt"Vararg parameter must be the last in parameter list")
+      scope.intern(param.car.sym.name, args)
+      break
+    else:
+      raise newException(ValueError, fmt"Invalid type for parameter! {param} in {macroObj.params} from {macroObj}")     
     params = params.safeCdr
     args   = args.safeCdr
   result = scope.eval(macroObj.body)
@@ -568,8 +579,16 @@ evalLambda =
         case param.kind
         of Symbol:
           lambda.closure.interned[param.sym.name] = evaluated[argIndex]
+        of Cons:
+          if param.len != 1 or not (param.car.kind == Symbol):
+            raise newException(ValueError, fmt"As of now, there is only one binding for varargs... (-> (x (xs)) ...), got this: {param}")
+          if not lambda.params.cdr.isNil:
+            raise newException(ValueError, "Varargs parameter must be the last in parameter list")
+          lambda.closure.interned[param.car.sym.name] = evaluated[argIndex..evaluated.high].list
+          argIndex = evaluated.len # so it doesnt think some params are unbound
+          break
         else:
-          discard
+          raise newException(ValueError, fmt"Invalid type for parameter! {param} in {form.params} from {form}")     
         lambda.params = lambda.params.cdr
         inc argIndex
       if argIndex != evaluated.len:
