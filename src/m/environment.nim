@@ -990,5 +990,6 @@ proc newEnv*(): owned Env =
    }
   result.loadedModules["Core"] = Core
   result.interned = wrapModule(Core)
+  result.intern("t", T())
   return result
 
