@@ -444,12 +444,12 @@ macroExpand = proc(env: var Env, macroObj: LispObject, rawArgsAst: LispObject): 
     case param.kind
     of Symbol:
       scope.intern(param.sym.name, args.first)
-    of Cons:
-      if param.len != 1 or not (param.car.kind == Symbol):
-        raise newException(ValueError, fmt"As of now, there is only one binding for varargs... (macro (x (xs)) ...), got this: {param}")
+    of Seq:
+      if param.len != 1 or not (param.sequence[0].kind == Symbol):
+        raise newException(ValueError, fmt"As of now, there is only one binding for varargs... (macro (x [xs]) ...), got this: {param}")
       if not params.safeCdr.isNil:
         raise newException(ValueError, fmt"Vararg parameter must be the last in parameter list")
-      scope.intern(param.car.sym.name, args)
+      scope.intern(param.sequence[0].sym.name, args)
       break
     else:
       raise newException(ValueError, fmt"Invalid type for parameter! {param} in {macroObj.params} from {macroObj}")     
@@ -579,12 +579,12 @@ evalLambda =
         case param.kind
         of Symbol:
           lambda.closure.interned[param.sym.name] = evaluated[argIndex]
-        of Cons:
-          if param.len != 1 or not (param.car.kind == Symbol):
-            raise newException(ValueError, fmt"As of now, there is only one binding for varargs... (-> (x (xs)) ...), got this: {param}")
+        of Seq:
+          if param.len != 1 or not (param.sequence[0].kind == Symbol):
+            raise newException(ValueError, fmt"As of now, there is only one binding for varargs... (-> (x [xs]) ...), got this: {param}")
           if not lambda.params.cdr.isNil:
             raise newException(ValueError, "Varargs parameter must be the last in parameter list")
-          lambda.closure.interned[param.car.sym.name] = evaluated[argIndex..evaluated.high].list
+          lambda.closure.interned[param.sequence[0].sym.name] = evaluated[argIndex..evaluated.high].list
           argIndex = evaluated.len # so it doesnt think some params are unbound
           break
         else:

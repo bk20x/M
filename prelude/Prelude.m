@@ -1,5 +1,9 @@
 (open Tables)
 
+(macro do ([forms])
+ `(let ()
+   ,@forms))
+
 (macro require (modname)
  `(let () 
    (open ,modname)
