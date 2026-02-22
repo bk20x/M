@@ -109,6 +109,9 @@ proc parseAtom(p: var Reader): owned LispObject =
     if p.lexer.curTok.sym.name == "nil" or p.lexer.curTok.sym.name == "NIL":
       p.advance
       return NIL()
+    elif p.lexer.curTok.sym.name == "t" or p.lexer.curTok.sym.name == "T":
+      p.advance
+      return T()
     result = newSym p.lexer.curTok.sym.name
     p.advance
     if p.lexer.curTok.kind == tkLBracket and (p.lexer.bufpos - 1 == p.lastEndPos): # only an index if its physically touching the symbol

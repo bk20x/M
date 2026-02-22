@@ -5,7 +5,6 @@ import SysIo
 import Tables
 import Seq
 import Streams
-
 const
   Stdlib* = toTable {
     "Strings": Strings.Module,

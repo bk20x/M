@@ -564,7 +564,12 @@ evalLambda =
       while not lambda.params.isNil:
         if argIndex >= evaluated.len:
           raise newException(ValueError, "Wrong number of arguments for lambda")
-        lambda.closure.interned[lambda.params.car.sym.name] = evaluated[argIndex]
+        let param = lambda.params.car
+        case param.kind
+        of Symbol:
+          lambda.closure.interned[param.sym.name] = evaluated[argIndex]
+        else:
+          discard
         lambda.params = lambda.params.cdr
         inc argIndex
       if argIndex != evaluated.len:
@@ -949,7 +954,6 @@ proc newEnv*(): owned Env =
           
 
   result.loadedModules = tables.newTable[string, Table[string, BuiltinFn]]()
-  result.intern("t", T())
   for k, v in Stdlib:
     result.loadedModules[k] = v
   let Core = toTable {
