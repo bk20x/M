@@ -218,18 +218,20 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
           if currentForm.cdr.isNil:
             raise newException(ValueError, "load expects a String for filename")
           var file = currentForm.second
-          if file.kind == Symbol:
+          if file.kind != String:
             file = currentEnv.eval(file)
+            if file.kind != String:
+              raise newException(ValueError, fmt"load expects a String for filename but got {file}")
           return currentEnv.load file
         of "open":
           if currentForm.cdr.isNil:
             raise newException(ValueError, fmt"open expects a Module or Modules but got {currentForm}")
-          
           for m in currentForm.cdr.toSeq:
+            if m.kind != Symbol:
+              raise newException(ValueError, fmt"invalid argument to `open` {m}; open expects a Symbol or Symbols")
             let module = m.sym.name
             var e = currentEnv
-            var found = false 
-            
+            var found = false             
             while e != nil:
               if e.loadedModules.hasKey(module):
                 let opened = wrapModule(e.loadedModules[module])
