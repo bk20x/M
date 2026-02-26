@@ -973,7 +973,17 @@ proc newEnv*(): owned Env =
           raise newException(ValueError, fmt"ftoi is of type Float -> Int but got {args}")
         return newInt(args.first.floatVal.int)
           
-
+    listToSeq: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        if args.len != 1 or args.first.kind != Cons:
+          raise newException(ValueError, fmt"`Cons->Seq` expects 1 argument of type Cons but got {args}")
+        return lispobject.newSeq(args.first.toSeq)
+    seqToList: BuiltinFn =
+      proc(args: LispObject): LispObject =
+        if args.len != 1 or args.first.kind != Seq:
+          raise newException(ValueError, fmt"`Seq->Cons` expects 1 argument of type Seq but got {args}")
+        return args.first.sequence.list()
+        
   result.loadedModules = tables.newTable[string, Table[string, BuiltinFn]]()
   for k, v in Stdlib:
     result.loadedModules[k] = v
@@ -1007,7 +1017,9 @@ proc newEnv*(): owned Env =
     "setb"         : setb,
     "setp"         : setp,
     "image"        : toString,
-    "~read"        : read
+    "~read"        : read,
+    "Cons->Seq"    : listToSeq,
+    "Seq->Cons"    : seqToList
    }
   result.loadedModules["Core"] = Core
   result.interned = wrapModule(Core)
