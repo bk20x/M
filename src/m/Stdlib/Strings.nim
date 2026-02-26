@@ -148,6 +148,12 @@ proc isWhitespace(args: LispObject): LispObject =
   if obj.kind == String:
     return if obj.str.isEmptyOrWhitespace: T() else: NIL()
   return if obj.charVal in Whitespace: T() else: NIL()
+
+
+proc chars(args: LispObject): LispObject =
+  if args.len != 1 or not (args.first.kind == String):
+    raise newException(ValueError, fmt"`chars` is of type String -> Seq[Char] but got {args}")
+  return lispobject.newSeq(args.first.str.toSeq.map(c => newChar(c)))
   
 const
   Module* = toTable {
@@ -165,5 +171,6 @@ const
     "String->Int": BuiltinFn parseI,
     "parseHexInt": BuiltinFn parseHexI,
     "split"      : BuiltinFn split,
-    "isWhitespace": BuiltinFn isWhitespace 
+    "isWhitespace": BuiltinFn isWhitespace ,
+    "chars"       : BuiltinFn chars
   }

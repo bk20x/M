@@ -2,6 +2,7 @@
 (define Seq (require Seq))
 (define Streams (require Streams))
 
+(define len (-> (xs) (let ((result 0)) (each (x xs) (setf result (+ result 1))) result)))
 
 
 (macro with-file-stream (binding body)
@@ -28,4 +29,5 @@
    (while (not (Streams.atEnd stream)) 
     ((Seq.add result (Streams.readChar stream)))))
     result)))
+
 
