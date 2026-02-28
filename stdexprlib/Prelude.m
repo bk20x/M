@@ -2,9 +2,18 @@
 
 (define not (-> (x) (= x nil)))
 
+(macro do ([forms])
+ `(let ()
+   ,@forms))
+
 (macro require (modname)
  `(let () 
    (open ,modname)
+  (interned-symbols)))
+
+(macro require-file (filename)
+ `(let ()
+   (load ,filename)
   (interned-symbols)))
 
 (macro try (call body catcher)

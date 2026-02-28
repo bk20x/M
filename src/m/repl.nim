@@ -14,6 +14,9 @@ proc runRepl*(env: var Env) =
           parsed = parse ln
           result = env.eval parsed
         stdout.write("=> "); styledEcho(fgGreen, styleBright, fmt"{result}")
+    except LispException as e:
+      styledEcho(fgRed, styleBright, fmt"Error: {e.errMsgOrObject}")
+      continue
     except CatchableError as e:
       styledEcho(fgRed, styleBright, fmt"Error: {e.msg}")
       continue

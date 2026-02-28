@@ -1,4 +1,4 @@
-import std/[strformat, tables, strutils, sugar]
+import std/[strformat, tables, sugar]
 import lispobject, reader
 
 import builtins
@@ -7,10 +7,13 @@ import Stdlib/Std
 
 
 type
-  ReturnException* = ref object of CatchableError
-    retVal*: LispObject
-
-  Thunk* = object
+  ReturnException = ref object of CatchableError
+    retVal: LispObject
+    
+  LispException* = ref object of CatchableError
+    errMsgOrObject*: LispObject
+    
+  Thunk = object
     form: LispObject
     closure: Env
 
@@ -102,7 +105,7 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
     elif currentForm.kind == FieldAccess:
       let targetTable = currentEnv.eval(currentForm.tableSym) 
       if targetTable.kind != HashTable:
-        raise newException(ValueError, fmt"Property access on non-table object: {targetTable.kind}")
+        raise newException(ValueError, fmt"Property access on non-table object: {targetTable} of {targetTable.kind}")
       let fieldSym = currentForm.field 
       if targetTable.table.hasKey(fieldSym):
         return targetTable.table[fieldSym]
@@ -148,15 +151,24 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
             let key = newSym(k)
             result.table[key] = v
           return result
+        of "failwith":
+          result = NIL()
+          if currentForm.len != 2:
+            raise newException(ValueError, fmt"`failwith` requires 1 argument as error object but got {currentForm}")
+          raise LispException(errMsgOrObject: currentForm.second)
         of "safe":
           result = lispobject.newTable()
           if not currentForm.len == 2:
-            raise newException(ValueError, fmt"`safe` expects 1 argument as the call but got {currentForm}")
+            raise newException(ValueError, fmt"`safe` requires 1 argument as the call but got {currentForm}")
           try:
             let callResult = currentEnv.eval(currentForm.second)
             result.table[newSym("success")] = T()
             result.table[newSym("value")]   = callResult
-            return result            
+            return result
+          except LispException as e:
+            result.table[newSym("success")] = NIL()
+            result.table[newSym("value")]   = e.errMsgOrObject
+            return result
           except CatchableError as e:
             result.table[newSym("success")] = NIL()
             result.table[newSym("value")]   = newStr(e.msg)
