@@ -7,7 +7,7 @@
 
 (macro constrained (name pred)
  `(class ,name (value)
-   (  ()  (if (not (,pred value)) (constraintError value ',name) ()) 
+   (  ()(if (not (,pred value)) (constraintError value ',name) ()) 
       get (-> () value)
       set (-> (v) (do (if (not (,pred v)) (constraintError v ',name)) (setf value v)))
    )
@@ -15,4 +15,3 @@
 
 (constrained Even (-> (x) (= (mod x 2) 0)))
 
-(define e (Even 2))

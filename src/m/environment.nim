@@ -759,7 +759,7 @@ proc newEnv*(): owned Env =
           result = lispobject.newSeq()
           if fun.kind == Builtin:
             for x in list:
-              result.sequence.add(fun.fun(x))
+              result.sequence.add(fun.fun(cons(x, NIL())))
             return result
           else:
             for x in list:
