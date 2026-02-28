@@ -239,6 +239,6 @@ proc append*(args: LispObject): LispObject =
   return list.list
 
 proc chrr*(args: LispObject): LispObject =
-  if args.len != 1 or not (args.first.kind != Int):
+  if args.len != 1 or (args.first.kind != Int):
     raise newException(ValueError, fmt"`chr` is of type Int -> Char but got {args}")
   return newChar(chr(args.first.intVal))
