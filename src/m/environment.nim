@@ -155,7 +155,7 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
           result = NIL()
           if currentForm.len != 2:
             raise newException(ValueError, fmt"`failwith` requires 1 argument as error object but got {currentForm}")
-          raise LispException(errMsgOrObject: currentForm.second)
+          raise LispException(errMsgOrObject: currentEnv.eval(currentForm.second))
         of "safe":
           result = lispobject.newTable()
           if not currentForm.len == 2:
