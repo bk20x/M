@@ -306,7 +306,6 @@ proc `==`*(x, y: LispObject): bool =
       currY = y
     while not currX.isNil and not currY.isNil:
       if not (currX.car == currY.car):
-    # maybe change THIS ^ later
         return false
       currX = currX.cdr
       currY = currY.cdr
@@ -326,7 +325,6 @@ proc `==`*(x, y: LispObject): bool =
       return false
     for idx, obj in x.sequence:
       if y.sequence[idx] != obj:
-              # and this ^
         return false
     return true    
   else:

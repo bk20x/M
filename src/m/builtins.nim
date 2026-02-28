@@ -194,14 +194,16 @@ proc lispMod*(args: LispObject): LispObject =
       y = args.second
     if not (x.kind in {Int, BigInt}) or not (y.kind in {Int, BigInt}):
        raise newException(ValueError, fmt"`mod` expects Int or BigInt but got {x.kind} and {y.kind}")
-    let
-      xVal = x.toBigInt()
-      yVal = y.toBigInt()
-    if xVal == initBigInt(0) or yVal == initBigInt(0):
-      raise newException(ValueError, "Cant divide by 0!!!")
-    let res  = xVal mod yVal
-
-    return LispObject(kind: BigInt, bigNum: res)
+    if x.kind == BigInt or y.kind == BigInt:
+      let
+        xVal = x.toBigInt()
+        yVal = y.toBigInt()
+      if xVal == initBigInt(0) or yVal == initBigInt(0):
+        raise newException(ValueError, "Cant divide by 0!!!")
+      return LispObject(kind: BigInt, bigNum: xVal mod yVal)
+    else:
+      return newInt(x.intVal mod y.intVal)
+        
 
 
 proc lispEquals*(args: LispObject): LispObject =
