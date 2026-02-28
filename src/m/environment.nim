@@ -1031,7 +1031,8 @@ proc newEnv*(): owned Env =
     "image"        : toString,
     "~read"        : read,
     "Cons->Seq"    : listToSeq,
-    "Seq->Cons"    : seqToList
+    "Seq->Cons"    : seqToList,
+    "chr"          : BuiltinFn chrr
    }
   result.loadedModules["Core"] = Core
   result.interned = wrapModule(Core)
