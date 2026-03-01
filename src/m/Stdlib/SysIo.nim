@@ -1,5 +1,6 @@
 import std/[tables, sequtils, sugar, osproc, os, strformat]
 import ../lispobject
+from std/times import `$`
 
     
 proc readFile(args: LispObject): LispObject =
@@ -61,6 +62,17 @@ proc getFileSize(args: LispObject): LispObject =
 proc input(args: LispObject): LispObject =
   return newStr(stdin.readLine())
 
+proc sleep(args: LispObject): LispObject =
+  if args.len != 1 or not (args.first.kind == Int):
+    raise newException(ValueError, fmt"`sleep` is of type Int -> Nil but got {args}")
+  sleep(args.first.intVal)
+  return NIL()
+  
+proc absolutePath(args: LispObject): LispObject =
+  if args.len != 1 or not (args.first.kind == String):
+    raise newException(ValueError, fmt"`absolutePath` is of type String -> String but got {args}")
+  return newStr(args.first.str.expandFilename)
+  
 const
   Module* = toTable {
     "readFile"    : BuiltinFn SysIo.readFile,
@@ -71,5 +83,7 @@ const
     "isFile?"     : BuiltinFn SysIo.isFile,
     "getEnv"      : BuiltinFn SysIo.getEnv,
     "getFileSize" : BuiltinFn SysIo.getFileSize,
-    "input"       : BuiltinFn SysIo.input
+    "input"       : BuiltinFn SysIo.input,
+    "sleep"       : BuiltinFn SysIo.sleep,
+    "absolutePath": BuiltinFn SysIo.absolutePath
   }

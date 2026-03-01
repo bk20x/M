@@ -120,12 +120,6 @@ proc substring(args: LispObject): LispObject =
     endp  = args.third.intVal
   return newStr(str.str[start..endp])
 
-proc parseI(args: LispObject): LispObject =
-  if args.len != 1 or not (args.first.kind == String):
-    raise newException(ValueError, fmt"`String->Int` is of type String -> Int but got {args}")
-  let str = args.first.str
-  return newInt(parseInt str)
-
 proc parseHexI(args: LispObject): LispObject =
   if args.len != 1 or not (args.first.kind == String):
     raise newException(ValueError, fmt"`parseHexInt` is of type String -> Int but got {args}")
@@ -157,20 +151,19 @@ proc chars(args: LispObject): LispObject =
   
 const
   Module* = toTable {
-    "strReplace" : BuiltinFn strReplace,
-    "strConcat"  : BuiltinFn strConcat,
-    "strLen"     : BuiltinFn strLen,
-    "strCharLen" : BuiltinFn strCharLen,
-    "strDowncase": BuiltinFn strDowncase,
-    "strUpcase"  : BuiltinFn strUpcase,
-    "strContains": BuiltinFn strContains,
-    "splitLines" : BuiltinFn splitLines,
-    "fmt"        : BuiltinFn stringFormat,
-    "strip"      : BuiltinFn strip,
-    "substring"  : BuiltinFn substring,
-    "String->Int": BuiltinFn parseI,
-    "parseHexInt": BuiltinFn parseHexI,
-    "split"      : BuiltinFn split,
-    "isWhitespace": BuiltinFn isWhitespace ,
+    "replace"     : BuiltinFn strReplace,
+    "concat"      : BuiltinFn strConcat,
+    "len"         : BuiltinFn strLen,
+    "strCharLen"  : BuiltinFn strCharLen,
+    "downcase"    : BuiltinFn strDowncase,
+    "upcase"      : BuiltinFn strUpcase,
+    "contains?"   : BuiltinFn strContains,
+    "splitLines"  : BuiltinFn splitLines,
+    "fmt"         : BuiltinFn stringFormat,
+    "strip"       : BuiltinFn strip,
+    "sub"         : BuiltinFn substring,
+    "parseHexInt" : BuiltinFn parseHexI,
+    "split"       : BuiltinFn split,
+    "whitespace?" : BuiltinFn isWhitespace ,
     "chars"       : BuiltinFn chars
   }

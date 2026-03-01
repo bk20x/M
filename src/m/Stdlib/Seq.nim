@@ -45,10 +45,10 @@ proc contains(args: LispObject): LispObject =
     
     
 const Module* = toTable {
-  "length"     : BuiltinFn length,
+  "len"        : BuiltinFn length,
   "high"       : BuiltinFn high,
   "add"        : BuiltinFn add,
   "newSeqWith" : BuiltinFn Seq.newSeqWith,
-  "contains"   : BuiltinFn contains
+  "contains?"  : BuiltinFn contains
 
 }

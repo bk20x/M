@@ -3,11 +3,6 @@ import ../lispobject
 
 
 
-
-
-proc makeTable(args: LispObject): LispObject =
-  return lispobject.newTable()
-
 proc getHash(args: LispObject): LispObject =
   if args.len != 2 or not (args.second.kind == HashTable):
     raise newException(ValueError, fmt"`getHash` is of type T -> Table -> T but got {args}")
@@ -61,13 +56,22 @@ proc delete(args: LispObject): LispObject =
   let exists =  table.table.hasKey(key)
   table.table.del(key)
   return if exists: T() else: NIL()
+
+
+proc clear(args: LispObject): LispObject =
+  if args.len != 1 or not (args.first.kind == HashTable):
+    raise newException(ValueError, fmt"`clear` is of type HashTable -> Nil but got {args}")
+  var tab = args.first.table
+  tab.clear()
+  return NIL()
+    
 const
   Module* = toTable {
-    "makeTable"  : BuiltinFn makeTable,
-    "tableKeys"  : BuiltinFn tableKeys,
-    "tableValues": BuiltinFn tableValues,
-    "hasKey"     : BuiltinFn hasKey,
+    "keys"       : BuiltinFn tableKeys,
+    "values"     : BuiltinFn tableValues,
+    "hasKey?"    : BuiltinFn hasKey,
     "rmkey"      : BuiltinFn delete,
     "get"        : BuiltinFn getHash,
-    "put"        : BuiltinFn putHash
+    "put"        : BuiltinFn putHash,
+    "clear"      : BuiltinFn clear,
   }

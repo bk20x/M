@@ -23,6 +23,8 @@
 		   (if (> v biggest)
 		    (let () (setf biggest v) (setf result k))))
 		    result))
+
+   image (-> () (image self.items))
  )
 )
 
