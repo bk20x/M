@@ -48,8 +48,12 @@ func safeCdr(obj: LispObject): LispObject =
     return NIL()
 
 
-
-    
+func getTop(env: Env): Env =
+  var e = env
+  while e.parent != nil:
+    e = e.parent
+  return e
+  
 var ## All used in `eval`, these are forward declared because they call `eval`;; see implementations below `eval`
   lookupPlace: (var Env, LispObject) -> ptr LispObject
   ifImpl:      (var Env, LispObject) -> LispObject
@@ -239,22 +243,23 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
           if currentForm.cdr.isNil:
             raise newException(ValueError, fmt"open expects a Module or Modules but got {currentForm}")
           for m in currentForm.cdr.toSeq:
-            if m.kind != Symbol:
-              raise newException(ValueError, fmt"invalid argument to `open` {m}; open expects a Symbol or Symbols")
-            let module = m.sym.name
-            var e = currentEnv
-            var found = false             
-            while e != nil:
-              if e.loadedModules.hasKey(module):
-                let opened = wrapModule(e.loadedModules[module])
-                for name, val in opened:
-                  currentEnv.intern(name, val)
-                found = true
-                break 
+            if m.kind == Symbol:
+              let
+                module  = m.sym.name
+                modules = currentEnv.getTop().loadedModules
+              if not modules.hasKey(module):
+                try:
+                  let maybeTable = currentEnv.eval(m)
+                  if maybeTable.kind == HashTable:
+                    for k, v in maybeTable.table:
+                      currentEnv.intern(k.sym.name, v)
+                    continue
+                except ValueError:
+                  raise newException(ValueError, fmt"Unbound module {module}")
               else:
-                e = e.parent
-            if not found:
-              raise newException(ValueError, fmt"Module not found: {module}")
+                let module = modules[module]
+                for k, v in wrapModule(module):
+                  currentEnv.intern(k, v)
           return T()
         of "return":
             try:

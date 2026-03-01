@@ -9,11 +9,16 @@
    (open ,modname)
   (interned-symbols)))
 
-(macro module (name body)
+(macro module (name [forms])
  `(define ,name
    (let ()
-    ,@body
+    ,@forms
     (interned-symbols))))
+
+(macro using (modname [forms])
+ `(let () 
+   (open ,modname)
+   ,@forms))
 
 (macro try (call body catcher)
   `(let ((result (safe ,call))) 
