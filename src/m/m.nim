@@ -10,10 +10,17 @@ proc doFile*(env: var Env, file: string) =
 template Mmain*(runtime: var Env) =
   let pc = paramCount()
   if pc > 0:
-    let arg1 = paramStr 1
+    let arg1 = paramStr(1)
     case arg1:
       of "-i":
         interactive = true
+        if pc > 1:
+          let withFile = paramStr(2)
+          if fileExists withFile:
+            echo "Loading " & withFile & "..."
+            runtime.doFile(withFile)
+          else:
+            echo "Cannot open file " & withFile
         runtime.runRepl()
       else:
         let lispArgs = lispobject.newSeq()
