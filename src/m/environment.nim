@@ -248,18 +248,11 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
                 module  = m.sym.name
                 modules = currentEnv.getTop().loadedModules
               if not modules.hasKey(module):
-                try:
-                  let maybeTable = currentEnv.eval(m)
-                  if maybeTable.kind == HashTable:
-                    for k, v in maybeTable.table:
-                      currentEnv.intern(k.sym.name, v)
-                    continue
-                except ValueError:
-                  raise newException(ValueError, fmt"Unbound module {module}")
-              else:
-                let module = modules[module]
-                for k, v in wrapModule(module):
-                  currentEnv.intern(k, v)
+                raise newException(ValueError, fmt"Unbound Module {module}")
+              block:
+                let module = wrapModule(modules[module])
+                for sym, val in module:
+                  currentEnv.intern(sym, val)
           return T()
         of "return":
             try:

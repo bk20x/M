@@ -7,9 +7,9 @@
 
 (macro constrained (name pred)
  `(class ,name (value)
-   (  ()(if (not (,pred value)) (constraintError value ',name) ()) 
-      get (-> () value)
-      set (-> (v) (do (if (not (,pred v)) (constraintError v ',name)) (setf value v)))
+   (  pred   (if (not (,pred value)) (constraintError value ',name) ,pred) 
+      value  (-> () value)
+      value= (-> (v) (do (if (not (,pred v)) (constraintError v ',name)) (setf value v)))
    )
 ))
 
