@@ -1,6 +1,5 @@
 import std/[tables, sequtils, sugar, osproc, os, strformat]
 import ../lispobject
-from std/times import `$`
 
     
 proc readFile(args: LispObject): LispObject =

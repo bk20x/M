@@ -1,6 +1,6 @@
 (open Tables)
 
-(define not (-> (x) (= x nil)))
+(define not (-> (x) (= nil x)))
 
 (macro do ([forms])
  `(let ()
@@ -11,10 +11,16 @@
    (open ,modname)
   (interned-symbols)))
 
-(macro require-file (filename)
- `(let ()
-   (load ,filename)
-  (interned-symbols)))
+(macro module (name [forms])
+ `(define ,name
+   (let ()
+    ,@forms
+    (interned-symbols))))
+
+(macro using (modname [forms])
+ `(let () 
+   (open ,modname)
+   ,@forms))
 
 (macro try (call body catcher)
   `(let ((result (safe ,call))) 
@@ -50,7 +56,7 @@
     ,body)))
 
 
-(macro case (scrutinee clauses)
+(macro case (scrutinee [clauses])
  `(let ((val ,scrutinee))
    ,(let () 
       (define ~expand (-> (cs)
