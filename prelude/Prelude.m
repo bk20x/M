@@ -1,5 +1,3 @@
-(open Tables)
-
 (macro do ([forms])
  `(let ()
    ,@forms))
@@ -8,6 +6,8 @@
  `(let () 
    (open ,modname)
   (interned-symbols)))
+  
+(define Tables (require Tables))
 
 (macro module (name [forms])
  `(define ,name
@@ -22,12 +22,15 @@
 
 (macro try (call body catcher)
   `(let ((result (safe ,call))) 
-    (if result.success ,body ,catcher)))
+    (if result.success ,body 
+     ,catcher)))
 
-(macro isDefined? (sym)
+(macro defined? (sym)
  `(try ,sym
     result.success
-    result.success))
+    nil))
+
+(macro lsenv () `(Tables.keys(interned-symbols)))
 
 (macro collect (binding body)
  (let ((var        (car binding))
@@ -54,7 +57,7 @@
     ,body)))
 
 
-(macro case (scrutinee clauses)
+(macro case (scrutinee [clauses])
  `(let ((val ,scrutinee))
    ,(let () 
       (define ~expand (-> (cs)

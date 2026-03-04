@@ -71,7 +71,19 @@ proc absolutePath(args: LispObject): LispObject =
   if args.len != 1 or not (args.first.kind == String):
     raise newException(ValueError, fmt"`absolutePath` is of type String -> String but got {args}")
   return newStr(args.first.str.expandFilename)
-  
+
+proc getOccMem(args: LispObject): LispObject =
+  return newInt(getOccupiedMem())
+
+proc getCurDir(args: LispObject): LispObject =
+  return newStr(getCurrentDir())
+
+proc chdir(args: LispObject): LispObject =
+  if args.len != 1 or not (args.first.kind == String):
+    raise newException(ValueError,fmt"`chdir` is of type String -> Nil but got {args}")
+  setCurrentDir(args.first.str)
+  return NIL()
+
 const
   Module* = toTable {
     "readFile"    : BuiltinFn SysIo.readFile,
@@ -84,5 +96,8 @@ const
     "getFileSize" : BuiltinFn SysIo.getFileSize,
     "input"       : BuiltinFn SysIo.input,
     "sleep"       : BuiltinFn SysIo.sleep,
-    "absolutePath": BuiltinFn SysIo.absolutePath
+    "absolutePath": BuiltinFn SysIo.absolutePath,
+    "getOccupiedMem": BuiltinFn SysIo.getOccMem,
+    "getCurrentDir": BuiltinFn SysIo.getCurDir,
+    "chdir"        : BuiltinFn SysIo.chdir
   }
