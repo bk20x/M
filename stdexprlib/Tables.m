@@ -3,7 +3,7 @@
 (macro withKeys (binding body)
      (let ((k     (car binding))
        (table (car (cdr binding))))
-      `(each (,k (Tables.tableKeys ,table))
+      `(each (,k (Tables.keys ,table))
 	,body)))
 
 
@@ -11,7 +11,7 @@
  (let ((k     (car binding))
        (v     (car (cdr binding)))
        (table (car (cdr (cdr binding))))) 
-    `(each (,k (Tables.tableKeys ,table)) 
+    `(each (,k (Tables.keys ,table)) 
       (let ((,v (Tables.get ,k ,table)))
         ,body))))
 

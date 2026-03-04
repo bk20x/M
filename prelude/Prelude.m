@@ -7,8 +7,6 @@
    (open ,modname)
   (interned-symbols)))
   
-(define Tables (require Tables))
-
 (macro module (name [forms])
  `(define ,name
    (let ()
@@ -29,8 +27,6 @@
  `(try ,sym
     result.success
     nil))
-
-(macro lsenv () `(Tables.keys(interned-symbols)))
 
 (macro collect (binding body)
  (let ((var        (car binding))
