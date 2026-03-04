@@ -9,7 +9,6 @@
   
   `(define ,name (-> ,params
     (let ((self {}))
-     (let ()
-        ,@(~gen-table fields))
+      ,@(~gen-table fields)
        self)))))
 
