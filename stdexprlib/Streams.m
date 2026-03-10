@@ -2,9 +2,6 @@
 (define Seq (require Seq))
 (define Streams (require Streams))
 
-(define len (-> (xs) (let ((result 0)) (each (x xs) (setf result (+ result 1))) result)))
-
-
 (macro with-file-stream (binding body)
   (let ((stream   (car binding))
         (filename (car (cdr binding)))) 

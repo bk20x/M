@@ -10,6 +10,7 @@
    (  name   (if (not (,pred value)) (constraintError value ',name) ',name) 
       value  (-> () value)
       value= (-> (v) (do (if (not (,pred v)) (constraintError v ',name)) (setf value v)))
+      isOf   (-> (constrained) (and (,pred (constrained.value)) (= ',name constrained.name)))
    )
 ))
 

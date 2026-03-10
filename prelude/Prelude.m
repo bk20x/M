@@ -2,17 +2,11 @@
  `(let ()
    ,@forms))
 
-(macro require (modname)
+(macro require ([modnames])
  `(let () 
-   (open ,modname)
+   (open ,@modnames)
   (interned-symbols)))
   
-(macro module (name [forms])
- `(define ,name
-   (let ()
-    ,@forms
-    (interned-symbols))))
-
 (macro using (modname [forms])
  `(let () 
    (open ,modname)
@@ -27,6 +21,9 @@
  `(try ,sym
     result.success
     nil))
+
+(macro printf (format [xs])
+`(using Strings (echo (fmt ,format ,@xs))))
 
 (macro collect (binding body)
  (let ((var        (car binding))
@@ -51,7 +48,6 @@
               (~gen-bindings (cdr vs) `(cdr ,coll))))))
   `(let (,@(~gen-bindings vars collection))
     ,body)))
-
 
 (macro case (scrutinee [clauses])
  `(let ((val ,scrutinee))

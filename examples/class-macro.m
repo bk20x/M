@@ -6,7 +6,6 @@
         ()
         (cons `(put ',(car fs) ,(car (cdr fs)) self) 
               (~gen-table (cdr (cdr fs)))))))
-  
   `(define ,name (-> ,params
     (let ((self {}))
     ,@(~gen-table fields)
