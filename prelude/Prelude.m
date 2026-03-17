@@ -8,9 +8,8 @@
   (interned-symbols)))
   
 (macro using (modname [forms])
- `(let () 
-   (open ,modname)
-   ,@forms))
+ (if (= 'Cons (typeOf modname)) `(let () (open ,@modname) ,@forms)
+  `(let () (open ,modname) ,@forms)))
 
 (macro try (call body catcher)
   `(let ((result (safe ,call))) 

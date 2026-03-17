@@ -717,7 +717,7 @@ eachImpl = proc(env: var Env, form: LispObject): LispObject =
 
 load =
   proc(env: var Env, form: LispObject): LispObject =
-    for form in readAllSexprs(form.str):
+    for form in forAllSexprs(form.str):
       env.eval form
     return T()
   
@@ -801,7 +801,7 @@ proc newEnv*(): owned Env =
           case fun.kind
           of Builtin:
             for x in list:
-              let new = fun.fun(x)
+              let new = fun.fun(cons(x, NIL()))
               if new.isT:
                 result.sequence.add(x)
             return result

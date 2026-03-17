@@ -220,3 +220,17 @@ proc readAllSexprs*(filename: string): seq[LispObject] =
   while parser.lexer.curTok.kind != tkEof:
     result.add parser.parseSexp()  
 
+
+
+iterator forAllSexprs*(filename: string): LispObject =
+  var stream = newFileStream(filename, fmRead)
+  defer: close stream
+  if stream == nil:
+    raise newException(ValueError, fmt"Could not open file {filename}")
+  var parser: Reader
+  initLexer(parser.lexer, stream)
+  parser.advance
+  while parser.lexer.curTok.kind != tkEof:
+    yield parser.parseSexp()
+
+

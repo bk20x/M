@@ -1,0 +1,5 @@
+(load "Prelude.m")
+
+(define myStringFunc (-> (str)
+ (using Strings
+  (upcase (replace str "oben" "opple")))))

@@ -1,4 +1,4 @@
-(macro case (scrutinee clauses)
+(macro case (scrutinee [clauses])
  `(let ((~val ,scrutinee))
    ,(let () 
       (define ~expand (-> (cs)
@@ -14,9 +14,9 @@
 
 (define check (-> (x)
   (case (typeOf x)
-   (('Int    (echo "Its an int!"))
+    ('Int    (echo "Its an int!"))
     ('String (echo "Its a String!"))
-    (        (echo "Its something else!"))))))
+    (        (echo "Its something else!")))))
 
 
 (define int 50)

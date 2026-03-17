@@ -1,0 +1,5 @@
+(load "Streams.m")
+(open SysIo Strings)
+(define cs (chars (readFile "Streams.m")))
+(echo cs)
+
