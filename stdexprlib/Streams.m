@@ -7,8 +7,8 @@
         (filename (car (cdr binding)))) 
   `(let ((,stream (Streams.openFileStream ,filename)))
      (try ,body
-       (Streams.close ,stream)
-       (Streams.close ,stream)))))
+       (do (Streams.close ,stream) result.value)
+       (do (Streams.close ,stream) result.value)))))
 
 
 (macro with-string-stream (binding body)
@@ -16,8 +16,8 @@
         (buffer (car (cdr binding)))) 
   `(let ((,stream (Streams.openStringStream ,buffer)))
      (try ,body
-       (Streams.close ,stream)
-       (Streams.close ,stream)))))
+       (do (Streams.close ,stream) result.value)
+       (do (Streams.close ,stream) result.value)))))
 
 
 (define tokenize (-> (string)

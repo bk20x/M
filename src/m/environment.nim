@@ -162,8 +162,6 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
           raise LispException(errMsgOrObject: currentEnv.eval(currentForm.second))
         of "safe":
           result = lispobject.newTable()
-          if not currentForm.len == 2:
-            raise newException(ValueError, fmt"`safe` requires 1 argument as the call but got {currentForm}")
           try:
             let callResult = currentEnv.eval(currentForm.second)
             result.table[newSym("success")] = T()
