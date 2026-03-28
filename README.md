@@ -52,6 +52,16 @@
 
 '(macro examples)
 
+(macro using (modname [forms])
+ (if (= 'Cons (typeOf modname)) `(let () (open ,@modname) ,@forms)
+  `(let () (open ,modname) ,@forms)))
+  
+(macro printf (format [xs])
+ `(using Strings (echo (fmt ,format ,@xs))))
+
+(define name 'Gobenezer)
+(printf "Hello $!" name)
+
 (macro collect (binding body)
  (let ((var        (car binding))
        (collection (car (cdr binding))))
@@ -60,7 +70,7 @@
 (define xs (collect (x '(2 4 6 8)) (* x x))) 
 
 
-'(recursion examples, recursion is fast, completely separated from the hardware callstack)
+'(recursion examples, recursion is fast, separated from the hardware callstack)
 
 (define last (-> (xs) (if (cdr xs) (last (cdr xs)) (car xs))))
 
@@ -77,7 +87,7 @@
 '(indexing/slicing)
 
 (define str "Yoben Boben")
-(echo str[5..(- (String.strLen str) 1)])
+(echo str[5..(- (String.len str) 1)])
 
 '(there are sequences along with the cons lists for when you need random access or slicing.
   builtins like map and filter or special forms like each work with both of these the same)
