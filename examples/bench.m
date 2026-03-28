@@ -1,5 +1,5 @@
 (open SysIo)
-(load "collect.m")
+(load "Prelude.m")
 
 (define readDir (-> (dir)
  (collectIf isFile? (file (listDir dir)) (readFile file))))

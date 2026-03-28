@@ -1,9 +1,10 @@
 import std/[os, unittest]
-import ../src/m/[environment, m]
+import ../src/m/[environment, m, lispobject] 
 
 suite "run tests":
   test "all examples are runnable":
     var interp = newEnv()
+    interp.intern("~args", lispobject.newSeq())
     let 
         testDir = currentSourcePath().parentDir()
         exampleDir = testDir / "../examples"

@@ -1,5 +1,5 @@
 (load "Prelude.m")
-(open SysIo Seq)
+(open SysIo Seq Tables)
 
 (define mapDirRec 
  (let ()

@@ -199,7 +199,7 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
           continue
         # (let (bindings) ...forms)
         of "let":
-          if not (currentForm.len >= 3):
+          if currentForm.len < 3 or currentForm.second.kind notin {Cons, Nil}:
             raise newException(ValueError, fmt"Malformed let binding: {currentForm}")
           result = NIL()
           let
@@ -213,7 +213,7 @@ proc eval*(env: var Env; initialForm: LispObject): LispObject {.discardable.} =
             result      = scope.eval(progn)
           return result
         of "let*":
-          if not (currentForm.len >= 3):
+          if currentForm.len < 3 or currentForm.second.kind notin {Cons, Nil}:
             raise newException(ValueError, fmt"Malformed let binding: {currentForm}")
           result = NIL()
           let
