@@ -18,7 +18,6 @@
 * Completely cross platform
 
 # Some Examples ^_^
-<img src="doc/ex1.png" width="800">
 - Flexible macros and syntax
 <img src="doc/classex.png" width="800">
 - Embed in any nim app in 2 lines
