@@ -42,12 +42,28 @@ const
   SymbolChars = {'a'..'z', 'A'..'Z', '0'..'9', '*', '+', '-', '!', '?', '_', '>', '<', '$', '|', '=', '@', '`', '^', '/', '~'}
 
 proc initLexer*(lx: var MLexr, input: Stream, filename: string = "") =
-  lexbase.open(lx, input)
+  lexbase.open(lx, input, refillChars = {EndOfFile})
   lx.filename = filename
 
-func skip*(lx: var MLexr) =
-  while lx.bufpos < lx.buf.len and lx.buf[lx.bufpos] in {' ', '\t', '\n', '\r'}:
-    inc lx.bufpos
+template handleEof (lexer: var MLexr) =
+  lexer.bufpos = lexer.handleRefillChar(lexer.bufpos)
+  if lexer.buf[lexer.bufpos] == EndOfFile:
+    lexer.curTok = Token(kind: tkEof)
+    return
+
+proc skip* (lexer: var MLexr) =
+  while true:
+    case lexer.buf[lexer.bufpos] 
+    of ' ', '\t':
+      inc(lexer.bufpos)
+    of '\L':
+      lexer.bufpos = lexer.handleLF(lexer.bufpos)
+    of '\c':
+      lexer.bufpos = lexer.handleCR(lexer.bufpos)
+    of EndOfFile:
+      lexer.handleEof()
+    else:
+      break
 
 
 func parseSym*(lx: var MLexr, start: int) =
@@ -95,7 +111,7 @@ func parseNumber*(lx: var MLexr, start: int) =
     raise newException(ValueError, fmt"Invalid number: {numStr}")
 
 
-func parseStr*(lx: var MLexr) =
+proc parseStr*(lx: var MLexr) =
   var str = ""
   inc lx.bufpos 
   while lx.buf[lx.bufpos] != '\0':
@@ -114,6 +130,8 @@ func parseStr*(lx: var MLexr) =
       of 't': str.add('\t')
       else: str.add(escapedChar)
       inc lx.bufpos 
+    elif c == EndOfFile:
+      lx.handleEof()
     else:
       str.add(c)
       inc lx.bufpos 
@@ -122,13 +140,12 @@ func parseStr*(lx: var MLexr) =
 
 
   
-func getTok*(lx: var MLexr) =
+proc getTok*(lx: var MLexr) =
   lx.skip()
   let start = lx.bufpos 
     
-  if lx.buf[lx.bufpos] == '\0':
-    lx.curTok = Token(kind: tkEof)
-    return    
+  if lx.buf[lx.bufpos] == EndOfFile:
+    lx.handleEof()
 
   case lx.buf[lx.bufpos]
   of '#':

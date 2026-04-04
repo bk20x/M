@@ -14,3 +14,8 @@
 
 (destructuring-bind (x y) xs (echo (* x y)))
 (destructuring-bind (x y z) xs (echo (fmt "x=$ y=$ z=$" x y z)))
+
+
+(echo (fmt "expanded = $" (macroexpand (destructuring-bind (x y) xs (echo (* x y))))))
+(echo (fmt "expanded = $" (macroexpand (destructuring-bind (x y z) xs (echo (fmt "x=$ y=$ z=$" x y z))))))
+

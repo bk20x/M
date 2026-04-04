@@ -1,10 +1,5 @@
 (load "Streams.m")
 
-(with-file-stream (f "Streams.m")
- (while (not (Streams.atEnd f))
-   ((echo (Streams.readChar f)))))
-
-
 (define Tables (require Tables))
 (define countCharacters (-> (string)
  (let ((result {})) 

@@ -9,11 +9,11 @@ type
 
 var parseSexp*: proc(p: var Reader): owned LispObject
 
-func advance*(p: var Reader) =
+proc advance*(p: var Reader) =
   p.lastEndPos = p.lexer.bufpos
   p.lexer.getTok
 
-func expect*(p: var Reader; kind: TokenKind; callsite = "";) =
+proc expect*(p: var Reader; kind: TokenKind; callsite = "";) =
   if p.lexer.curTok.kind != kind:
       raise newException(ValueError, fmt"at {callsite} Reader expected TokenKind: {kind} but got {p.lexer.curTok}")
   p.advance
