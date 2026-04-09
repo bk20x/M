@@ -7,15 +7,24 @@ type
     lexer: MLexr
     lastEndPos: int # position of the end of the last token
 
+  ParseErrorKind* = enum
+    pekUnmatchedParens,
+    pekUnmatchedBraces,
+    pekTrailingDot,
+    pekGeneric,
+
+  ParseError* = ref object of CatchableError
+    kind*: ParseErrorKind
+
 var parseSexp*: proc(p: var Reader): owned LispObject
 
 proc advance*(p: var Reader) =
   p.lastEndPos = p.lexer.bufpos
   p.lexer.getTok
 
-proc expect*(p: var Reader; kind: TokenKind; callsite = "";) =
+proc expect*(p: var Reader; kind: TokenKind; callsite = ""; errKind=pekGeneric) =
   if p.lexer.curTok.kind != kind:
-      raise newException(ValueError, fmt"at {callsite} Reader expected TokenKind: {kind} but got {p.lexer.curTok}")
+      raise ParseError(kind: errKind, msg: fmt"at {callsite} Reader expected TokenKind: {kind} but got {p.lexer.curTok}")
   p.advance
 
 proc parseFieldAccess(p: var Reader; rootSymbol: LispObject): LispObject =
@@ -29,7 +38,7 @@ proc parseFieldAccess(p: var Reader; rootSymbol: LispObject): LispObject =
       p.advance 
       result = newFieldAccess(tableSym=result, field=field)
     else:
-      raise newException(ValueError, fmt"Reader expected symbol after '.' for FieldAccess but got {p.lexer.curTok}")
+      raise ParseError(kind: pekTrailingDot, msg: fmt"Reader expected symbol after '.' for FieldAccess but got {p.lexer.curTok}")
       
 
 proc parseIndex*(p: var Reader; obj: sink LispObject): owned LispObject =
@@ -72,17 +81,24 @@ proc parseTableLit(p: var Reader): owned LispObject =
     p.advance
     return result
   while true:
+    if p.lexer.curTok.kind == tkEof:
+      raise ParseError(kind: pekUnmatchedBraces, msg: "Expected } to close table literal")
     let key = parseSexp(p)
     p.expect(tkColon, "parseTableLit")
     let val = parseSexp(p)
     result.table[key] = val
-    if p.lexer.curTok.kind == tkComma:
+    case p.lexer.curTok.kind:
+    of tkComma:
       p.advance
-      if p.lexer.curTok.kind == tkRBrace: break
-    elif p.lexer.curTok.kind == tkRBrace: break 
+      if p.lexer.curTok.kind == tkRBrace: 
+        break
+    of tkRBrace: 
+      break 
+    of tkEof:
+      raise ParseError(kind: pekUnmatchedBraces, msg: "Expected closing } for table literal")
     else:
-      raise newException(ValueError, fmt"Expected ',' or '}}' in Table literal but got {p.lexer.curTok}")
-  p.expect(tkRBrace, "parseTableLit")
+      raise ParseError(kind: pekGeneric, msg: fmt"Expected ',' or '}}' in Table literal but got {p.lexer.curTok}")
+  p.expect(tkRBrace, callsite = "parseTableLit", pekUnmatchedBraces)
 
 proc parseSeqLit(p: var Reader): owned LispObject =
   result = lispobject.newSeq()
@@ -165,8 +181,7 @@ proc parseList(p: var Reader): owned LispObject =
   
   while p.lexer.curTok.kind != tkRpar:
     if p.lexer.curTok.kind == tkEof:
-      raise newException(ValueError, "Unmatched opening parenthesis")
-    
+      raise ParseError(kind: pekUnmatchedParens, msg: "Unmatched opening parenthesis")
     if p.lexer.curTok.kind == tkDot:
       p.expect tkDot
       cdr = parseSexp(p)
